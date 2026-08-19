@@ -1,41 +1,46 @@
+// استيراد useState من React
 import { useState } from "react";
-import "./App.css";
+
+// إنشاء دالة اسمها App
 function App() {
 
+  // task يخزن المهمة الحالية، و setTask تستخدم لتغيير قيمتها
   const [task, setTask] = useState("");
+
+  // إنشاء state لتخزين قائمة جميع المهام
+  // tasks لتخزين المهام، و setTasks لتحديث قائمة المهام
   const [tasks, setTasks] = useState([]);
+
   return (
     <div>
 
-      <h1>📝 إدارة المهام</h1>
+      {/* إرجاع وعرض عنوان الصفحة */}
+      <h1>Task Management</h1>
 
+      {/* عند الكتابة يتم تحديث task بقيمة input الحالية */}
       <input
-        type="text"
-        placeholder="اكتب مهمة"
         value={task}
         onChange={(e) => setTask(e.target.value)}
       />
 
-      <button onClick={() => setTasks([...tasks, task])}>
-  إضافة
-</button>
-
-<ul>
-  {tasks.map((item, index) => (
-    <li key={index}>
-      {item}
-
-      <button onClick={() => setTasks(tasks.filter((_, i) => i !== index))}>
-        حذف
+      {/* عند الضغط على Add يتم إضافة المهمة إلى قائمة المهام ثم إفراغ input */}
+      <button
+        onClick={() => {
+          setTasks([...tasks, task]);
+          setTask("");
+        }}
+      >
+        Add
       </button>
 
-    </li>
-  ))}
-</ul>
-      
+      {/* استخدام map للمرور على جميع المهام وعرضها */}
+      {tasks.map((task, index) => (
+        <p key={index}>{task}</p>
+      ))}
 
     </div>
   );
 }
 
+// App تصدير لاستخدامه في ملفات أخرى
 export default App;
