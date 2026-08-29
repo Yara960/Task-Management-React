@@ -92,7 +92,9 @@ function App() {
       />
 
       {/* إضافة أو تعديل المهمة */}
-      <button onClick={addTask}>Add</button>
+      <button onClick={addTask}>
+        {editingId !== null ? "Update" : "Add"}
+      </button>
 
       {/* المرور على جميع المهام وعرضها */}
       {tasks.map((task) => (
