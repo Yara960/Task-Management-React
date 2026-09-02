@@ -2,6 +2,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient";
 
+
+import CustomButton from "./Components/Button";
+import Navbar from "./Components/Navbar";
+import Footer from "./Components/Footer";
+
+
 // إنشاء دالة اسمها App
 function App() {
   // task يخزن المهمة الحالية
@@ -81,9 +87,11 @@ function App() {
   }
 
   return (
+    
     <div>
-      {/* إرجاع وعرض عنوان الصفحة */}
-      <h1>Task Management</h1>
+
+       <Navbar />
+     
 
       {/* عند الكتابة يتم تحديث task */}
       <input
@@ -92,27 +100,36 @@ function App() {
       />
 
       {/* إضافة أو تعديل المهمة */}
-      <button onClick={addTask}>
+      <CustomButton onClick={addTask} color="primary">
         {editingId !== null ? "Update" : "Add"}
-      </button>
+      </CustomButton>
 
       {/* المرور على جميع المهام وعرضها */}
       {tasks.map((task) => (
         <div key={task.id}>
           <p>{task.task}</p>
 
-          <button onClick={() => startEdit(task)}>
+          <CustomButton
+            onClick={() => startEdit(task)}
+            color="warning"
+          >
             Edit
-          </button>
+          </CustomButton>
 
-          <button onClick={() => deleteTask(task.id)}>
+          <CustomButton
+            onClick={() => deleteTask(task.id)}
+            color="error"
+          >
             Delete
-          </button>
+          </CustomButton>
         </div>
       ))}
+    <Footer />  
+
     </div>
   );
 }
 
 // تصدير App لاستخدامه في ملفات أخرى
 export default App;
+
