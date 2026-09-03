@@ -5,19 +5,32 @@ function Navbar() {
     <AppBar
       position="static"
       sx={{
-        backgroundColor: "black",
+        backgroundColor: "#d9da93",
+        boxShadow: "0 4px 10px rgba(233, 30, 99, 0.3)",
       }}
     >
-      <Toolbar>
+      <Toolbar
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+        }}
+      >
         <Typography
-          variant="h6"
           sx={{
-            color: "white",
-            textAlign: "left",
-            width: "100%",
+            fontSize: "15px",
+            fontWeight: "bold",
+            color: "black",
           }}
         >
-          Task Management
+          🌸 Task Management
+        </Typography>
+
+        <Typography
+          sx={{
+            fontSize: "15px",
+          }}
+        >
+          🌸
         </Typography>
       </Toolbar>
     </AppBar>

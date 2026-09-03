@@ -1,6 +1,7 @@
 // استيراد useState و useEffect من React
 import { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient";
+import "./App.css";
 
 
 import CustomButton from "./Components/Button";
@@ -87,11 +88,10 @@ function App() {
   }
 
   return (
-    
-    <div>
-
-       <Navbar />
-     
+  
+  <div>
+    <div style={{ height: "15px" }}></div>
+   <Navbar />
 
       {/* عند الكتابة يتم تحديث task */}
       <input
