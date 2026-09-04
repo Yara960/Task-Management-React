@@ -5,7 +5,7 @@ function Navbar() {
     <AppBar
       position="static"
       sx={{
-        backgroundColor: "#d9da93",
+        backgroundColor: "#e7e977",
         boxShadow: "0 4px 10px rgba(233, 30, 99, 0.3)",
       }}
     >

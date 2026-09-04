@@ -2,7 +2,7 @@ function Header() {
   return (
     <header
       style={{
-        backgroundColor: "#f8b4f8",
+        backgroundColor: "#f8bbc8",
         textAlign: "center",
         padding: "18px 10px",
         color: "#880e4f",

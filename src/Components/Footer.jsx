@@ -11,7 +11,7 @@ function Footer() {
         textAlign: "center",
         padding: "12px",
         fontWeight: "bold",
-        borderTop: "3px solid #ece38f",
+        borderTop: "3px solid #dae958",
         boxSizing: "border-box",
       }}
     >
