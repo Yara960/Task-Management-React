@@ -17,6 +17,7 @@ import TextField from "@mui/material/TextField";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
+import Checkbox from "@mui/material/Checkbox";
 
 // استيراد Dialog
 import Dialog from "@mui/material/Dialog";
@@ -32,7 +33,6 @@ import TaskAltIcon from "@mui/icons-material/TaskAlt";
 
 // استيراد Navbar
 import Navbar from "../Components/Navbar";
-
 
 // ==========================================
 // صفحة المهام
@@ -105,11 +105,13 @@ function TasksPage() {
 
 
     // إضافة المهمة إلى Supabase
+    // completed = false يعني المهمة غير مكتملة
     const { error } = await supabase
       .from("tasks")
       .insert([
         {
-          task: task,
+          task: task.trim(),
+          completed: false,
         },
       ]);
 
@@ -122,6 +124,36 @@ function TasksPage() {
 
       // تنظيف خانة الإدخال
       setTask("");
+
+      // تحديث قائمة المهام
+      getTasks();
+
+    }
+  }
+
+
+  // ==========================================
+  // تغيير حالة المهمة
+  // ==========================================
+
+  async function toggleTask(task) {
+
+    // تغيير حالة المهمة
+    // إذا كانت true تصبح false
+    // وإذا كانت false تصبح true
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        completed: !task.completed,
+      })
+      .eq("id", task.id);
+
+
+    if (error) {
+
+      console.log(error);
+
+    } else {
 
       // تحديث قائمة المهام
       getTasks();
@@ -207,7 +239,7 @@ function TasksPage() {
     const { error } = await supabase
       .from("tasks")
       .update({
-        task: editTask,
+        task: editTask.trim(),
       })
       .eq("id", editingId);
 
@@ -491,7 +523,12 @@ function TasksPage() {
                 elevation={0}
                 sx={{
                   borderRadius: "16px",
-                  backgroundColor: "#FFFFFF",
+
+                  // تغيير لون الكرت قليلًا إذا كانت المهمة مكتملة
+                  backgroundColor: task.completed
+                    ? "#F8FAFA"
+                    : "#FFFFFF",
+
                   border: "1px solid #E8ECEF",
                   transition: "all 0.2s ease",
 
@@ -520,11 +557,32 @@ function TasksPage() {
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "15px",
+                      gap: "10px",
                       minWidth: 0,
                       flex: 1,
                     }}
                   >
+
+                    {/* ==========================================
+                        Checkbox إنجاز المهمة
+                    ========================================== */}
+
+                    <Checkbox
+                      checked={Boolean(task.completed)}
+                      onChange={() => toggleTask(task)}
+                      sx={{
+                        color: "#B0BEC5",
+
+                        "&.Mui-checked": {
+                          color: "#00897B",
+                        },
+
+                        "&:hover": {
+                          backgroundColor: "#E0F2F1",
+                        },
+                      }}
+                    />
+
 
                     {/* أيقونة المهمة */}
 
@@ -534,7 +592,12 @@ function TasksPage() {
                         height: "42px",
                         minWidth: "42px",
                         borderRadius: "12px",
-                        backgroundColor: "#E0F2F1",
+
+                        // يتغير لون الأيقونة عند إكمال المهمة
+                        backgroundColor: task.completed
+                          ? "#E0F2F1"
+                          : "#E0F2F1",
+
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -561,10 +624,20 @@ function TasksPage() {
 
                       <Typography
                         sx={{
-                          color: "#263238",
+                          color: task.completed
+                            ? "#90A4AE"
+                            : "#263238",
+
                           fontSize: "16px",
                           fontWeight: "600",
                           wordBreak: "break-word",
+
+                          // وضع خط على المهمة المكتملة
+                          textDecoration: task.completed
+                            ? "line-through"
+                            : "none",
+
+                          transition: "all 0.2s ease",
                         }}
                       >
                         {task.task}
@@ -578,7 +651,10 @@ function TasksPage() {
                           marginTop: "3px",
                         }}
                       >
-                        Task #{task.id}
+                        {task.completed
+                          ? "Completed"
+                          : "Task"}{" "}
+                        #{task.id}
                       </Typography>
 
                     </Box>
