@@ -1,138 +1,64 @@
+import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-// استيراد useState و useEffect من React
-import { useState, useEffect } from "react";
-
-// استيراد React Router
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-
-// استيراد Material UI
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 
-// استيراد Supabase
+import Login from "./Pages/Auth/Login";
+import Register from "./Pages/Auth/Register";
+import ForgotPassword from "./Pages/Auth/ForgotPassword";
+import ResetPassword from "./Pages/Auth/ResetPassword";
+
+import TasksPage from "./Pages/TasksPage";
+import Profile from "./Pages/Profile";
+import Chat from "./Pages/Chat";
+
+import Navbar from "./Components/Navbar";
+
 import { supabase } from "./supabaseClient";
 
-// استيراد الصفحات
-import TasksPage from "./Pages/TasksPage";
-import Login from "./Pages/Login";
-import Register from "./Pages/Register";
-import ForgotPassword from "./Pages/ForgotPassword";
-import ResetPassword from "./Pages/ResetPassword";
-
-
-// ==========================================
-// حماية صفحة المهام
-// ==========================================
-
+// حماية الصفحات من المستخدم غير المسجل
 function ProtectedRoute({ children }) {
-
-  // تخزين المستخدم الحالي
   const [user, setUser] = useState(null);
-
-  // معرفة هل ما زلنا نتحقق من المستخدم
   const [loading, setLoading] = useState(true);
 
-
   useEffect(() => {
-
-    // جلب المستخدم الحالي من Supabase
     async function getUser() {
-
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       setUser(user);
-
       setLoading(false);
     }
 
-
     getUser();
 
-
-    // مراقبة حالة تسجيل الدخول
+    // متابعة حالة تسجيل الدخول والخروج
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
 
-        setUser(session?.user ?? null);
-
-      }
-    );
-
-
-    // إلغاء المراقبة عند مغادرة الصفحة
     return () => {
-
       subscription.unsubscribe();
-
     };
-
   }, []);
 
-
-  // أثناء التحقق من المستخدم
   if (loading) {
-
-    return (
-
-      <Box
-        sx={{
-          minHeight: "100vh",
-          backgroundColor: "#F5F7FA",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-
-        <Typography
-          sx={{
-            color: "#00897B",
-            fontWeight: "bold",
-          }}
-        >
-          Loading...
-        </Typography>
-
-      </Box>
-
-    );
+    return null;
   }
 
-
-  // إذا لم يكن المستخدم مسجل دخول
   if (!user) {
-
-    return (
-      <Navigate
-        to="/login"
-        replace
-      />
-    );
+    return <Navigate to="/login" replace />;
   }
 
-
-  // إذا كان المستخدم مسجل دخول
   return children;
 }
 
-
-// ==========================================
-// Layout
-// ==========================================
-
+// Layout يحتوي على الـ Navbar
 function Layout({ children }) {
-
   return (
-
     <Box
       sx={{
         minHeight: "100vh",
@@ -140,124 +66,74 @@ function Layout({ children }) {
         flexDirection: "column",
       }}
     >
+      <Navbar />
 
-      <Box
-        sx={{
-          flex: 1,
-        }}
-      >
-
+      <Box sx={{ flex: 1 }}>
         {children}
-
       </Box>
-
     </Box>
-
   );
 }
 
-
-// ==========================================
-// Routes
-// ==========================================
-
 function AppRoutes() {
-
   return (
-
     <BrowserRouter>
-
       <Routes>
 
-        {/* ==========================
-            استعادة كلمة المرور
-        ========================== */}
+        {/* صفحة تسجيل الدخول */}
+        <Route path="/login" element={<Login />} />
 
-        <Route
-          path="/forgot-password"
-          element={
-            <Layout>
-              <ForgotPassword />
-            </Layout>
-          }
-        />
+        {/* صفحة إنشاء حساب */}
+        <Route path="/register" element={<Register />} />
 
-        <Route
-          path="/reset-password"
-          element={
-            <Layout>
-              <ResetPassword />
-            </Layout>
-          }
-        />
+        {/* نسيت كلمة المرور */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
+        {/* إعادة تعيين كلمة المرور */}
+        <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* ==========================
-            صفحة تسجيل الدخول
-        ========================== */}
-
-        <Route
-          path="/login"
-          element={
-            <Layout>
-              <Login />
-            </Layout>
-          }
-        />
-
-
-        {/* ==========================
-            صفحة التسجيل
-        ========================== */}
-
-        <Route
-          path="/register"
-          element={
-            <Layout>
-              <Register />
-            </Layout>
-          }
-        />
-
-
-        {/* ==========================
-            صفحة المهام
-        ========================== */}
-
+        {/* الصفحة الرئيسية - المهام */}
         <Route
           path="/"
           element={
-            <Layout>
-
-              <ProtectedRoute>
+            <ProtectedRoute>
+              <Layout>
                 <TasksPage />
-              </ProtectedRoute>
-
-            </Layout>
+              </Layout>
+            </ProtectedRoute>
           }
         />
 
-
-        {/* ==========================
-            أي رابط غير موجود
-        ========================== */}
-
+        {/* صفحة البروفايل */}
         <Route
-          path="*"
+          path="/profile"
           element={
-            <Navigate
-              to="/login"
-              replace
-            />
+            <ProtectedRoute>
+              <Layout>
+                <Profile />
+              </Layout>
+            </ProtectedRoute>
           }
         />
+
+        {/* صفحة الشات */}
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Chat />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* أي رابط غير موجود يرجع إلى تسجيل الدخول */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
 
       </Routes>
-
     </BrowserRouter>
-
   );
 }
-
 
 export default AppRoutes;

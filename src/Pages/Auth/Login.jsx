@@ -13,7 +13,9 @@ import LoginIcon from "@mui/icons-material/Login";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
-import { supabase } from "../supabaseClient";
+import Navbar from "../../Components/Navbar";
+
+import { supabase } from '../../supabaseClient';
 
 import { Link, useNavigate } from "react-router-dom";
 

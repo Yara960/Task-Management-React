@@ -18,7 +18,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 // استيراد Supabase
-import { supabase } from "../supabaseClient";
+import { supabase } from "../../supabaseClient";
 
 // استيراد React Router
 import { Link, useNavigate } from "react-router-dom";

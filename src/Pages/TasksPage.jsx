@@ -1,4 +1,3 @@
-
 // استيراد useState و useEffect من React
 import { useState, useEffect } from "react";
 
@@ -40,51 +39,64 @@ import Navbar from "../Components/Navbar";
 
 function TasksPage() {
 
-  // task يخزن المهمة الجديدة
+  // المهمة الجديدة
   const [task, setTask] = useState("");
 
-  // tasks تخزن جميع المهام
+  // قائمة المهام
   const [tasks, setTasks] = useState([]);
 
-  // editingId يخزن ID المهمة التي نريد تعديلها
+  // ID المهمة التي نعدلها
   const [editingId, setEditingId] = useState(null);
 
-  // deleteId يخزن ID المهمة التي نريد حذفها
+  // ID المهمة التي نريد حذفها
   const [deleteId, setDeleteId] = useState(null);
 
-  // التحكم في ظهور نافذة تأكيد الحذف
+  // التحكم في نافذة تأكيد الحذف
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
-  // التحكم في ظهور نافذة تعديل المهمة
+  // التحكم في نافذة التعديل
   const [openEditDialog, setOpenEditDialog] = useState(false);
 
-  // المهمة التي نعدلها داخل Dialog
+  // النص الجديد للمهمة
   const [editTask, setEditTask] = useState("");
 
 
   // ==========================================
-  // جلب المهام من Supabase
+  // جلب مهام المستخدم
   // ==========================================
 
   async function getTasks() {
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return;
+    }
+
     const { data, error } = await supabase
       .from("tasks")
-      .select("*");
+      .select("*")
+      .eq("user_id", user.id)
+      .is("deleted_at", null);
 
     if (error) {
 
-      console.log(error);
+      console.log("Get tasks error:", error);
 
     } else {
 
-      setTasks(data);
+      setTasks(data || []);
 
     }
   }
 
 
+  // ==========================================
   // تشغيل getTasks عند فتح الصفحة
+  // ==========================================
+
   useEffect(() => {
 
     getTasks();
@@ -93,39 +105,41 @@ function TasksPage() {
 
 
   // ==========================================
-  // إضافة مهمة جديدة
+  // إضافة مهمة
   // ==========================================
 
   async function addTask() {
 
-    // التأكد أن المستخدم كتب مهمة
     if (!task.trim()) {
       return;
     }
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    // إضافة المهمة إلى Supabase
-    // completed = false يعني المهمة غير مكتملة
+    if (!user) {
+      return;
+    }
+
     const { error } = await supabase
       .from("tasks")
       .insert([
         {
           task: task.trim(),
           completed: false,
+          user_id: user.id,
         },
       ]);
 
-
     if (error) {
 
-      console.log(error);
+      console.log("Add task error:", error);
 
     } else {
 
-      // تنظيف خانة الإدخال
       setTask("");
 
-      // تحديث قائمة المهام
       getTasks();
 
     }
@@ -138,24 +152,20 @@ function TasksPage() {
 
   async function toggleTask(task) {
 
-    // تغيير حالة المهمة
-    // إذا كانت true تصبح false
-    // وإذا كانت false تصبح true
     const { error } = await supabase
       .from("tasks")
       .update({
         completed: !task.completed,
+        updated_at: new Date().toISOString(),
       })
       .eq("id", task.id);
 
-
     if (error) {
 
-      console.log(error);
+      console.log("Toggle task error:", error);
 
     } else {
 
-      // تحديث قائمة المهام
       getTasks();
 
     }
@@ -175,30 +185,36 @@ function TasksPage() {
 
 
   // ==========================================
-  // تنفيذ حذف المهمة
+  // حذف المهمة
   // ==========================================
 
   async function deleteTask() {
 
+    if (!deleteId) {
+      return;
+    }
+
+    // تسجيل وقت الحذف بدل حذف الصف نهائيًا
     const { error } = await supabase
       .from("tasks")
-      .delete()
+      .update({
+        deleted_at: new Date().toISOString(),
+      })
       .eq("id", deleteId);
-
 
     if (error) {
 
-      console.log(error);
+      console.log("Delete error:", error);
 
-    } else {
-
-      // تحديث قائمة المهام
-      getTasks();
-
+      return;
     }
 
+    // إزالة المهمة من الصفحة
+    setTasks((currentTasks) =>
+      currentTasks.filter((task) => task.id !== deleteId)
+    );
 
-    // إغلاق نافذة التأكيد
+    // إغلاق نافذة الحذف
     setOpenDeleteDialog(false);
 
     // تنظيف ID
@@ -212,60 +228,62 @@ function TasksPage() {
 
   function startEdit(task) {
 
-    // حفظ ID المهمة
     setEditingId(task.id);
 
-    // وضع اسم المهمة الحالي داخل الحقل
     setEditTask(task.task);
 
-    // فتح Dialog
     setOpenEditDialog(true);
   }
 
 
   // ==========================================
-  // حفظ تعديل المهمة
+  // تحديث المهمة
   // ==========================================
 
   async function updateTask() {
 
-    // التأكد أن المستخدم كتب مهمة
-    if (!editTask.trim()) {
+    if (!editTask.trim() || !editingId) {
       return;
     }
 
-
-    // تحديث المهمة في Supabase
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("tasks")
       .update({
         task: editTask.trim(),
-      })
-      .eq("id", editingId);
 
+        // تسجيل وقت آخر تعديل
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", editingId)
+      .select()
+      .single();
 
     if (error) {
 
-      console.log(error);
+      console.log("Update error:", error);
 
-    } else {
-
-      // تحديث قائمة المهام
-      getTasks();
-
-      // إغلاق Dialog
-      setOpenEditDialog(false);
-
-      // تنظيف البيانات
-      setEditingId(null);
-
-      setEditTask("");
+      return;
     }
+
+    // تحديث المهمة في الصفحة مباشرة
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === editingId ? data : task
+      )
+    );
+
+    // إغلاق نافذة التعديل
+    setOpenEditDialog(false);
+
+    // تنظيف البيانات
+    setEditingId(null);
+
+    setEditTask("");
   }
 
 
   // ==========================================
-  // واجهة صفحة المهام
+  // واجهة الصفحة
   // ==========================================
 
   return (
@@ -279,9 +297,7 @@ function TasksPage() {
       }}
     >
 
-      {/* Navbar */}
-
-      <Navbar />
+      
 
 
       {/* المحتوى الرئيسي */}
@@ -299,9 +315,7 @@ function TasksPage() {
         }}
       >
 
-        {/* ==========================================
-            عنوان الصفحة
-        ========================================== */}
+        {/* عنوان الصفحة */}
 
         <Box
           sx={{
@@ -328,9 +342,8 @@ function TasksPage() {
                 },
               }}
             >
-              My Tasks
+              Tasks
             </Typography>
-
 
             <Typography
               sx={{
@@ -367,9 +380,7 @@ function TasksPage() {
         </Box>
 
 
-        {/* ==========================================
-            Card إضافة المهمة
-        ========================================== */}
+        {/* إضافة مهمة */}
 
         <Paper
           elevation={0}
@@ -409,8 +420,6 @@ function TasksPage() {
             }}
           >
 
-            {/* خانة كتابة المهمة */}
-
             <TextField
               fullWidth
               label="What do you need to do?"
@@ -443,8 +452,6 @@ function TasksPage() {
             />
 
 
-            {/* زر إضافة المهمة */}
-
             <Button
               onClick={addTask}
               variant="contained"
@@ -476,9 +483,7 @@ function TasksPage() {
         </Paper>
 
 
-        {/* ==========================================
-            عنوان قائمة المهام
-        ========================================== */}
+        {/* عنوان قائمة المهام */}
 
         <Box
           sx={{
@@ -502,9 +507,7 @@ function TasksPage() {
         </Box>
 
 
-        {/* ==========================================
-            Cards المهام
-        ========================================== */}
+        {/* قائمة المهام */}
 
         {tasks.length > 0 ? (
 
@@ -524,7 +527,6 @@ function TasksPage() {
                 sx={{
                   borderRadius: "16px",
 
-                  // تغيير لون الكرت قليلًا إذا كانت المهمة مكتملة
                   backgroundColor: task.completed
                     ? "#F8FAFA"
                     : "#FFFFFF",
@@ -563,9 +565,7 @@ function TasksPage() {
                     }}
                   >
 
-                    {/* ==========================================
-                        Checkbox إنجاز المهمة
-                    ========================================== */}
+                    {/* Checkbox */}
 
                     <Checkbox
                       checked={Boolean(task.completed)}
@@ -592,12 +592,7 @@ function TasksPage() {
                         height: "42px",
                         minWidth: "42px",
                         borderRadius: "12px",
-
-                        // يتغير لون الأيقونة عند إكمال المهمة
-                        backgroundColor: task.completed
-                          ? "#E0F2F1"
-                          : "#E0F2F1",
-
+                        backgroundColor: "#E0F2F1",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -632,7 +627,6 @@ function TasksPage() {
                           fontWeight: "600",
                           wordBreak: "break-word",
 
-                          // وضع خط على المهمة المكتملة
                           textDecoration: task.completed
                             ? "line-through"
                             : "none",
@@ -662,9 +656,7 @@ function TasksPage() {
                   </Box>
 
 
-                  {/* ==========================================
-                      أزرار التحكم
-                  ========================================== */}
+                  {/* أزرار التحكم */}
 
                   <Box
                     sx={{
@@ -800,7 +792,10 @@ function TasksPage() {
 
       <Dialog
         open={openDeleteDialog}
-        onClose={() => setOpenDeleteDialog(false)}
+        onClose={() => {
+          setOpenDeleteDialog(false);
+          setDeleteId(null);
+        }}
         PaperProps={{
           sx: {
             width: "100%",
@@ -845,10 +840,11 @@ function TasksPage() {
           }}
         >
 
-          {/* Cancel */}
-
           <Button
-            onClick={() => setOpenDeleteDialog(false)}
+            onClick={() => {
+              setOpenDeleteDialog(false);
+              setDeleteId(null);
+            }}
             variant="outlined"
             sx={{
               color: "#607D8B",
@@ -866,8 +862,6 @@ function TasksPage() {
             Cancel
           </Button>
 
-
-          {/* Delete */}
 
           <Button
             onClick={deleteTask}
@@ -937,8 +931,6 @@ function TasksPage() {
           </Typography>
 
 
-          {/* خانة تعديل المهمة */}
-
           <TextField
             fullWidth
             label="Task"
@@ -981,17 +973,11 @@ function TasksPage() {
           }}
         >
 
-          {/* Cancel */}
-
           <Button
             onClick={() => {
-
               setOpenEditDialog(false);
-
               setEditingId(null);
-
               setEditTask("");
-
             }}
             variant="outlined"
             sx={{
@@ -1010,8 +996,6 @@ function TasksPage() {
             Cancel
           </Button>
 
-
-          {/* Save Changes */}
 
           <Button
             onClick={updateTask}
@@ -1042,4 +1026,3 @@ function TasksPage() {
 
 // تصدير صفحة المهام
 export default TasksPage;
-

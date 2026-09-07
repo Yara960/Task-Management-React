@@ -8,7 +8,7 @@ import Button from "@mui/material/Button";
 
 import LockResetIcon from "@mui/icons-material/LockReset";
 
-import { supabase } from "../supabaseClient";
+import { supabase } from "../../supabaseClient";
 
 import { Link } from "react-router-dom";
 

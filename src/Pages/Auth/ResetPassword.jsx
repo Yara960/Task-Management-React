@@ -13,7 +13,7 @@ import LockResetIcon from "@mui/icons-material/LockReset";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
-import { supabase } from "../supabaseClient";
+import { supabase } from "../../supabaseClient";
 
 import { useNavigate } from "react-router-dom";
 
