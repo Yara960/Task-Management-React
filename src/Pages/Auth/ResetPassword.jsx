@@ -12,38 +12,326 @@ import IconButton from "@mui/material/IconButton";
 import LockResetIcon from "@mui/icons-material/LockReset";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import LanguageIcon from "@mui/icons-material/Language";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import LightModeIcon from "@mui/icons-material/LightMode";
 
 import { supabase } from "../../supabaseClient";
 
 import { useNavigate } from "react-router-dom";
 
+import { useAppTheme } from "../../ThemeContext";
+
+
 function ResetPassword() {
 
+  // ==========================================
+  // التحكم في الوضع الليلي
+  // ==========================================
+
+  const {
+    darkMode,
+    toggleDarkMode,
+  } = useAppTheme();
+
+
+  // ==========================================
   // كلمة المرور الجديدة
+  // ==========================================
+
   const [password, setPassword] = useState("");
 
+
+  // ==========================================
   // تأكيد كلمة المرور
-  const [confirmPassword, setConfirmPassword] = useState("");
+  // ==========================================
 
+  const [confirmPassword, setConfirmPassword] =
+    useState("");
+
+
+  // ==========================================
   // إظهار كلمة المرور
-  const [showPassword, setShowPassword] = useState(false);
+  // ==========================================
 
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+
+  // ==========================================
   // إظهار تأكيد كلمة المرور
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  // ==========================================
 
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState(false);
+
+
+  // ==========================================
   // رسالة الخطأ
+  // ==========================================
+
   const [error, setError] = useState("");
 
+
+  // ==========================================
   // رسالة النجاح
+  // ==========================================
+
   const [message, setMessage] = useState("");
 
-  // حالة جلسة استرجاع كلمة المرور
-  const [sessionReady, setSessionReady] = useState(false);
 
+  // ==========================================
+  // حالة جلسة استرجاع كلمة المرور
+  // ==========================================
+
+  const [sessionReady, setSessionReady] =
+    useState(false);
+
+
+  // ==========================================
   // حالة التحميل
-  const [loading, setLoading] = useState(true);
+  // ==========================================
+
+  const [loading, setLoading] =
+    useState(true);
+
+
+  // ==========================================
+  // اللغة الحالية
+  // ==========================================
+
+  const [language, setLanguage] = useState(
+    () => localStorage.getItem("language") || "en"
+  );
+
 
   const navigate = useNavigate();
+
+
+  // ==========================================
+  // النصوص باللغتين
+  // ==========================================
+
+  const text = {
+
+    en: {
+
+      title: "Reset Password",
+
+      description:
+        "Create a new password for your account",
+
+      newPassword:
+        "New Password",
+
+      newPasswordPlaceholder:
+        "Enter your new password",
+
+      confirmPassword:
+        "Confirm Password",
+
+      confirmPasswordPlaceholder:
+        "Confirm your new password",
+
+      updatePassword:
+        "Update Password",
+
+      checkingSession:
+        "Checking password reset session...",
+
+      language:
+        "العربية",
+
+      darkMode:
+        "Dark Mode",
+
+      lightMode:
+        "Light Mode",
+
+      requiredFields:
+        "Please fill in all fields.",
+
+      passwordsNotMatch:
+        "Passwords do not match.",
+
+      passwordShort:
+        "Password must be at least 6 characters.",
+
+      sessionMissing:
+        "Your password reset session is not ready. Please open the reset link from your email again.",
+
+      sessionMissingInitial:
+        "The password reset session is missing. Please open the reset link from your email again.",
+
+      passwordUpdated:
+        "Password updated successfully.",
+
+      unexpectedError:
+        "Something went wrong. Please try again.",
+
+    },
+
+
+    ar: {
+
+      title:
+        "إعادة تعيين كلمة المرور",
+
+      description:
+        "أنشئ كلمة مرور جديدة لحسابك",
+
+      newPassword:
+        "كلمة المرور الجديدة",
+
+      newPasswordPlaceholder:
+        "أدخل كلمة المرور الجديدة",
+
+      confirmPassword:
+        "تأكيد كلمة المرور",
+
+      confirmPasswordPlaceholder:
+        "أكد كلمة المرور الجديدة",
+
+      updatePassword:
+        "تحديث كلمة المرور",
+
+      checkingSession:
+        "جاري التحقق من جلسة استرجاع كلمة المرور...",
+
+      language:
+        "English",
+
+      darkMode:
+        "الوضع الليلي",
+
+      lightMode:
+        "الوضع النهاري",
+
+      requiredFields:
+        "يرجى تعبئة جميع الحقول.",
+
+      passwordsNotMatch:
+        "كلمتا المرور غير متطابقتين.",
+
+      passwordShort:
+        "يجب أن تكون كلمة المرور 6 أحرف على الأقل.",
+
+      sessionMissing:
+        "جلسة استرجاع كلمة المرور غير جاهزة. يرجى فتح رابط إعادة التعيين من بريدك الإلكتروني مرة أخرى.",
+
+      sessionMissingInitial:
+        "جلسة استرجاع كلمة المرور غير موجودة. يرجى فتح رابط إعادة التعيين من بريدك الإلكتروني مرة أخرى.",
+
+      passwordUpdated:
+        "تم تحديث كلمة المرور بنجاح.",
+
+      unexpectedError:
+        "حدث خطأ غير متوقع. حاول مرة أخرى.",
+
+    },
+
+  };
+
+
+  // النصوص حسب اللغة الحالية
+
+  const currentText =
+    language === "ar"
+      ? text.ar
+      : text.en;
+
+
+  // ==========================================
+  // استقبال تغيير اللغة من Navbar
+  // ==========================================
+
+  useEffect(() => {
+
+    const handleLanguageChange = (event) => {
+
+      setLanguage(event.detail);
+
+    };
+
+
+    window.addEventListener(
+      "languageChanged",
+      handleLanguageChange
+    );
+
+
+    return () => {
+
+      window.removeEventListener(
+        "languageChanged",
+        handleLanguageChange
+      );
+
+    };
+
+  }, []);
+
+
+  // ==========================================
+  // تغيير اتجاه الصفحة
+  // ==========================================
+
+  useEffect(() => {
+
+    if (language === "ar") {
+
+      document.documentElement.dir = "rtl";
+
+      document.documentElement.lang = "ar";
+
+    } else {
+
+      document.documentElement.dir = "ltr";
+
+      document.documentElement.lang = "en";
+
+    }
+
+
+    localStorage.setItem(
+      "language",
+      language
+    );
+
+  }, [language]);
+
+
+  // ==========================================
+  // تغيير اللغة
+  // ==========================================
+
+  const toggleLanguage = () => {
+
+    const newLanguage =
+      language === "en"
+        ? "ar"
+        : "en";
+
+
+    setLanguage(newLanguage);
+
+
+    localStorage.setItem(
+      "language",
+      newLanguage
+    );
+
+
+    window.dispatchEvent(
+      new CustomEvent(
+        "languageChanged",
+        {
+          detail: newLanguage,
+        }
+      )
+    );
+
+  };
 
 
   // ==========================================
@@ -54,22 +342,33 @@ function ResetPassword() {
 
     let mounted = true;
 
+
     async function checkSession() {
 
-      // الحصول على الجلسة الحالية
-      const { data, error } = await supabase.auth.getSession();
+      const {
+        data,
+        error,
+      } = await supabase.auth.getSession();
+
 
       if (!mounted) return;
 
+
       if (error) {
 
-        setError(error.message);
+        setError(
+          currentText.unexpectedError
+        );
+
         setLoading(false);
 
         return;
+
       }
 
+
       // إذا كانت الجلسة موجودة
+
       if (data.session) {
 
         setSessionReady(true);
@@ -77,36 +376,55 @@ function ResetPassword() {
       } else {
 
         setError(
-          "The password reset session is missing. Please open the reset link from your email again."
+          currentText.sessionMissingInitial
         );
 
       }
 
+
       setLoading(false);
+
     }
 
 
     checkSession();
 
 
-    // الاستماع إلى أحداث تسجيل الدخول واسترجاع كلمة المرور
+    // ==========================================
+    // الاستماع لأحداث المصادقة
+    // ==========================================
+
     const {
-      data: { subscription },
+      data: {
+        subscription,
+      },
     } = supabase.auth.onAuthStateChange(
       (event, session) => {
 
-        console.log("Auth event:", event);
+        console.log(
+          "Auth event:",
+          event
+        );
+
 
         // عند استرجاع كلمة المرور
-        if (event === "PASSWORD_RECOVERY" && session) {
+
+        if (
+          event === "PASSWORD_RECOVERY"
+          && session
+        ) {
 
           setSessionReady(true);
+
           setError("");
 
           setLoading(false);
+
         }
 
+
         // إذا أصبحت هناك جلسة
+
         if (session) {
 
           setSessionReady(true);
@@ -114,12 +432,15 @@ function ResetPassword() {
           setError("");
 
           setLoading(false);
+
         }
+
       }
     );
 
 
-    // تنظيف الاشتراك عند مغادرة الصفحة
+    // تنظيف الاشتراك
+
     return () => {
 
       mounted = false;
@@ -139,64 +460,130 @@ function ResetPassword() {
 
     e.preventDefault();
 
+
+    // مسح الرسائل القديمة
+
     setError("");
+
     setMessage("");
 
 
+    // ==========================================
     // التأكد من وجود جلسة
+    // ==========================================
+
     if (!sessionReady) {
 
       setError(
-        "Your password reset session is not ready. Please open the reset link from your email again."
+        currentText.sessionMissing
       );
 
       return;
+
     }
 
 
-    // التأكد من تطابق الباسورد
-    if (password !== confirmPassword) {
+    // ==========================================
+    // التأكد من تعبئة الحقول
+    // ==========================================
 
-      setError("Passwords do not match.");
+    if (
+      !password.trim()
+      ||
+      !confirmPassword.trim()
+    ) {
+
+      setError(
+        currentText.requiredFields
+      );
 
       return;
+
     }
 
 
-    // التأكد من أن الباسورد ليس قصيرًا
+    // ==========================================
+    // التأكد من تطابق الباسورد
+    // ==========================================
+
+    if (
+      password !== confirmPassword
+    ) {
+
+      setError(
+        currentText.passwordsNotMatch
+      );
+
+      return;
+
+    }
+
+
+    // ==========================================
+    // التأكد من طول الباسورد
+    // ==========================================
+
     if (password.length < 6) {
 
-      setError("Password must be at least 6 characters.");
+      setError(
+        currentText.passwordShort
+      );
 
       return;
+
     }
 
 
+    // ==========================================
     // تحديث كلمة المرور في Supabase
-    const { error } = await supabase.auth.updateUser({
+    // ==========================================
+
+    const {
+      error,
+    } = await supabase.auth.updateUser({
       password: password,
     });
 
 
     // إذا حدث خطأ
+
     if (error) {
 
-      setError(error.message);
+      console.log(
+        "Update password error:",
+        error
+      );
+
+
+      setError(
+        currentText.unexpectedError
+      );
 
       return;
+
     }
 
 
+    // ==========================================
     // رسالة النجاح
-    setMessage("Password updated successfully.");
+    // ==========================================
+
+    setMessage(
+      currentText.passwordUpdated
+    );
 
 
     // مسح الحقول
+
     setPassword("");
+
     setConfirmPassword("");
 
 
+    // ==========================================
     // الانتقال إلى Login
+    // ==========================================
+
     setTimeout(() => {
 
       navigate("/login");
@@ -206,16 +593,35 @@ function ResetPassword() {
   }
 
 
+  // ==========================================
+  // واجهة الصفحة
+  // ==========================================
+
   return (
 
     <Box
       sx={{
-        minHeight: "70vh",
-        backgroundColor: "#F5F7FA",
+        minHeight: "100vh",
+
+        backgroundColor:
+          "background.default",
+
+        color:
+          "text.primary",
+
         display: "flex",
+
         justifyContent: "center",
+
         alignItems: "center",
-        padding: "30px 16px",
+
+        padding: {
+          xs: "24px 16px",
+          sm: "40px 20px",
+        },
+
+        transition:
+          "background-color 0.3s, color 0.3s",
       }}
     >
 
@@ -223,125 +629,481 @@ function ResetPassword() {
         elevation={0}
         sx={{
           width: "100%",
+
           maxWidth: "430px",
+
           padding: {
             xs: "28px 22px",
-            sm: "38px",
+            sm: "36px 34px",
           },
+
           borderRadius: "20px",
-          backgroundColor: "#FFFFFF",
-          border: "1px solid #E8ECEF",
-          boxShadow:
-            "0 8px 30px rgba(38, 50, 56, 0.08)",
+
+          position: "relative",
+
+          overflow: "hidden",
         }}
       >
 
-        {/* الأيقونة */}
+        {/* ==========================================
+            أزرار اللغة والوضع الليلي
+            ========================================== */}
+
+        <Box
+          sx={{
+            display: "flex",
+
+            justifyContent: "flex-end",
+
+            alignItems: "center",
+
+            gap: "6px",
+
+            marginBottom: "18px",
+          }}
+        >
+
+          {/* زر اللغة */}
+
+          <IconButton
+            onClick={toggleLanguage}
+            title={currentText.language}
+            sx={{
+              color:
+                "text.secondary",
+
+              borderRadius:
+                "10px",
+
+              "&:hover": {
+
+                backgroundColor:
+                  darkMode
+                    ? "rgba(128,203,196,0.10)"
+                    : "rgba(0,137,123,0.06)",
+
+                color:
+                  "primary.main",
+              },
+            }}
+          >
+
+            <LanguageIcon />
+
+          </IconButton>
+
+
+          {/* زر Dark / Light */}
+
+          <IconButton
+            onClick={toggleDarkMode}
+            title={
+              darkMode
+                ? currentText.lightMode
+                : currentText.darkMode
+            }
+            sx={{
+              color:
+                "text.secondary",
+
+              borderRadius:
+                "10px",
+
+              "&:hover": {
+
+                backgroundColor:
+                  darkMode
+                    ? "rgba(128,203,196,0.10)"
+                    : "rgba(0,137,123,0.06)",
+
+                color:
+                  "primary.main",
+              },
+            }}
+          >
+
+            {darkMode ? (
+              <LightModeIcon />
+            ) : (
+              <DarkModeIcon />
+            )}
+
+          </IconButton>
+
+        </Box>
+
+
+        {/* ==========================================
+            الأيقونة
+            ========================================== */}
 
         <Box
           sx={{
             width: "65px",
+
             height: "65px",
+
             borderRadius: "18px",
-            backgroundColor: "#E0F2F1",
+
+            backgroundColor:
+              darkMode
+                ? "rgba(128,203,196,0.12)"
+                : "#E0F2F1",
+
             display: "flex",
+
             justifyContent: "center",
+
             alignItems: "center",
+
             margin: "0 auto 18px",
           }}
         >
 
           <LockResetIcon
             sx={{
-              color: "#00897B",
-              fontSize: "34px",
+              color:
+                "primary.main",
+
+              fontSize:
+                "34px",
             }}
           />
 
         </Box>
 
 
-        {/* العنوان */}
+        {/* ==========================================
+            العنوان
+            ========================================== */}
 
         <Typography
           sx={{
-            textAlign: "center",
-            fontSize: "26px",
-            fontWeight: "800",
-            color: "#263238",
+            textAlign:
+              "center",
+
+            fontSize:
+              "26px",
+
+            fontWeight:
+              "800",
+
+            color:
+              "text.primary",
           }}
         >
-          Reset Password
+
+          {currentText.title}
+
         </Typography>
 
+
+        {/* الوصف */}
 
         <Typography
           sx={{
-            textAlign: "center",
-            color: "#78909C",
-            fontSize: "14px",
-            marginTop: "8px",
-            marginBottom: "28px",
+            textAlign:
+              "center",
+
+            color:
+              "text.secondary",
+
+            fontSize:
+              "14px",
+
+            lineHeight:
+              "1.6",
+
+            marginTop:
+              "8px",
+
+            marginBottom:
+              "28px",
           }}
         >
-          Create a new password for your account
+
+          {currentText.description}
+
         </Typography>
 
 
-        {/* رسالة الخطأ */}
+        {/* ==========================================
+            رسالة الخطأ
+            ========================================== */}
 
         {error && (
 
           <Box
             sx={{
-              backgroundColor: "#FFEBEE",
-              border: "1px solid #FFCDD2",
-              color: "#D32F2F",
-              borderRadius: "10px",
-              padding: "12px",
-              marginBottom: "18px",
-              fontSize: "13px",
+              display:
+                "flex",
+
+              alignItems:
+                "center",
+
+              gap:
+                "10px",
+
+              backgroundColor:
+                darkMode
+                  ? "#3B1F1F"
+                  : "#FFEBEE",
+
+              border:
+                darkMode
+                  ? "1px solid #7F1D1D"
+                  : "1px solid #FFCDD2",
+
+              color:
+                darkMode
+                  ? "#FF8A80"
+                  : "#D32F2F",
+
+              borderRadius:
+                "10px",
+
+              padding:
+                "12px 14px",
+
+              marginBottom:
+                "20px",
+
+              fontSize:
+                "13px",
+
+              fontWeight:
+                "500",
+
+              lineHeight:
+                "1.6",
+
+              boxShadow:
+                darkMode
+                  ? "0 4px 12px rgba(239,83,80,0.18)"
+                  : "0 4px 12px rgba(211,47,47,0.08)",
             }}
           >
-            {error}
+
+            {/* علامة التعجب */}
+
+            <Box
+              sx={{
+                minWidth:
+                  "28px",
+
+                width:
+                  "28px",
+
+                height:
+                  "28px",
+
+                borderRadius:
+                  "50%",
+
+                display:
+                  "flex",
+
+                alignItems:
+                  "center",
+
+                justifyContent:
+                  "center",
+
+                backgroundColor:
+                  darkMode
+                    ? "#7F1D1D"
+                    : "#FFCDD2",
+
+                color:
+                  darkMode
+                    ? "#FF8A80"
+                    : "#D32F2F",
+
+                fontSize:
+                  "16px",
+
+                fontWeight:
+                  "700",
+              }}
+            >
+              !
+            </Box>
+
+
+            {/* نص الخطأ */}
+
+            <Typography
+              sx={{
+                fontSize:
+                  "13px",
+
+                fontWeight:
+                  "600",
+
+                color:
+                  "inherit",
+
+                lineHeight:
+                  "1.6",
+              }}
+            >
+
+              {error}
+
+            </Typography>
+
           </Box>
 
         )}
 
 
-        {/* رسالة النجاح */}
+        {/* ==========================================
+            رسالة النجاح
+            ========================================== */}
 
         {message && (
 
           <Box
             sx={{
-              backgroundColor: "#E8F5E9",
-              border: "1px solid #C8E6C9",
-              color: "#2E7D32",
-              borderRadius: "10px",
-              padding: "12px",
-              marginBottom: "18px",
-              fontSize: "13px",
+              display:
+                "flex",
+
+              alignItems:
+                "center",
+
+              gap:
+                "10px",
+
+              backgroundColor:
+                darkMode
+                  ? "#1B3A2A"
+                  : "#E8F5E9",
+
+              border:
+                darkMode
+                  ? "1px solid #2E7D32"
+                  : "1px solid #C8E6C9",
+
+              color:
+                darkMode
+                  ? "#81C784"
+                  : "#2E7D32",
+
+              borderRadius:
+                "10px",
+
+              padding:
+                "12px 14px",
+
+              marginBottom:
+                "20px",
+
+              fontSize:
+                "13px",
+
+              fontWeight:
+                "600",
+
+              lineHeight:
+                "1.6",
             }}
           >
-            {message}
+
+            {/* علامة النجاح */}
+
+            <Box
+              sx={{
+                minWidth:
+                  "28px",
+
+                width:
+                  "28px",
+
+                height:
+                  "28px",
+
+                borderRadius:
+                  "50%",
+
+                display:
+                  "flex",
+
+                alignItems:
+                  "center",
+
+                justifyContent:
+                  "center",
+
+                backgroundColor:
+                  darkMode
+                    ? "#2E7D32"
+                    : "#C8E6C9",
+
+                color:
+                  darkMode
+                    ? "#E8F5E9"
+                    : "#2E7D32",
+
+                fontSize:
+                  "15px",
+
+                fontWeight:
+                  "700",
+              }}
+            >
+              ✓
+            </Box>
+
+
+            <Typography
+              sx={{
+                fontSize:
+                  "13px",
+
+                fontWeight:
+                  "600",
+
+                color:
+                  "inherit",
+
+                lineHeight:
+                  "1.6",
+              }}
+            >
+
+              {message}
+
+            </Typography>
+
           </Box>
 
         )}
 
 
-        {/* حالة التحميل */}
+        {/* ==========================================
+            حالة التحميل
+            ========================================== */}
 
         {loading ? (
 
           <Typography
             sx={{
-              textAlign: "center",
-              color: "#78909C",
-              padding: "20px 0",
+              textAlign:
+                "center",
+
+              color:
+                "text.secondary",
+
+              padding:
+                "20px 0",
+
+              fontSize:
+                "14px",
             }}
           >
-            Checking password reset session...
+
+            {currentText.checkingSession}
+
           </Typography>
 
         ) : (
@@ -349,42 +1111,76 @@ function ResetPassword() {
           <Box
             component="form"
             onSubmit={handleUpdatePassword}
+            noValidate
           >
 
-            {/* الباسورد الجديد */}
+            {/* ==========================================
+                كلمة المرور الجديدة
+                ========================================== */}
 
             <TextField
               fullWidth
-              label="New Password"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={!sessionReady}
-              sx={{
-                marginBottom: "18px",
 
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                },
+              label={
+                currentText.newPassword
+              }
+
+              placeholder={
+                currentText.newPasswordPlaceholder
+              }
+
+              type={
+                showPassword
+                  ? "text"
+                  : "password"
+              }
+
+              value={
+                password
+              }
+
+              onChange={(e) =>
+                setPassword(
+                  e.target.value
+                )
+              }
+
+              disabled={
+                !sessionReady
+              }
+
+              sx={{
+                marginBottom:
+                  "18px",
               }}
+
               slotProps={{
                 input: {
+
                   endAdornment: (
 
-                    <InputAdornment position="end">
+                    <InputAdornment
+                      position="end"
+                    >
 
                       <IconButton
                         onClick={() =>
-                          setShowPassword(!showPassword)
+                          setShowPassword(
+                            !showPassword
+                          )
                         }
+
                         edge="end"
-                        disabled={!sessionReady}
+
+                        disabled={
+                          !sessionReady
+                        }
                       >
 
                         {showPassword
                           ? <VisibilityOff />
-                          : <Visibility />}
+                          : <Visibility />
+                        }
 
                       </IconButton>
 
@@ -396,30 +1192,54 @@ function ResetPassword() {
             />
 
 
-            {/* تأكيد الباسورد */}
+            {/* ==========================================
+                تأكيد كلمة المرور
+                ========================================== */}
 
             <TextField
               fullWidth
-              label="Confirm Password"
-              type={showConfirmPassword ? "text" : "password"}
-              value={confirmPassword}
-              onChange={(e) =>
-                setConfirmPassword(e.target.value)
-              }
-              required
-              disabled={!sessionReady}
-              sx={{
-                marginBottom: "22px",
 
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                },
+              label={
+                currentText.confirmPassword
+              }
+
+              placeholder={
+                currentText.confirmPasswordPlaceholder
+              }
+
+              type={
+                showConfirmPassword
+                  ? "text"
+                  : "password"
+              }
+
+              value={
+                confirmPassword
+              }
+
+              onChange={(e) =>
+                setConfirmPassword(
+                  e.target.value
+                )
+              }
+
+              disabled={
+                !sessionReady
+              }
+
+              sx={{
+                marginBottom:
+                  "22px",
               }}
+
               slotProps={{
                 input: {
+
                   endAdornment: (
 
-                    <InputAdornment position="end">
+                    <InputAdornment
+                      position="end"
+                    >
 
                       <IconButton
                         onClick={() =>
@@ -427,13 +1247,18 @@ function ResetPassword() {
                             !showConfirmPassword
                           )
                         }
+
                         edge="end"
-                        disabled={!sessionReady}
+
+                        disabled={
+                          !sessionReady
+                        }
                       >
 
                         {showConfirmPassword
                           ? <VisibilityOff />
-                          : <Visibility />}
+                          : <Visibility />
+                        }
 
                       </IconButton>
 
@@ -445,35 +1270,79 @@ function ResetPassword() {
             />
 
 
-            {/* زر تحديث كلمة المرور */}
+            {/* ==========================================
+                زر تحديث كلمة المرور
+                ========================================== */}
 
             <Button
               type="submit"
+
               fullWidth
+
               variant="contained"
-              startIcon={<LockResetIcon />}
-              disabled={!sessionReady}
+
+              startIcon={
+                <LockResetIcon />
+              }
+
+              disabled={
+                !sessionReady
+              }
+
               sx={{
-                height: "52px",
-                borderRadius: "12px",
-                backgroundColor: "#00897B",
-                textTransform: "none",
-                fontSize: "15px",
-                fontWeight: "bold",
-                boxShadow: "none",
+                height:
+                  "48px",
+
+                borderRadius:
+                  "10px",
+
+                backgroundColor:
+                  "primary.main",
+
+                color:
+                  darkMode
+                    ? "#0F172A"
+                    : "#FFFFFF",
+
+                textTransform:
+                  "none",
+
+                fontSize:
+                  "15px",
+
+                fontWeight:
+                  "700",
+
+                boxShadow:
+                  "none",
 
                 "&:hover": {
-                  backgroundColor: "#00695C",
-                  boxShadow: "none",
+
+                  backgroundColor:
+                    "primary.main",
+
+                  opacity:
+                    0.9,
+
+                  boxShadow:
+                    "none",
                 },
 
                 "&.Mui-disabled": {
-                  backgroundColor: "#B0BEC5",
-                  color: "#FFFFFF",
+
+                  backgroundColor:
+                    darkMode
+                      ? "#475569"
+                      : "#B0BEC5",
+
+                  color:
+                    "#FFFFFF",
                 },
               }}
             >
-              Update Password
+
+              {currentText.updatePassword}
+
             </Button>
 
           </Box>
@@ -488,5 +1357,7 @@ function ResetPassword() {
 
 }
 
+
 export default ResetPassword;
+
 

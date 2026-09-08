@@ -1,4 +1,3 @@
-
 // استيراد useState و useEffect من React
 import { useState, useEffect } from "react";
 
@@ -32,10 +31,215 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 
-// استيراد Navbar
-import Navbar from "../Components/Navbar";
+// استيراد Theme
+import { useTheme } from "@mui/material/styles";
 
 function TasksPage() {
+
+  // ==========================================
+  // Theme
+  // ==========================================
+
+  const theme = useTheme();
+
+
+  // ==========================================
+  // اللغة
+  // ==========================================
+
+  const [language, setLanguage] = useState(
+    () => localStorage.getItem("language") || "en"
+  );
+
+
+  // الاستماع لتغيير اللغة من Navbar
+  useEffect(() => {
+
+    const handleLanguageChange = (event) => {
+      setLanguage(event.detail);
+    };
+
+    window.addEventListener(
+      "languageChanged",
+      handleLanguageChange
+    );
+
+    return () => {
+      window.removeEventListener(
+        "languageChanged",
+        handleLanguageChange
+      );
+    };
+
+  }, []);
+
+
+  // ==========================================
+  // النصوص
+  // ==========================================
+
+  const text = {
+
+    en: {
+
+      tasks: "Tasks",
+
+      manageTasks:
+        "Manage your tasks easily and stay organized.",
+
+      task:
+        "Task",
+
+      taskCount:
+        "Task",
+
+      tasksCount:
+        "Tasks",
+
+      addNewTask:
+        "Add New Task",
+
+      whatToDo:
+        "What do you need to do?",
+
+      priority:
+        "Priority",
+
+      normal:
+        "Normal",
+
+      urgent:
+        "Urgent",
+
+      addTask:
+        "Add Task",
+
+      yourTasks:
+        "Your Tasks",
+
+      completed:
+        "Completed",
+
+      edit:
+        "Edit",
+
+      delete:
+        "Delete",
+
+      noTasks:
+        "No tasks yet",
+
+      firstTask:
+        "Add your first task to get started.",
+
+      deleteTask:
+        "Delete Task?",
+
+      deleteConfirmation:
+        "Are you sure you want to delete this task? This action cannot be undone.",
+
+      cancel:
+        "Cancel",
+
+      editTask:
+        "Edit Task",
+
+      updateTask:
+        "Update your task below.",
+
+      saveChanges:
+        "Save Changes",
+
+      required:
+        "Task is required",
+
+    },
+
+
+    ar: {
+
+      tasks: "المهام",
+
+      manageTasks:
+        "أدر مهامك بسهولة وحافظ على تنظيمك.",
+
+      task:
+        "مهمة",
+
+      taskCount:
+        "مهمة",
+
+      tasksCount:
+        "مهام",
+
+      addNewTask:
+        "إضافة مهمة جديدة",
+
+      whatToDo:
+        "ماذا تحتاج إلى إنجازه؟",
+
+      priority:
+        "الأولوية",
+
+      normal:
+        "عادية",
+
+      urgent:
+        "عاجلة",
+
+      addTask:
+        "إضافة مهمة",
+
+      yourTasks:
+        "مهامك",
+
+      completed:
+        "مكتملة",
+
+      edit:
+        "تعديل",
+
+      delete:
+        "حذف",
+
+      noTasks:
+        "لا توجد مهام بعد",
+
+      firstTask:
+        "أضف أول مهمة لك للبدء.",
+
+      deleteTask:
+        "حذف المهمة؟",
+
+      deleteConfirmation:
+        "هل أنت متأكد من أنك تريد حذف هذه المهمة؟ لا يمكن التراجع عن هذا الإجراء.",
+
+      cancel:
+        "إلغاء",
+
+      editTask:
+        "تعديل المهمة",
+
+      updateTask:
+        "قم بتحديث المهمة أدناه.",
+
+      saveChanges:
+        "حفظ التغييرات",
+
+      required:
+        "المهمة مطلوبة",
+
+    },
+
+  };
+
+
+  // النص الحالي
+  const currentText =
+    language === "ar"
+      ? text.ar
+      : text.en;
+
 
   // ==========================================
   // الحالات
@@ -83,15 +287,19 @@ function TasksPage() {
       .order("id", { ascending: false });
 
     if (error) {
+
       console.log("Get tasks error:", error);
+
     } else {
+
       setTasks(data || []);
+
     }
   }
 
 
   // ==========================================
-  // تشغيل جلب المهام عند فتح الصفحة
+  // تشغيل جلب المهام
   // ==========================================
 
   useEffect(() => {
@@ -106,7 +314,9 @@ function TasksPage() {
   async function addTask() {
 
     if (!task.trim()) {
-      setTaskError("Task is required");
+
+      setTaskError(currentText.required);
+
       return;
     }
 
@@ -161,9 +371,13 @@ function TasksPage() {
       .eq("id", task.id);
 
     if (error) {
+
       console.log("Toggle task error:", error);
+
     } else {
+
       getTasks();
+
     }
   }
 
@@ -176,6 +390,7 @@ function TasksPage() {
 
     setDeleteId(id);
     setOpenDeleteDialog(true);
+
   }
 
 
@@ -189,7 +404,6 @@ function TasksPage() {
       return;
     }
 
-    // Soft Delete
     const { error } = await supabase
       .from("tasks")
       .update({
@@ -200,6 +414,7 @@ function TasksPage() {
     if (error) {
 
       console.log("Delete error:", error);
+
       return;
     }
 
@@ -225,6 +440,7 @@ function TasksPage() {
     setEditPriority(task.priority || "NORMAL");
     setEditTaskError("");
     setOpenEditDialog(true);
+
   }
 
 
@@ -236,7 +452,8 @@ function TasksPage() {
 
     if (!editTask.trim()) {
 
-      setEditTaskError("Task is required");
+      setEditTaskError(currentText.required);
+
       return;
     }
 
@@ -260,6 +477,7 @@ function TasksPage() {
     if (error) {
 
       console.log("Update error:", error);
+
       return;
     }
 
@@ -291,6 +509,7 @@ function TasksPage() {
     setEditTask("");
     setEditPriority("NORMAL");
     setEditTaskError("");
+
   }
 
 
@@ -302,6 +521,7 @@ function TasksPage() {
 
     setOpenDeleteDialog(false);
     setDeleteId(null);
+
   }
 
 
@@ -310,18 +530,24 @@ function TasksPage() {
   // ==========================================
 
   return (
+
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#0F172A",
-        color: "#FFFFFF",
+
+        backgroundColor:
+          theme.palette.background.default,
+
+        color:
+          theme.palette.text.primary,
+
+        transition:
+          "background-color 0.3s, color 0.3s",
       }}
     >
 
-      
-
-
       {/* المحتوى */}
+
       <Box
         sx={{
           padding: {
@@ -335,9 +561,7 @@ function TasksPage() {
         }}
       >
 
-        {/* ==========================================
-            العنوان
-        ========================================== */}
+        {/* العنوان */}
 
         <Box
           sx={{
@@ -356,19 +580,19 @@ function TasksPage() {
               variant="h4"
               sx={{
                 fontWeight: "bold",
-                color: "#FFFFFF",
+                color: "text.primary",
                 marginBottom: 1,
               }}
             >
-              Tasks
+              {currentText.tasks}
             </Typography>
 
             <Typography
               sx={{
-                color: "#94A3B8",
+                color: "text.secondary",
               }}
             >
-              Manage your tasks easily and stay organized.
+              {currentText.manageTasks}
             </Typography>
 
           </Box>
@@ -380,17 +604,26 @@ function TasksPage() {
             icon={<TaskAltIcon />}
             label={`${tasks.length} ${
               tasks.length === 1
-                ? "Task"
-                : "Tasks"
+                ? currentText.taskCount
+                : currentText.tasksCount
             }`}
             sx={{
-              backgroundColor: "#273449",
-              color: "#80CBC4",
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "#273449"
+                  : "#E6F4F2",
+
+              color: "primary.main",
+
               fontWeight: "bold",
-              border: "1px solid #334155",
+
+              border:
+                theme.palette.mode === "dark"
+                  ? "1px solid #334155"
+                  : "1px solid #B2DFDB",
 
               "& .MuiChip-icon": {
-                color: "#80CBC4",
+                color: "primary.main",
               },
             }}
           />
@@ -398,9 +631,7 @@ function TasksPage() {
         </Box>
 
 
-        {/* ==========================================
-            إضافة مهمة
-        ========================================== */}
+        {/* إضافة مهمة */}
 
         <Paper
           elevation={0}
@@ -412,8 +643,9 @@ function TasksPage() {
 
             marginBottom: 4,
 
-            backgroundColor: "#1E293B",
-            border: "1px solid #334155",
+            backgroundColor:
+              "background.paper",
+
             borderRadius: "16px",
           }}
         >
@@ -421,12 +653,12 @@ function TasksPage() {
           <Typography
             sx={{
               fontWeight: "bold",
-              color: "#FFFFFF",
+              color: "text.primary",
               marginBottom: 2,
               fontSize: "20px",
             }}
           >
-            Add New Task
+            {currentText.addNewTask}
           </Typography>
 
 
@@ -447,10 +679,11 @@ function TasksPage() {
 
             <TextField
               fullWidth
-              label="What do you need to do?"
+              label={currentText.whatToDo}
               value={task}
               error={Boolean(taskError)}
               helperText={taskError}
+
               onChange={(e) => {
 
                 setTask(e.target.value);
@@ -460,6 +693,7 @@ function TasksPage() {
                 }
 
               }}
+
               onKeyDown={(e) => {
 
                 if (e.key === "Enter") {
@@ -467,31 +701,10 @@ function TasksPage() {
                 }
 
               }}
+
               sx={{
-                "& .MuiInputLabel-root": {
-                  color: "#94A3B8",
-                },
-
-                "& .MuiInputLabel-root.Mui-focused": {
-                  color: "#80CBC4",
-                },
-
                 "& .MuiOutlinedInput-root": {
-                  backgroundColor: "#273449",
                   borderRadius: "12px",
-                  color: "#FFFFFF",
-
-                  "& fieldset": {
-                    borderColor: "#334155",
-                  },
-
-                  "&:hover fieldset": {
-                    borderColor: "#80CBC4",
-                  },
-
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#80CBC4",
-                  },
                 },
 
                 "& .MuiFormHelperText-root": {
@@ -512,53 +725,29 @@ function TasksPage() {
               }}
             >
 
-              <InputLabel
-                sx={{
-                  color: "#94A3B8",
-
-                  "&.Mui-focused": {
-                    color: "#80CBC4",
-                  },
-                }}
-              >
-                Priority
+              <InputLabel>
+                {currentText.priority}
               </InputLabel>
 
               <Select
                 value={priority}
-                label="Priority"
+                label={currentText.priority}
+
                 onChange={(e) =>
                   setPriority(e.target.value)
                 }
+
                 sx={{
-                  backgroundColor: "#273449",
-                  color: "#FFFFFF",
                   borderRadius: "12px",
-
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#334155",
-                  },
-
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#80CBC4",
-                  },
-
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#80CBC4",
-                  },
-
-                  "& .MuiSvgIcon-root": {
-                    color: "#80CBC4",
-                  },
                 }}
               >
 
                 <MenuItem value="NORMAL">
-                  Normal
+                  {currentText.normal}
                 </MenuItem>
 
                 <MenuItem value="URGENT">
-                  Urgent
+                  {currentText.urgent}
                 </MenuItem>
 
               </Select>
@@ -572,6 +761,7 @@ function TasksPage() {
               onClick={addTask}
               variant="contained"
               startIcon={<AddIcon />}
+
               sx={{
                 minWidth: {
                   xs: "100%",
@@ -582,20 +772,29 @@ function TasksPage() {
 
                 borderRadius: "12px",
 
-                backgroundColor: "#80CBC4",
-                color: "#0F172A",
+                backgroundColor:
+                  "primary.main",
+
+                color:
+                  theme.palette.mode === "dark"
+                    ? "#0F172A"
+                    : "#FFFFFF",
 
                 textTransform: "none",
                 fontWeight: "bold",
                 boxShadow: "none",
 
                 "&:hover": {
-                  backgroundColor: "#6FB8B1",
+                  backgroundColor:
+                    theme.palette.mode === "dark"
+                      ? "#6FB8B1"
+                      : "#00796B",
+
                   boxShadow: "none",
                 },
               }}
             >
-              Add Task
+              {currentText.addTask}
             </Button>
 
           </Box>
@@ -603,25 +802,21 @@ function TasksPage() {
         </Paper>
 
 
-        {/* ==========================================
-            Your Tasks
-        ========================================== */}
+        {/* Your Tasks */}
 
         <Typography
           variant="h5"
           sx={{
             fontWeight: "bold",
-            color: "#FFFFFF",
+            color: "text.primary",
             marginBottom: 2,
           }}
         >
-          Your Tasks
+          {currentText.yourTasks}
         </Typography>
 
 
-        {/* ==========================================
-            قائمة المهام
-        ========================================== */}
+        {/* قائمة المهام */}
 
         {tasks.length > 0 ? (
 
@@ -639,26 +834,35 @@ function TasksPage() {
                 key={task.id}
                 elevation={0}
                 sx={{
-                  backgroundColor: "#1E293B",
-                  border: "1px solid #334155",
+                  backgroundColor:
+                    "background.paper",
+
                   borderRadius: "16px",
 
-                  transition: "0.2s",
+                  transition:
+                    "background-color 0.3s, border-color 0.2s, transform 0.2s",
 
                   "&:hover": {
-                    borderColor: "#475569",
-                    transform: "translateY(-2px)",
+                    borderColor:
+                      theme.palette.mode === "dark"
+                        ? "#475569"
+                        : "#B2DFDB",
+
+                    transform:
+                      "translateY(-2px)",
                   },
                 }}
               >
 
                 <CardContent
                   sx={{
-                    padding: "20px !important",
+                    padding:
+                      "20px !important",
 
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
+                    justifyContent:
+                      "space-between",
 
                     gap: 2,
                     flexWrap: "wrap",
@@ -678,22 +882,29 @@ function TasksPage() {
                     }}
                   >
 
-                    {/* Checkbox */}
-
                     <Checkbox
-                      checked={Boolean(task.completed)}
+                      checked={
+                        Boolean(task.completed)
+                      }
+
                       onChange={() =>
                         toggleTask(task)
                       }
+
                       sx={{
-                        color: "#64748B",
+                        color:
+                          theme.palette.text.secondary,
 
                         "&.Mui-checked": {
-                          color: "#80CBC4",
+                          color:
+                            "primary.main",
                         },
 
                         "&:hover": {
-                          backgroundColor: "rgba(128,203,196,0.08)",
+                          backgroundColor:
+                            theme.palette.mode === "dark"
+                              ? "rgba(128,203,196,0.08)"
+                              : "rgba(0,137,123,0.08)",
                         },
                       }}
                     />
@@ -709,19 +920,26 @@ function TasksPage() {
 
                         borderRadius: "12px",
 
-                        backgroundColor: "#273449",
+                        backgroundColor:
+                          theme.palette.mode === "dark"
+                            ? "#273449"
+                            : "#E6F4F2",
 
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
 
-                        border: "1px solid #334155",
+                        border:
+                          theme.palette.mode === "dark"
+                            ? "1px solid #334155"
+                            : "1px solid #B2DFDB",
                       }}
                     >
 
                       <TaskAltIcon
                         sx={{
-                          color: "#80CBC4",
+                          color:
+                            "primary.main",
                         }}
                       />
 
@@ -738,14 +956,16 @@ function TasksPage() {
 
                       <Typography
                         sx={{
-                          color: task.completed
-                            ? "#64748B"
-                            : "#FFFFFF",
+                          color:
+                            task.completed
+                              ? "text.secondary"
+                              : "text.primary",
 
                           fontWeight: "600",
                           fontSize: "16px",
 
-                          wordBreak: "break-word",
+                          wordBreak:
+                            "break-word",
 
                           textDecoration:
                             task.completed
@@ -759,14 +979,16 @@ function TasksPage() {
 
                       <Typography
                         sx={{
-                          color: "#64748B",
+                          color:
+                            "text.secondary",
+
                           fontSize: "12px",
                           marginTop: "4px",
                         }}
                       >
                         {task.completed
-                          ? "Completed"
-                          : "Task"}{" "}
+                          ? currentText.completed
+                          : currentText.task}{" "}
                         #{task.id}
                       </Typography>
 
@@ -780,32 +1002,44 @@ function TasksPage() {
                   <Chip
                     label={
                       task.priority === "URGENT"
-                        ? "Urgent"
-                        : "Normal"
+                        ? currentText.urgent
+                        : currentText.normal
                     }
+
                     size="small"
+
                     sx={{
                       fontWeight: "bold",
 
                       backgroundColor:
                         task.priority === "URGENT"
-                          ? "rgba(244,143,177,0.15)"
-                          : "rgba(128,203,196,0.12)",
+                          ? theme.palette.mode === "dark"
+                            ? "rgba(244,143,177,0.15)"
+                            : "#FCE7EF"
+                          : theme.palette.mode === "dark"
+                            ? "rgba(128,203,196,0.12)"
+                            : "#E6F4F2",
 
                       color:
                         task.priority === "URGENT"
-                          ? "#F48FB1"
-                          : "#80CBC4",
+                          ? theme.palette.mode === "dark"
+                            ? "#F48FB1"
+                            : "#D81B60"
+                          : "primary.main",
 
                       border:
                         task.priority === "URGENT"
-                          ? "1px solid rgba(244,143,177,0.3)"
-                          : "1px solid rgba(128,203,196,0.25)",
+                          ? theme.palette.mode === "dark"
+                            ? "1px solid rgba(244,143,177,0.3)"
+                            : "1px solid #F8BBD0"
+                          : theme.palette.mode === "dark"
+                            ? "1px solid rgba(128,203,196,0.25)"
+                            : "1px solid #B2DFDB",
                     }}
                   />
 
 
-                  {/* Buttons */}
+                  {/* الأزرار */}
 
                   <Box
                     sx={{
@@ -820,11 +1054,18 @@ function TasksPage() {
                       onClick={() =>
                         startEdit(task)
                       }
+
                       variant="outlined"
                       startIcon={<EditIcon />}
+
                       sx={{
-                        color: "#80CBC4",
-                        borderColor: "#334155",
+                        color:
+                          "primary.main",
+
+                        borderColor:
+                          theme.palette.mode === "dark"
+                            ? "#475569"
+                            : "#B2DFDB",
 
                         borderRadius: "10px",
 
@@ -832,13 +1073,17 @@ function TasksPage() {
                         fontWeight: "600",
 
                         "&:hover": {
-                          borderColor: "#80CBC4",
+                          borderColor:
+                            "primary.main",
+
                           backgroundColor:
-                            "rgba(128,203,196,0.08)",
+                            theme.palette.mode === "dark"
+                              ? "rgba(128,203,196,0.08)"
+                              : "rgba(0,137,123,0.06)",
                         },
                       }}
                     >
-                      Edit
+                      {currentText.edit}
                     </Button>
 
 
@@ -848,11 +1093,20 @@ function TasksPage() {
                       onClick={() =>
                         confirmDelete(task.id)
                       }
+
                       variant="outlined"
                       startIcon={<DeleteIcon />}
+
                       sx={{
-                        color: "#EF5350",
-                        borderColor: "#7F1D1D",
+                        color:
+                          theme.palette.mode === "dark"
+                            ? "#EF5350"
+                            : "#D32F2F",
+
+                        borderColor:
+                          theme.palette.mode === "dark"
+                            ? "#7F1D1D"
+                            : "#FFCDD2",
 
                         borderRadius: "10px",
 
@@ -860,13 +1114,17 @@ function TasksPage() {
                         fontWeight: "600",
 
                         "&:hover": {
-                          borderColor: "#EF5350",
+                          borderColor:
+                            "#EF5350",
+
                           backgroundColor:
-                            "rgba(239,83,80,0.08)",
+                            theme.palette.mode === "dark"
+                              ? "rgba(239,83,80,0.08)"
+                              : "rgba(239,83,80,0.06)",
                         },
                       }}
                     >
-                      Delete
+                      {currentText.delete}
                     </Button>
 
                   </Box>
@@ -890,8 +1148,8 @@ function TasksPage() {
 
               textAlign: "center",
 
-              backgroundColor: "#1E293B",
-              border: "1px solid #334155",
+              backgroundColor:
+                "background.paper",
 
               borderRadius: "16px",
             }}
@@ -904,22 +1162,29 @@ function TasksPage() {
 
                 borderRadius: "50%",
 
-                backgroundColor: "#273449",
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "#273449"
+                    : "#E6F4F2",
 
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
 
-                margin: "0 auto 15px",
+                margin:
+                  "0 auto 15px",
 
-                border: "1px solid #334155",
+                border:
+                  theme.palette.mode === "dark"
+                    ? "1px solid #334155"
+                    : "1px solid #B2DFDB",
               }}
             >
 
               <TaskAltIcon
                 sx={{
                   fontSize: 32,
-                  color: "#80CBC4",
+                  color: "primary.main",
                 }}
               />
 
@@ -929,22 +1194,22 @@ function TasksPage() {
             <Typography
               sx={{
                 fontWeight: "bold",
-                color: "#FFFFFF",
+                color: "text.primary",
                 fontSize: "18px",
                 marginBottom: 1,
               }}
             >
-              No tasks yet
+              {currentText.noTasks}
             </Typography>
 
 
             <Typography
               sx={{
-                color: "#64748B",
+                color: "text.secondary",
                 fontSize: "14px",
               }}
             >
-              Add your first task to get started.
+              {currentText.firstTask}
             </Typography>
 
           </Paper>
@@ -965,13 +1230,9 @@ function TasksPage() {
           sx: {
             width: "100%",
             maxWidth: 430,
-
-            backgroundColor: "#1E293B",
-            color: "#FFFFFF",
-
-            border: "1px solid #334155",
+            backgroundColor: "background.paper",
+            color: "text.primary",
             borderRadius: "16px",
-
             padding: 1,
           },
         }}
@@ -980,10 +1241,10 @@ function TasksPage() {
         <DialogTitle
           sx={{
             fontWeight: "bold",
-            color: "#FFFFFF",
+            color: "text.primary",
           }}
         >
-          Delete Task?
+          {currentText.deleteTask}
         </DialogTitle>
 
 
@@ -991,12 +1252,11 @@ function TasksPage() {
 
           <Typography
             sx={{
-              color: "#94A3B8",
+              color: "text.secondary",
               lineHeight: 1.6,
             }}
           >
-            Are you sure you want to delete this task?
-            This action cannot be undone.
+            {currentText.deleteConfirmation}
           </Typography>
 
         </DialogContent>
@@ -1013,19 +1273,28 @@ function TasksPage() {
             onClick={closeDeleteDialog}
             variant="outlined"
             sx={{
-              color: "#94A3B8",
-              borderColor: "#334155",
+              color: "text.secondary",
+
+              borderColor:
+                theme.palette.mode === "dark"
+                  ? "#475569"
+                  : "#CBD5E1",
 
               textTransform: "none",
               borderRadius: "10px",
 
               "&:hover": {
-                borderColor: "#64748B",
-                backgroundColor: "#273449",
+                borderColor:
+                  theme.palette.text.secondary,
+
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "#273449"
+                    : "#F1F5F9",
               },
             }}
           >
-            Cancel
+            {currentText.cancel}
           </Button>
 
 
@@ -1035,7 +1304,6 @@ function TasksPage() {
             startIcon={<DeleteIcon />}
             sx={{
               backgroundColor: "#EF5350",
-
               color: "#FFFFFF",
 
               textTransform: "none",
@@ -1046,7 +1314,7 @@ function TasksPage() {
               },
             }}
           >
-            Delete
+            {currentText.delete}
           </Button>
 
         </DialogActions>
@@ -1065,13 +1333,9 @@ function TasksPage() {
           sx: {
             width: "100%",
             maxWidth: 430,
-
-            backgroundColor: "#1E293B",
-            color: "#FFFFFF",
-
-            border: "1px solid #334155",
+            backgroundColor: "background.paper",
+            color: "text.primary",
             borderRadius: "16px",
-
             padding: 1,
           },
         }}
@@ -1080,10 +1344,10 @@ function TasksPage() {
         <DialogTitle
           sx={{
             fontWeight: "bold",
-            color: "#FFFFFF",
+            color: "text.primary",
           }}
         >
-          Edit Task
+          {currentText.editTask}
         </DialogTitle>
 
 
@@ -1091,12 +1355,12 @@ function TasksPage() {
 
           <Typography
             sx={{
-              color: "#94A3B8",
+              color: "text.secondary",
               fontSize: "14px",
               marginBottom: 2,
             }}
           >
-            Update your task below.
+            {currentText.updateTask}
           </Typography>
 
 
@@ -1104,7 +1368,7 @@ function TasksPage() {
 
           <TextField
             fullWidth
-            label="Task"
+            label={currentText.task}
             value={editTask}
             error={Boolean(editTaskError)}
             helperText={editTaskError}
@@ -1131,30 +1395,8 @@ function TasksPage() {
             sx={{
               marginBottom: 2,
 
-              "& .MuiInputLabel-root": {
-                color: "#94A3B8",
-              },
-
-              "& .MuiInputLabel-root.Mui-focused": {
-                color: "#80CBC4",
-              },
-
               "& .MuiOutlinedInput-root": {
-                backgroundColor: "#273449",
-                color: "#FFFFFF",
                 borderRadius: "12px",
-
-                "& fieldset": {
-                  borderColor: "#334155",
-                },
-
-                "&:hover fieldset": {
-                  borderColor: "#80CBC4",
-                },
-
-                "&.Mui-focused fieldset": {
-                  borderColor: "#80CBC4",
-                },
               },
 
               "& .MuiFormHelperText-root": {
@@ -1168,54 +1410,29 @@ function TasksPage() {
 
           <FormControl fullWidth>
 
-            <InputLabel
-              sx={{
-                color: "#94A3B8",
-
-                "&.Mui-focused": {
-                  color: "#80CBC4",
-                },
-              }}
-            >
-              Priority
+            <InputLabel>
+              {currentText.priority}
             </InputLabel>
 
             <Select
               value={editPriority}
-              label="Priority"
+              label={currentText.priority}
+
               onChange={(e) =>
                 setEditPriority(e.target.value)
               }
+
               sx={{
-                backgroundColor: "#273449",
-                color: "#FFFFFF",
-
                 borderRadius: "12px",
-
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#334155",
-                },
-
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#80CBC4",
-                },
-
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#80CBC4",
-                },
-
-                "& .MuiSvgIcon-root": {
-                  color: "#80CBC4",
-                },
               }}
             >
 
               <MenuItem value="NORMAL">
-                Normal
+                {currentText.normal}
               </MenuItem>
 
               <MenuItem value="URGENT">
-                Urgent
+                {currentText.urgent}
               </MenuItem>
 
             </Select>
@@ -1236,19 +1453,28 @@ function TasksPage() {
             onClick={closeEditDialog}
             variant="outlined"
             sx={{
-              color: "#94A3B8",
-              borderColor: "#334155",
+              color: "text.secondary",
+
+              borderColor:
+                theme.palette.mode === "dark"
+                  ? "#475569"
+                  : "#CBD5E1",
 
               textTransform: "none",
               borderRadius: "10px",
 
               "&:hover": {
-                borderColor: "#64748B",
-                backgroundColor: "#273449",
+                borderColor:
+                  theme.palette.text.secondary,
+
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "#273449"
+                    : "#F1F5F9",
               },
             }}
           >
-            Cancel
+            {currentText.cancel}
           </Button>
 
 
@@ -1257,18 +1483,26 @@ function TasksPage() {
             variant="contained"
             startIcon={<EditIcon />}
             sx={{
-              backgroundColor: "#80CBC4",
-              color: "#0F172A",
+              backgroundColor:
+                "primary.main",
+
+              color:
+                theme.palette.mode === "dark"
+                  ? "#0F172A"
+                  : "#FFFFFF",
 
               textTransform: "none",
               borderRadius: "10px",
 
               "&:hover": {
-                backgroundColor: "#6FB8B1",
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "#6FB8B1"
+                    : "#00796B",
               },
             }}
           >
-            Save Changes
+            {currentText.saveChanges}
           </Button>
 
         </DialogActions>

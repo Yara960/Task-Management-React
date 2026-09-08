@@ -1,8 +1,18 @@
+
 // استيراد React
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 // استيراد Material UI Theme
-import { createTheme, ThemeProvider } from "@mui/material/styles";
+import {
+  createTheme,
+  ThemeProvider,
+} from "@mui/material/styles";
 
 // إنشاء Context للـ Theme
 const ThemeContext = createContext();
@@ -30,6 +40,7 @@ export function AppThemeProvider({ children }) {
   const toggleDarkMode = () => {
 
     setDarkMode((previousMode) => !previousMode);
+
   };
 
 
@@ -51,6 +62,7 @@ export function AppThemeProvider({ children }) {
     } else {
 
       document.documentElement.classList.remove("dark");
+
     }
 
   }, [darkMode]);
@@ -66,54 +78,83 @@ export function AppThemeProvider({ children }) {
 
       palette: {
 
+        // Light / Dark
         mode: darkMode ? "dark" : "light",
 
 
-        // الألوان الأساسية
+        // =================================================
+        // اللون الأساسي
+        // =================================================
+
         primary: {
-          main: darkMode ? "#80CBC4" : "#00897B",
+
+          main: darkMode
+            ? "#80CBC4"
+            : "#00897B",
+
         },
 
+
+        // =================================================
+        // اللون الثانوي
+        // =================================================
 
         secondary: {
-          main: darkMode ? "#F48FB1" : "#E91E63",
+
+          main: darkMode
+            ? "#F48FB1"
+            : "#E91E63",
+
         },
 
 
-        // ألوان الخلفية
+        // =================================================
+        // الخلفيات
+        // =================================================
+
         background: {
 
           default: darkMode
             ? "#0F172A"
-            : "#F5F7FA",
+            : "#F4F7F9",
 
           paper: darkMode
             ? "#1E293B"
             : "#FFFFFF",
+
         },
 
 
-        // ألوان النصوص
+        // =================================================
+        // النصوص
+        // =================================================
+
         text: {
 
           primary: darkMode
-            ? "#FFFFFF"
+            ? "#F8FAFC"
             : "#263238",
 
           secondary: darkMode
             ? "#CBD5E1"
-            : "#546E7A",
+            : "#607D8B",
+
         },
+
       },
 
 
-      // =================================================
+      // =====================================================
       // تخصيص Material UI
-      // =================================================
+      // =====================================================
 
       components: {
 
-        // Paper
+
+        // =================================================
+        // Paper / Cards
+        // =================================================
+
         MuiPaper: {
 
           styleOverrides: {
@@ -122,17 +163,32 @@ export function AppThemeProvider({ children }) {
 
               backgroundImage: "none",
 
+              backgroundColor: darkMode
+                ? "#1E293B"
+                : "#FFFFFF",
+
               border: darkMode
                 ? "1px solid #334155"
-                : "1px solid #E5E7EB",
+                : "1px solid #E2E8F0",
 
-              transition: "background-color 0.3s, border-color 0.3s",
+              boxShadow: darkMode
+                ? "0 4px 15px rgba(0,0,0,0.20)"
+                : "0 4px 15px rgba(15,23,42,0.06)",
+
+              transition:
+                "background-color 0.3s, border-color 0.3s, box-shadow 0.3s",
+
             },
+
           },
+
         },
 
 
+        // =================================================
         // TextField
+        // =================================================
+
         MuiTextField: {
 
           styleOverrides: {
@@ -145,11 +201,14 @@ export function AppThemeProvider({ children }) {
                   ? "#273449"
                   : "#FFFFFF",
 
+                borderRadius: "10px",
+
                 "& fieldset": {
 
                   borderColor: darkMode
                     ? "#475569"
                     : "#CBD5E1",
+
                 },
 
                 "&:hover fieldset": {
@@ -157,21 +216,48 @@ export function AppThemeProvider({ children }) {
                   borderColor: darkMode
                     ? "#80CBC4"
                     : "#00897B",
+
                 },
+
+                "&.Mui-focused fieldset": {
+
+                  borderColor: darkMode
+                    ? "#80CBC4"
+                    : "#00897B",
+
+                },
+
               },
+
 
               "& .MuiInputLabel-root": {
 
                 color: darkMode
                   ? "#CBD5E1"
-                  : "#546E7A",
+                  : "#607D8B",
+
               },
+
+
+              "& .MuiInputLabel-root.Mui-focused": {
+
+                color: darkMode
+                  ? "#80CBC4"
+                  : "#00897B",
+
+              },
+
             },
+
           },
+
         },
 
 
+        // =================================================
         // Select
+        // =================================================
+
         MuiSelect: {
 
           styleOverrides: {
@@ -181,12 +267,20 @@ export function AppThemeProvider({ children }) {
               backgroundColor: darkMode
                 ? "#273449"
                 : "#FFFFFF",
+
+              borderRadius: "10px",
+
             },
+
           },
+
         },
 
 
-        // Button
+        // =================================================
+        // Buttons
+        // =================================================
+
         MuiButton: {
 
           styleOverrides: {
@@ -198,35 +292,82 @@ export function AppThemeProvider({ children }) {
               borderRadius: "10px",
 
               fontWeight: 600,
+
             },
+
           },
+
         },
 
 
-        // AppBar
+        // =================================================
+        // AppBar / Navbar
+        // =================================================
+
         MuiAppBar: {
 
           styleOverrides: {
 
             root: {
 
+              // الوضع الليلي
+              // الوضع النهاري
               backgroundColor: darkMode
-                ? "#0B1120"
+                ? "#1E293B"
+                : "#FFFFFF",
+
+              color: darkMode
+                ? "#F8FAFC"
                 : "#263238",
 
               backgroundImage: "none",
 
+              borderBottom: darkMode
+                ? "1px solid #334155"
+                : "1px solid #E2E8F0",
+
               boxShadow: darkMode
-                ? "0 2px 10px rgba(0,0,0,0.4)"
-                : "0 2px 10px rgba(0,0,0,0.15)",
+                ? "0 2px 10px rgba(15,23,42,0.30)"
+                : "0 2px 10px rgba(15,23,42,0.08)",
+
+              transition:
+                "background-color 0.3s, color 0.3s, border-color 0.3s",
+
             },
+
           },
+
         },
+
+
+        // =================================================
+        // Avatar
+        // =================================================
+
+        MuiAvatar: {
+
+          styleOverrides: {
+
+            root: {
+
+              transition: "background-color 0.3s",
+
+            },
+
+          },
+
+        },
+
       },
+
     });
 
   }, [darkMode]);
 
+
+  // =====================================================
+  // Provider
+  // =====================================================
 
   return (
 
@@ -244,15 +385,19 @@ export function AppThemeProvider({ children }) {
       </ThemeProvider>
 
     </ThemeContext.Provider>
+
   );
+
 }
 
 
 // =====================================================
-// Hook لاستخدام Dark Mode
+// Hook لاستخدام Theme
 // =====================================================
 
 export function useAppTheme() {
 
   return useContext(ThemeContext);
+
 }
+

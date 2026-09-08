@@ -1,5 +1,9 @@
+
 // استيراد useState و useEffect من React
 import { useState, useEffect } from "react";
+
+// استيراد useTheme من Material UI
+import { useTheme } from "@mui/material/styles";
 
 // استيراد Material UI
 import Box from "@mui/material/Box";
@@ -7,10 +11,14 @@ import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Avatar from "@mui/material/Avatar";
 import Chip from "@mui/material/Chip";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
 
 // استيراد الأيقونات
 import PersonIcon from "@mui/icons-material/Person";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import SaveIcon from "@mui/icons-material/Save";
 
 // استيراد Supabase
 import { supabase } from "../supabaseClient";
@@ -20,22 +28,136 @@ import { supabase } from "../supabaseClient";
 // ==========================================
 
 function Profile() {
+  // معرفة الثيم الحالي
+  const theme = useTheme();
+
+  // معرفة هل الوضع Dark Mode
+  const isDark = theme.palette.mode === "dark";
+
   // تخزين بيانات المستخدم
   const [user, setUser] = useState(null);
 
   // تخزين عدد المهام
   const [taskCount, setTaskCount] = useState(0);
 
-  // الألوان المستخدمة في جميع الصفحات
+  // تخزين الاسم الجديد
+  const [name, setName] = useState("");
+
+  // حالة الحفظ
+  const [saving, setSaving] = useState(false);
+
+  // رسالة النجاح أو الخطأ
+  const [message, setMessage] = useState("");
+
+  // نوع الرسالة
+  const [messageType, setMessageType] = useState("success");
+
+  // تخزين اللغة الحالية
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem("language") || "en";
+  });
+
+  // ==========================================
+  // الاستماع لتغيير اللغة من Navbar
+  // ==========================================
+
+  useEffect(() => {
+    const handleLanguageChange = (event) => {
+      setLanguage(event.detail);
+    };
+
+    window.addEventListener(
+      "languageChanged",
+      handleLanguageChange
+    );
+
+    return () => {
+      window.removeEventListener(
+        "languageChanged",
+        handleLanguageChange
+      );
+    };
+  }, []);
+
+  // ==========================================
+  // النصوص العربية والإنجليزية
+  // ==========================================
+
+  const text = {
+    en: {
+      profile: "Profile",
+      description:
+        "View your account information and task statistics.",
+
+      totalTasks: "Total Tasks",
+      totalTasksDescription:
+        "Your total number of tasks",
+
+      user: "User",
+      task: "Task",
+      tasks: "Tasks",
+
+      name: "Name",
+      namePlaceholder: "Enter your name",
+      save: "Save Changes",
+      saving: "Saving...",
+
+      nameRequired: "Please enter your name.",
+      updateSuccess: "Your name has been updated successfully.",
+      updateError: "Failed to update your name.",
+    },
+
+    ar: {
+      profile: "الملف الشخصي",
+      description:
+        "عرض معلومات حسابك وإحصائيات المهام الخاصة بك.",
+
+      totalTasks: "إجمالي المهام",
+      totalTasksDescription:
+        "إجمالي عدد المهام الخاصة بك",
+
+      user: "مستخدم",
+      task: "مهمة",
+      tasks: "مهام",
+
+      name: "الاسم",
+      namePlaceholder: "اكتب اسمك",
+      save: "حفظ التغييرات",
+      saving: "جاري الحفظ...",
+
+      nameRequired: "يرجى إدخال الاسم.",
+      updateSuccess: "تم تحديث اسمك بنجاح.",
+      updateError: "حدث خطأ أثناء تحديث الاسم.",
+    },
+  };
+
+  // اختيار النصوص حسب اللغة
+  const currentText =
+    language === "ar"
+      ? text.ar
+      : text.en;
+
+  // ==========================================
+  // الألوان تتغير تلقائيًا حسب Light / Dark
+  // ==========================================
+
   const colors = {
-    background: "#0F172A",
-    card: "#1E293B",
-    field: "#273449",
-    border: "#334155",
-    primary: "#80CBC4",
-    secondary: "#F48FB1",
-    text: "#FFFFFF",
-    muted: "#94A3B8",
+    background: theme.palette.background.default,
+    card: theme.palette.background.paper,
+
+    field: isDark
+      ? "#273449"
+      : "#F8FAFC",
+
+    border: isDark
+      ? "#334155"
+      : "#DCE3E8",
+
+    primary: theme.palette.primary.main,
+    secondary: theme.palette.secondary.main,
+
+    text: theme.palette.text.primary,
+    muted: theme.palette.text.secondary,
   };
 
   // ==========================================
@@ -57,6 +179,14 @@ function Profile() {
       // حفظ بيانات المستخدم
       setUser(user);
 
+      // جلب الاسم الحالي
+      const currentName =
+        user?.user_metadata?.name ||
+        user?.user_metadata?.full_name ||
+        "";
+
+      setName(currentName);
+
       // جلب عدد مهام المستخدم الحالية
       const { count, error } = await supabase
         .from("tasks")
@@ -69,7 +199,10 @@ function Profile() {
 
       // التحقق من وجود خطأ
       if (error) {
-        console.log("Get task count error:", error);
+        console.log(
+          "Get task count error:",
+          error
+        );
       } else {
         // حفظ عدد المهام
         setTaskCount(count || 0);
@@ -79,6 +212,116 @@ function Profile() {
     // تشغيل جلب البيانات
     getProfileData();
   }, []);
+
+  // ==========================================
+  // تحديث الاسم
+  // ==========================================
+
+  const handleUpdateName = async () => {
+    // إزالة المسافات الزائدة
+    const newName = name.trim();
+
+    // التحقق من الاسم
+    if (!newName) {
+      setMessage(currentText.nameRequired);
+      setMessageType("error");
+      return;
+    }
+
+    // بدء الحفظ
+    setSaving(true);
+
+    // إزالة الرسالة القديمة
+    setMessage("");
+
+    try {
+      // جلب المستخدم الحالي
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+
+      // إذا لم يوجد مستخدم
+      if (!currentUser) {
+        setMessage(currentText.updateError);
+        setMessageType("error");
+        return;
+      }
+
+      // ==========================================
+      // تحديث الاسم في Supabase Auth
+      // ==========================================
+
+      const { data: updatedUser, error: authError } =
+        await supabase.auth.updateUser({
+          data: {
+            name: newName,
+          },
+        });
+
+      // التحقق من خطأ Auth
+      if (authError) {
+        console.log(
+          "Update auth name error:",
+          authError
+        );
+
+        setMessage(currentText.updateError);
+        setMessageType("error");
+        return;
+      }
+
+      // ==========================================
+      // تحديث الاسم في جدول profiles
+      // ==========================================
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          name: newName,
+        })
+        .eq("id", currentUser.id);
+
+      // التحقق من خطأ profiles
+      if (profileError) {
+        console.log(
+          "Update profile name error:",
+          profileError
+        );
+
+        setMessage(currentText.updateError);
+        setMessageType("error");
+        return;
+      }
+
+      // ==========================================
+      // تحديث بيانات المستخدم في الصفحة
+      // ==========================================
+
+      setUser(updatedUser.user);
+
+      // إظهار رسالة النجاح
+      setMessage(currentText.updateSuccess);
+      setMessageType("success");
+
+      // إرسال حدث لتحديث Navbar
+      window.dispatchEvent(
+        new CustomEvent("profileUpdated", {
+          detail: newName,
+        })
+      );
+    } catch (error) {
+      console.log(
+        "Update name error:",
+        error
+      );
+
+      setMessage(currentText.updateError);
+      setMessageType("error");
+    } finally {
+      // إنهاء حالة الحفظ
+      setSaving(false);
+    }
+  };
 
   // ==========================================
   // واجهة صفحة Profile
@@ -129,7 +372,7 @@ function Profile() {
               },
             }}
           >
-            Profile
+            {currentText.profile}
           </Typography>
 
           <Typography
@@ -138,7 +381,7 @@ function Profile() {
               fontSize: "15px",
             }}
           >
-            View your account information and task statistics.
+            {currentText.description}
           </Typography>
         </Box>
 
@@ -179,7 +422,10 @@ function Profile() {
                   sm: 75,
                 },
                 backgroundColor: colors.primary,
-                color: colors.background,
+
+                color: isDark
+                  ? colors.background
+                  : "#FFFFFF",
               }}
             >
               <PersonIcon
@@ -211,7 +457,7 @@ function Profile() {
               >
                 {user?.user_metadata?.name ||
                   user?.user_metadata?.full_name ||
-                  "User"}
+                  currentText.user}
               </Typography>
 
               <Typography
@@ -227,6 +473,70 @@ function Profile() {
               </Typography>
             </Box>
           </Box>
+
+          {/* ==========================================
+              تعديل الاسم
+          ========================================== */}
+
+          <Box
+            sx={{
+              marginTop: "30px",
+              display: "flex",
+              gap: "12px",
+              alignItems: "flex-start",
+              flexWrap: "wrap",
+            }}
+          >
+            <TextField
+              fullWidth
+              label={currentText.name}
+              placeholder={currentText.namePlaceholder}
+              value={name}
+              onChange={(event) => {
+                setName(event.target.value);
+              }}
+              sx={{
+                flex: 1,
+                minWidth: {
+                  xs: "100%",
+                  sm: "300px",
+                },
+              }}
+            />
+
+            <Button
+              variant="contained"
+              startIcon={<SaveIcon />}
+              onClick={handleUpdateName}
+              disabled={saving}
+              sx={{
+                minHeight: "56px",
+                px: 3,
+                width: {
+                  xs: "100%",
+                  sm: "auto",
+                },
+              }}
+            >
+              {saving
+                ? currentText.saving
+                : currentText.save}
+            </Button>
+          </Box>
+
+          {/* رسالة النجاح أو الخطأ */}
+
+          {message && (
+            <Alert
+              severity={messageType}
+              sx={{
+                marginTop: "15px",
+                borderRadius: "10px",
+              }}
+            >
+              {message}
+            </Alert>
+          )}
         </Paper>
 
         {/* ==========================================
@@ -291,7 +601,7 @@ function Profile() {
                     color: colors.text,
                   }}
                 >
-                  Total Tasks
+                  {currentText.totalTasks}
                 </Typography>
 
                 <Typography
@@ -301,7 +611,7 @@ function Profile() {
                     marginTop: "3px",
                   }}
                 >
-                  Your total number of tasks
+                  {currentText.totalTasksDescription}
                 </Typography>
               </Box>
             </Box>
@@ -310,7 +620,9 @@ function Profile() {
 
             <Chip
               label={`${taskCount} ${
-                taskCount === 1 ? "Task" : "Tasks"
+                taskCount === 1
+                  ? currentText.task
+                  : currentText.tasks
               }`}
               sx={{
                 height: "48px",
@@ -336,3 +648,4 @@ function Profile() {
 
 // تصدير صفحة Profile
 export default Profile;
+

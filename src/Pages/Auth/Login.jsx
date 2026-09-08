@@ -1,5 +1,8 @@
-import { useState } from "react";
 
+// استيراد useState و useEffect من React
+import { useEffect, useState } from "react";
+
+// استيراد مكونات Material UI
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
@@ -8,83 +11,238 @@ import Button from "@mui/material/Button";
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
 
+// استيراد الأيقونات
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import LanguageIcon from "@mui/icons-material/Language";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import LightModeIcon from "@mui/icons-material/LightMode";
 
+// استيراد Supabase
 import { supabase } from "../../supabaseClient";
 
+// استيراد التنقل
 import { Link, useNavigate } from "react-router-dom";
 
+// استيراد الثيم
+import { useAppTheme } from "../../ThemeContext";
+
 function Login() {
-
-  // تخزين البريد الإلكتروني
-  const [email, setEmail] = useState("");
-
-  // تخزين كلمة المرور
-  const [password, setPassword] = useState("");
-
-  // التحكم في إظهار كلمة المرور
-  const [showPassword, setShowPassword] = useState(false);
-
-  // تخزين رسالة الخطأ
-  const [error, setError] = useState("");
+  // التحكم في الوضع الليلي
+  const { darkMode, toggleDarkMode } = useAppTheme();
 
   // الانتقال بين الصفحات
   const navigate = useNavigate();
 
-  // ==========================================
-  // تسجيل الدخول
-  // ==========================================
+  // بيانات تسجيل الدخول
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  async function handleLogin(e) {
+  // إظهار وإخفاء كلمة المرور
+  const [showPassword, setShowPassword] = useState(false);
 
-    e.preventDefault();
+  // رسالة الخطأ
+  const [error, setError] = useState("");
 
-    // حذف رسالة الخطأ القديمة
+  // اللغة الحالية
+  const [language, setLanguage] = useState(
+    () => localStorage.getItem("language") || "en"
+  );
+
+  // النصوص باللغتين
+  const text = {
+    en: {
+      welcome: "Welcome Back",
+      description: "Login to manage your tasks",
+
+      email: "Email",
+      emailPlaceholder: "Enter your email",
+
+      password: "Password",
+      passwordPlaceholder: "Enter your password",
+
+      forgotPassword: "Forgot Password?",
+      login: "Login",
+
+      noAccount: "Don't have an account?",
+      register: "Register",
+
+      language: "العربية",
+      darkMode: "Dark Mode",
+      lightMode: "Light Mode",
+
+      requiredFields: "Please fill in all fields.",
+
+      invalidCredentials:
+        "Invalid email or password.",
+
+      emailNotConfirmed:
+        "Please confirm your email before logging in.",
+
+      tooManyRequests:
+        "Too many login attempts. Please try again later.",
+
+      networkError:
+        "Network error. Please check your internet connection.",
+
+      unexpectedError:
+        "Something went wrong. Please try again.",
+    },
+
+    ar: {
+      welcome: "مرحباً بعودتك",
+      description: "سجل الدخول لإدارة مهامك",
+
+      email: "البريد الإلكتروني",
+      emailPlaceholder: "أدخل بريدك الإلكتروني",
+
+      password: "كلمة المرور",
+      passwordPlaceholder: "أدخل كلمة المرور",
+
+      forgotPassword: "نسيت كلمة المرور؟",
+      login: "تسجيل الدخول",
+
+      noAccount: "ليس لديك حساب؟",
+      register: "إنشاء حساب",
+
+      language: "English",
+      darkMode: "الوضع الليلي",
+      lightMode: "الوضع النهاري",
+
+      requiredFields: "يرجى تعبئة جميع الحقول.",
+
+      invalidCredentials:
+        "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+
+      emailNotConfirmed:
+        "يرجى تأكيد بريدك الإلكتروني قبل تسجيل الدخول.",
+
+      tooManyRequests:
+        "محاولات تسجيل الدخول كثيرة جداً. حاول مرة أخرى لاحقاً.",
+
+      networkError:
+        "حدث خطأ في الاتصال. تأكد من اتصالك بالإنترنت.",
+
+      unexpectedError:
+        "حدث خطأ غير متوقع. حاول مرة أخرى.",
+    },
+  };
+
+  // اختيار النصوص حسب اللغة
+  const currentText =
+    language === "ar" ? text.ar : text.en;
+
+  // تغيير اتجاه الصفحة حسب اللغة
+  useEffect(() => {
+    if (language === "ar") {
+      document.documentElement.dir = "rtl";
+      document.documentElement.lang = "ar";
+    } else {
+      document.documentElement.dir = "ltr";
+      document.documentElement.lang = "en";
+    }
+
+    // حفظ اللغة
+    localStorage.setItem("language", language);
+  }, [language]);
+
+  // تغيير اللغة
+  const toggleLanguage = () => {
+    setLanguage((previousLanguage) =>
+      previousLanguage === "en" ? "ar" : "en"
+    );
+  };
+
+  // تحويل أخطاء Supabase إلى رسائل مترجمة
+  function getTranslatedError(error) {
+    if (!error) {
+      return currentText.unexpectedError;
+    }
+
+    const message =
+      error.message?.toLowerCase() || "";
+
+    if (
+      message.includes("invalid login credentials") ||
+      message.includes("invalid email or password") ||
+      message.includes("invalid credentials")
+    ) {
+      return currentText.invalidCredentials;
+    }
+
+    if (
+      message.includes("email not confirmed") ||
+      message.includes("email_not_confirmed")
+    ) {
+      return currentText.emailNotConfirmed;
+    }
+
+    if (
+      message.includes("too many requests") ||
+      message.includes("rate limit")
+    ) {
+      return currentText.tooManyRequests;
+    }
+
+    if (
+      message.includes("network") ||
+      message.includes("fetch") ||
+      message.includes("failed to fetch")
+    ) {
+      return currentText.networkError;
+    }
+
+    return currentText.unexpectedError;
+  }
+
+  // تنفيذ تسجيل الدخول
+  const handleLogin = async (event) => {
+    // منع تحديث الصفحة
+    event.preventDefault();
+
+    // حذف رسالة الخطأ السابقة
     setError("");
 
-    // تسجيل الدخول باستخدام Supabase
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
-
-    // إذا حدث خطأ
-    if (error) {
-
-      setError(error.message);
-
+    // التحقق من أن الحقول ليست فارغة
+    if (!email.trim() || !password.trim()) {
+      setError(currentText.requiredFields);
       return;
     }
 
-    // الانتقال إلى الصفحة الرئيسية
+    // تسجيل الدخول باستخدام Supabase
+    const { error } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+    // إذا حدث خطأ
+    if (error) {
+      setError(getTranslatedError(error));
+      return;
+    }
+
+    // الانتقال إلى صفحة المهام
     navigate("/");
-  }
+  };
 
   return (
-
     <Box
       sx={{
-        minHeight: "70vh",
-
-        // خلفية الصفحة
-        backgroundColor: "#F5F7FA",
+        minHeight: "100vh",
+        backgroundColor: "background.default",
+        color: "text.primary",
 
         display: "flex",
-        justifyContent: "center",
         alignItems: "center",
+        justifyContent: "center",
 
-        padding: {
-          xs: "30px 16px",
-          sm: "50px 20px",
-        },
+        padding: "24px",
+
+        transition:
+          "background-color 0.3s, color 0.3s",
       }}
     >
-
-      {/* ==========================================
-          المربع الرئيسي
-          ========================================== */}
-
       <Paper
         elevation={0}
         sx={{
@@ -92,290 +250,342 @@ function Login() {
           maxWidth: "430px",
 
           padding: {
-            xs: "30px 24px",
-            sm: "40px",
+            xs: "28px 22px",
+            sm: "36px 34px",
           },
 
           borderRadius: "20px",
 
-          // لون المربع المميز
-          backgroundColor: "#E0F2F1",
-
-          // حدود المربع
-          border: "2px solid #80CBC4",
-
-          // ظل المربع
-          boxShadow:
-            "0 12px 35px rgba(0, 137, 123, 0.20)",
+          position: "relative",
+          overflow: "hidden",
         }}
       >
+        {/* الأزرار العلوية */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            gap: "6px",
+            marginBottom: "18px",
+          }}
+        >
+          {/* زر تغيير اللغة */}
+          <IconButton
+            onClick={toggleLanguage}
+            title={currentText.language}
+            sx={{
+              color: "text.secondary",
+              borderRadius: "10px",
 
-        {/* ==========================================
-            العنوان
-            ========================================== */}
+              "&:hover": {
+                backgroundColor: darkMode
+                  ? "rgba(128,203,196,0.10)"
+                  : "rgba(0,137,123,0.06)",
 
+                color: "primary.main",
+              },
+            }}
+          >
+            <LanguageIcon />
+          </IconButton>
+
+          {/* زر الوضع الليلي والنهاري */}
+          <IconButton
+            onClick={toggleDarkMode}
+            title={
+              darkMode
+                ? currentText.lightMode
+                : currentText.darkMode
+            }
+            sx={{
+              color: "text.secondary",
+              borderRadius: "10px",
+
+              "&:hover": {
+                backgroundColor: darkMode
+                  ? "rgba(128,203,196,0.10)"
+                  : "rgba(0,137,123,0.06)",
+
+                color: "primary.main",
+              },
+            }}
+          >
+            {darkMode ? (
+              <LightModeIcon />
+            ) : (
+              <DarkModeIcon />
+            )}
+          </IconButton>
+        </Box>
+
+        {/* العنوان */}
         <Typography
           sx={{
-            textAlign: "center",
-            fontSize: "28px",
+            fontSize: {
+              xs: "27px",
+              sm: "30px",
+            },
+
             fontWeight: "700",
-            color: "#263238",
+            color: "text.primary",
+
+            textAlign: "center",
+
             marginBottom: "8px",
           }}
         >
-          Welcome Back
+          {currentText.welcome}
         </Typography>
-
 
         {/* الوصف */}
-
         <Typography
           sx={{
-            textAlign: "center",
-            color: "#546E7A",
             fontSize: "14px",
-            marginBottom: "30px",
+            color: "text.secondary",
+
+            textAlign: "center",
+
+            marginBottom: "28px",
           }}
         >
-          Login to manage your tasks
+          {currentText.description}
         </Typography>
 
-
-        {/* ==========================================
-            رسالة الخطأ
-            ========================================== */}
-
-        {error && (
-
-          <Box
-            sx={{
-              backgroundColor: "#FFEBEE",
-              border: "1px solid #FFCDD2",
-              color: "#D32F2F",
-              borderRadius: "10px",
-              padding: "12px",
-              marginBottom: "18px",
-              fontSize: "13px",
-            }}
-          >
-            {error}
-          </Box>
-
-        )}
-
-
-        {/* ==========================================
-            Form
-            ========================================== */}
-
+        {/* نموذج تسجيل الدخول */}
         <Box
           component="form"
           onSubmit={handleLogin}
+          noValidate
         >
-
-          {/* ==========================================
-              البريد الإلكتروني
-              ========================================== */}
-
-          <Typography
-            sx={{
-              fontSize: "14px",
-              fontWeight: "600",
-              color: "#37474F",
-              marginBottom: "8px",
-            }}
-          >
-            Email
-          </Typography>
-
-
+          {/* البريد الإلكتروني */}
           <TextField
             fullWidth
-            type="email"
-            placeholder="Enter your email"
+            label={currentText.email}
+            placeholder={currentText.emailPlaceholder}
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-
+            onChange={(event) =>
+              setEmail(event.target.value)
+            }
+            type="email"
             sx={{
-              marginBottom: "22px",
-
-              "& .MuiOutlinedInput-root": {
-
-                backgroundColor: "#FFFFFF",
-
-                borderRadius: "10px",
-
-                "&:hover fieldset": {
-                  borderColor: "#00897B",
-                },
-
-                "&.Mui-focused fieldset": {
-                  borderColor: "#00897B",
-                },
-              },
+              marginBottom: "18px",
             }}
           />
 
-
-          {/* ==========================================
-              كلمة المرور
-              ========================================== */}
-
-          <Typography
-            sx={{
-              fontSize: "14px",
-              fontWeight: "600",
-              color: "#37474F",
-              marginBottom: "8px",
-            }}
-          >
-            Password
-          </Typography>
-
-
+          {/* كلمة المرور */}
           <TextField
             fullWidth
-            type={showPassword ? "text" : "password"}
-            placeholder="Enter your password"
+            label={currentText.password}
+            placeholder={
+              currentText.passwordPlaceholder
+            }
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-
+            onChange={(event) =>
+              setPassword(event.target.value)
+            }
+            type={
+              showPassword ? "text" : "password"
+            }
             sx={{
-              marginBottom: "8px",
-
-              "& .MuiOutlinedInput-root": {
-
-                backgroundColor: "#FFFFFF",
-
-                borderRadius: "10px",
-
-                "&:hover fieldset": {
-                  borderColor: "#00897B",
-                },
-
-                "&.Mui-focused fieldset": {
-                  borderColor: "#00897B",
-                },
-              },
+              marginBottom: "10px",
             }}
-
-            slotProps={{
-              input: {
-
-                endAdornment: (
-
-                  <InputAdornment position="end">
-
-                    <IconButton
-                      onClick={() =>
-                        setShowPassword(!showPassword)
-                      }
-                      edge="end"
-                    >
-
-                      {showPassword
-                        ? <VisibilityOff />
-                        : <Visibility />}
-
-                    </IconButton>
-
-                  </InputAdornment>
-
-                ),
-              },
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() =>
+                      setShowPassword(
+                        (previous) => !previous
+                      )
+                    }
+                    edge="end"
+                  >
+                    {showPassword ? (
+                      <VisibilityOff />
+                    ) : (
+                      <Visibility />
+                    )}
+                  </IconButton>
+                </InputAdornment>
+              ),
             }}
           />
 
-
-          {/* ==========================================
-              نسيت كلمة المرور
-              ========================================== */}
-
+          {/* نسيت كلمة المرور */}
           <Box
             sx={{
-              textAlign: "right",
-              marginBottom: "22px",
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "20px",
             }}
           >
-
-            <Box
+            <Typography
               component={Link}
               to="/forgot-password"
               sx={{
-                color: "#00796B",
+                color: "primary.main",
+
+                textDecoration: "none",
+
                 fontSize: "13px",
                 fontWeight: "600",
-                textDecoration: "none",
 
                 "&:hover": {
                   textDecoration: "underline",
                 },
               }}
             >
-              Forgot Password?
-            </Box>
-
+              {currentText.forgotPassword}
+            </Typography>
           </Box>
 
+          {/* تنبيه الخطأ الأحمر */}
+          {error && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
 
-          {/* ==========================================
-              زر تسجيل الدخول
-              ========================================== */}
+                gap: "10px",
 
+                backgroundColor: darkMode
+                  ? "#3B1F1F"
+                  : "#FFEBEE",
+
+                border: darkMode
+                  ? "1px solid #7F1D1D"
+                  : "1px solid #FFCDD2",
+
+                color: darkMode
+                  ? "#FF8A80"
+                  : "#D32F2F",
+
+                borderRadius: "10px",
+
+                padding: "12px 14px",
+
+                marginBottom: "20px",
+
+                fontSize: "13px",
+                fontWeight: "500",
+
+                lineHeight: "1.6",
+
+                boxShadow: darkMode
+                  ? "0 4px 12px rgba(239,83,80,0.18)"
+                  : "0 4px 12px rgba(211,47,47,0.08)",
+              }}
+            >
+              {/* دائرة علامة التنبيه */}
+              <Box
+                sx={{
+                  minWidth: "28px",
+                  width: "28px",
+                  height: "28px",
+
+                  borderRadius: "50%",
+
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+
+                  backgroundColor: darkMode
+                    ? "#7F1D1D"
+                    : "#FFCDD2",
+
+                  color: darkMode
+                    ? "#FF8A80"
+                    : "#D32F2F",
+
+                  fontSize: "16px",
+                  fontWeight: "700",
+                }}
+              >
+                !
+              </Box>
+
+              {/* نص التنبيه */}
+              <Typography
+                sx={{
+                  fontSize: "13px",
+                  fontWeight: "600",
+
+                  color: "inherit",
+
+                  lineHeight: "1.6",
+                }}
+              >
+                {error}
+              </Typography>
+            </Box>
+          )}
+
+          {/* زر تسجيل الدخول */}
           <Button
             type="submit"
             fullWidth
             variant="contained"
-
             sx={{
-              height: "50px",
+              minHeight: "48px",
 
               borderRadius: "10px",
 
-              backgroundColor: "#00897B",
+              backgroundColor: "primary.main",
 
-              textTransform: "none",
+              color: darkMode
+                ? "#0F172A"
+                : "#FFFFFF",
 
               fontSize: "15px",
-
-              fontWeight: "bold",
+              fontWeight: "700",
 
               boxShadow: "none",
 
               "&:hover": {
-                backgroundColor: "#00695C",
+                backgroundColor: "primary.main",
+                opacity: 0.9,
                 boxShadow: "none",
               },
             }}
           >
-            Login
+            {currentText.login}
           </Button>
-
         </Box>
 
-
-        {/* ==========================================
-            رابط التسجيل
-            ========================================== */}
-
-        <Typography
+        {/* إنشاء حساب */}
+        <Box
           sx={{
-            textAlign: "center",
-            color: "#546E7A",
-            fontSize: "14px",
+            display: "flex",
+
+            justifyContent: "center",
+            alignItems: "center",
+
+            gap: "5px",
+
             marginTop: "24px",
+
+            flexWrap: "wrap",
           }}
         >
-          Don't have an account?{" "}
+          <Typography
+            sx={{
+              fontSize: "13px",
+              color: "text.secondary",
+            }}
+          >
+            {currentText.noAccount}
+          </Typography>
 
-          <Box
+          <Typography
             component={Link}
             to="/register"
             sx={{
-              color: "#00796B",
-              fontWeight: "bold",
+              fontSize: "13px",
+              fontWeight: "700",
+
+              color: "secondary.main",
+
               textDecoration: "none",
 
               "&:hover": {
@@ -383,15 +593,14 @@ function Login() {
               },
             }}
           >
-            Register
-          </Box>
-
-        </Typography>
-
+            {currentText.register}
+          </Typography>
+        </Box>
       </Paper>
-
     </Box>
   );
 }
 
 export default Login;
+
+ 

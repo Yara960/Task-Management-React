@@ -40,30 +40,48 @@ import { useAppTheme } from "../ThemeContext";
 
 export default function Navbar() {
 
+  // =====================================================
   // التنقل بين الصفحات
+  // =====================================================
+
   const navigate = useNavigate();
 
 
-  // Dark Mode من ThemeContext
+  // =====================================================
+  // Dark Mode
+  // =====================================================
+
   const {
     darkMode,
     toggleDarkMode,
   } = useAppTheme();
 
 
+  // =====================================================
   // حالة القائمة في الجوال
+  // =====================================================
+
   const [anchorEl, setAnchorEl] = useState(null);
 
 
+  // =====================================================
   // اسم المستخدم
+  // =====================================================
+
   const [userName, setUserName] = useState("User");
 
 
+  // =====================================================
   // Role المستخدم
+  // =====================================================
+
   const [userRole, setUserRole] = useState("USER");
 
 
+  // =====================================================
   // اللغة
+  // =====================================================
+
   const [language, setLanguage] = useState(() => {
 
     return localStorage.getItem("language") || "en";
@@ -122,7 +140,7 @@ export default function Navbar() {
       }
 
 
-      // الاسم
+      // اسم المستخدم
       setUserName(
         profile?.name ||
         user?.user_metadata?.name ||
@@ -131,7 +149,7 @@ export default function Navbar() {
       );
 
 
-      // الدور
+      // دور المستخدم
       setUserRole(
         profile?.role || "USER"
       );
@@ -141,11 +159,12 @@ export default function Navbar() {
       console.log(error);
 
     }
+
   };
 
 
   // =====================================================
-  // تغيير اللغة
+  // حفظ اللغة وتغيير اتجاه الصفحة
   // =====================================================
 
   useEffect(() => {
@@ -170,14 +189,29 @@ export default function Navbar() {
   }, [language]);
 
 
+  // =====================================================
   // تغيير اللغة
+  // =====================================================
+
   const toggleLanguage = () => {
 
     setLanguage((previousLanguage) => {
 
-      return previousLanguage === "en"
-        ? "ar"
-        : "en";
+      const newLanguage =
+        previousLanguage === "en"
+          ? "ar"
+          : "en";
+
+
+      // إرسال إشعار لباقي الصفحات
+      window.dispatchEvent(
+        new CustomEvent("languageChanged", {
+          detail: newLanguage,
+        })
+      );
+
+
+      return newLanguage;
 
     });
 
@@ -331,6 +365,10 @@ export default function Navbar() {
   };
 
 
+  // =====================================================
+  // النص الحالي
+  // =====================================================
+
   const currentText =
     language === "ar"
       ? text.ar
@@ -338,12 +376,16 @@ export default function Navbar() {
 
 
   // =====================================================
-  // الحروف الأولى للاسم
+  // الحرف الأول للاسم
   // =====================================================
 
   const avatarLetter =
     userName?.charAt(0)?.toUpperCase() || "U";
 
+
+  // =====================================================
+  // الواجهة
+  // =====================================================
 
   return (
 
@@ -401,6 +443,7 @@ export default function Navbar() {
             }}
           />
 
+
           <Typography
             variant="h6"
             sx={{
@@ -412,9 +455,7 @@ export default function Navbar() {
               },
             }}
           >
-
             {currentText.appName}
-
           </Typography>
 
         </Box>
@@ -450,9 +491,7 @@ export default function Navbar() {
               px: 2,
             }}
           >
-
             {currentText.myTasks}
-
           </Button>
 
 
@@ -467,13 +506,11 @@ export default function Navbar() {
               px: 2,
             }}
           >
-
             {currentText.chat}
-
           </Button>
 
 
-          {/* Admin - SUPERADMIN فقط */}
+          {/* Admin */}
 
           {userRole === "SUPERADMIN" && (
 
@@ -488,9 +525,7 @@ export default function Navbar() {
                 px: 2,
               }}
             >
-
               {currentText.admin}
-
             </Button>
 
           )}
@@ -514,7 +549,6 @@ export default function Navbar() {
             gap: 1,
           }}
         >
-
 
           {/* المستخدم */}
 
@@ -549,9 +583,7 @@ export default function Navbar() {
                 fontSize: 15,
               }}
             >
-
               {avatarLetter}
-
             </Avatar>
 
 
@@ -566,9 +598,7 @@ export default function Navbar() {
                 whiteSpace: "nowrap",
               }}
             >
-
               {userName}
-
             </Typography>
 
           </Box>
@@ -587,13 +617,9 @@ export default function Navbar() {
           >
 
             {darkMode ? (
-
               <LightModeIcon />
-
             ) : (
-
               <DarkModeIcon />
-
             )}
 
           </IconButton>
@@ -606,9 +632,7 @@ export default function Navbar() {
             onClick={toggleLanguage}
             title={currentText.language}
           >
-
             <LanguageIcon />
-
           </IconButton>
 
 
@@ -623,16 +647,14 @@ export default function Navbar() {
               px: 2,
             }}
           >
-
             {currentText.logout}
-
           </Button>
 
         </Box>
 
 
         {/* =================================================
-            Mobile Menu Button
+            Mobile Menu
         ================================================= */}
 
         <Box
@@ -648,9 +670,7 @@ export default function Navbar() {
             color="inherit"
             onClick={handleMenuOpen}
           >
-
             <MenuIcon />
-
           </IconButton>
 
 
@@ -667,11 +687,11 @@ export default function Navbar() {
                 backgroundColor:
                   "background.paper",
 
-                color: "text.primary",
+                color:
+                  "text.primary",
               },
             }}
           >
-
 
             {/* المستخدم */}
 
@@ -692,18 +712,15 @@ export default function Navbar() {
                     fontWeight: 600,
                   }}
                 >
-
                   {userName}
-
                 </Typography>
+
 
                 <Typography
                   variant="caption"
                   color="text.secondary"
                 >
-
                   {currentText.profile}
-
                 </Typography>
 
               </Box>
@@ -801,6 +818,7 @@ export default function Navbar() {
 
               )}
 
+
               {darkMode
                 ? currentText.lightMode
                 : currentText.darkMode}
@@ -857,5 +875,8 @@ export default function Navbar() {
       </Toolbar>
 
     </AppBar>
+
   );
+
 }
+
