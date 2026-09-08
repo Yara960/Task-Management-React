@@ -1,7 +1,7 @@
-// استيراد useState و useEffect من React
-import { useState, useEffect } from "react";
+// استيراد React
+import { useEffect, useState } from "react";
 
-// استيراد مكونات Material UI
+// استيراد Material UI
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
@@ -11,64 +11,182 @@ import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
+import Avatar from "@mui/material/Avatar";
 
 // استيراد الأيقونات
 import MenuIcon from "@mui/icons-material/Menu";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import LanguageIcon from "@mui/icons-material/Language";
+import ChatIcon from "@mui/icons-material/Chat";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import LogoutIcon from "@mui/icons-material/Logout";
+import PersonIcon from "@mui/icons-material/Person";
 
-// استيراد التنقل بين الصفحات
+// React Router
 import { useNavigate } from "react-router-dom";
 
-// استيراد Supabase
+// Supabase
 import { supabase } from "../supabaseClient";
 
-function Navbar() {
+// Theme
+import { useAppTheme } from "../ThemeContext";
 
-  // التحكم في فتح وإغلاق قائمة الثلاث خطوط
-  const [anchorEl, setAnchorEl] = useState(null);
 
-  // تخزين اسم المستخدم
-  const [userName, setUserName] = useState("");
+// =====================================================
+// Navbar
+// =====================================================
 
-  // الانتقال بين الصفحات
+export default function Navbar() {
+
+  // التنقل بين الصفحات
   const navigate = useNavigate();
 
-  // ==========================================
-  // جلب اسم المستخدم من Supabase
-  // ==========================================
+
+  // Dark Mode من ThemeContext
+  const {
+    darkMode,
+    toggleDarkMode,
+  } = useAppTheme();
+
+
+  // حالة القائمة في الجوال
+  const [anchorEl, setAnchorEl] = useState(null);
+
+
+  // اسم المستخدم
+  const [userName, setUserName] = useState("User");
+
+
+  // Role المستخدم
+  const [userRole, setUserRole] = useState("USER");
+
+
+  // اللغة
+  const [language, setLanguage] = useState(() => {
+
+    return localStorage.getItem("language") || "en";
+
+  });
+
+
+  // =====================================================
+  // الحصول على بيانات المستخدم
+  // =====================================================
 
   useEffect(() => {
 
-    const getUser = async () => {
-
-      // جلب المستخدم الحالي
-      const { data, error } = await supabase.auth.getUser();
-
-      // في حالة وجود خطأ
-      if (error) {
-        console.log(error);
-        return;
-      }
-
-      // إذا كان هناك مستخدم
-      if (data.user) {
-
-        // جلب اسم المستخدم من بيانات الحساب
-        setUserName(
-          data.user.user_metadata?.name || "User"
-        );
-
-      }
-
-    };
-
-    getUser();
+    getUserProfile();
 
   }, []);
 
-  // ==========================================
-  // فتح القائمة
-  // ==========================================
+
+  const getUserProfile = async () => {
+
+    try {
+
+      // الحصول على المستخدم الحالي
+      const {
+        data: {
+          user,
+        },
+      } = await supabase.auth.getUser();
+
+
+      // إذا لم يوجد مستخدم
+      if (!user) {
+
+        return;
+
+      }
+
+
+      // الحصول على بيانات المستخدم من profiles
+      const {
+        data: profile,
+        error,
+      } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+
+      if (error) {
+
+        console.log("Profile error:", error);
+
+        return;
+
+      }
+
+
+      // الاسم
+      setUserName(
+        profile?.name ||
+        user?.user_metadata?.name ||
+        user?.email?.split("@")[0] ||
+        "User"
+      );
+
+
+      // الدور
+      setUserRole(
+        profile?.role || "USER"
+      );
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+  };
+
+
+  // =====================================================
+  // تغيير اللغة
+  // =====================================================
+
+  useEffect(() => {
+
+    // حفظ اللغة
+    localStorage.setItem("language", language);
+
+
+    // تغيير اتجاه الصفحة
+    if (language === "ar") {
+
+      document.documentElement.dir = "rtl";
+      document.documentElement.lang = "ar";
+
+    } else {
+
+      document.documentElement.dir = "ltr";
+      document.documentElement.lang = "en";
+
+    }
+
+  }, [language]);
+
+
+  // تغيير اللغة
+  const toggleLanguage = () => {
+
+    setLanguage((previousLanguage) => {
+
+      return previousLanguage === "en"
+        ? "ar"
+        : "en";
+
+    });
+
+  };
+
+
+  // =====================================================
+  // فتح قائمة الجوال
+  // =====================================================
 
   const handleMenuOpen = (event) => {
 
@@ -76,9 +194,10 @@ function Navbar() {
 
   };
 
-  // ==========================================
-  // إغلاق القائمة
-  // ==========================================
+
+  // =====================================================
+  // إغلاق قائمة الجوال
+  // =====================================================
 
   const handleMenuClose = () => {
 
@@ -86,363 +205,657 @@ function Navbar() {
 
   };
 
-  // ==========================================
-  // الانتقال إلى صفحة المهام
-  // ==========================================
 
-  const handleTasks = () => {
+  // =====================================================
+  // التنقل
+  // =====================================================
 
-    // إغلاق القائمة
+  const goToTasks = () => {
+
     handleMenuClose();
 
-    // الانتقال إلى الصفحة الرئيسية
     navigate("/");
 
   };
 
-  // ==========================================
-  // الانتقال إلى الملف الشخصي
-  // ==========================================
 
-  const handleProfile = () => {
+  const goToProfile = () => {
 
-    // إغلاق القائمة
     handleMenuClose();
 
-    // الانتقال إلى صفحة Profile
     navigate("/profile");
 
   };
 
-  // ==========================================
-  // الانتقال إلى صفحة الدردشة
-  // ==========================================
 
-  const handleChat = () => {
+  const goToChat = () => {
 
-    // إغلاق القائمة
     handleMenuClose();
 
-    // الانتقال إلى صفحة Chat
     navigate("/chat");
 
   };
 
-  // ==========================================
+
+  const goToAdmin = () => {
+
+    handleMenuClose();
+
+    navigate("/admin");
+
+  };
+
+
+  // =====================================================
   // تسجيل الخروج
-  // ==========================================
+  // =====================================================
 
   const handleLogout = async () => {
 
-    // إغلاق القائمة
-    handleMenuClose();
+    try {
 
-    // تسجيل الخروج من Supabase
-    const { error } = await supabase.auth.signOut();
+      await supabase.auth.signOut();
 
-    // في حالة وجود خطأ
-    if (error) {
+      handleMenuClose();
 
-      console.log(error);
-      return;
+      navigate("/login");
+
+    } catch (error) {
+
+      console.log("Logout error:", error);
 
     }
 
-    // الانتقال إلى صفحة تسجيل الدخول
-    navigate("/login");
+  };
+
+
+  // =====================================================
+  // النصوص
+  // =====================================================
+
+  const text = {
+
+    en: {
+
+      appName: "Task Management",
+
+      myTasks: "My Tasks",
+
+      chat: "Chat",
+
+      admin: "Admin",
+
+      logout: "Logout",
+
+      profile: "Profile",
+
+      language: "العربية",
+
+      darkMode: "Dark Mode",
+
+      lightMode: "Light Mode",
+
+      tasks: "Tasks",
+
+      welcome: "Welcome",
+
+    },
+
+
+    ar: {
+
+      appName: "إدارة المهام",
+
+      myTasks: "مهامي",
+
+      chat: "المحادثة",
+
+      admin: "الإدارة",
+
+      logout: "تسجيل الخروج",
+
+      profile: "الملف الشخصي",
+
+      language: "English",
+
+      darkMode: "الوضع الليلي",
+
+      lightMode: "الوضع النهاري",
+
+      tasks: "المهام",
+
+      welcome: "مرحباً",
+
+    },
 
   };
+
+
+  const currentText =
+    language === "ar"
+      ? text.ar
+      : text.en;
+
+
+  // =====================================================
+  // الحروف الأولى للاسم
+  // =====================================================
+
+  const avatarLetter =
+    userName?.charAt(0)?.toUpperCase() || "U";
+
 
   return (
 
     <AppBar
-      position="static"
+      position="sticky"
       elevation={0}
       sx={{
-        backgroundColor: "#263238",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        zIndex: 1100,
       }}
     >
 
       <Toolbar
         sx={{
-          minHeight: "70px",
-          padding: {
-            xs: "0 16px",
-            sm: "0 28px",
+          minHeight: "70px !important",
+
+          px: {
+            xs: 2,
+            md: 4,
           },
+
+          gap: 1,
         }}
       >
 
-        {/* ==========================================
-            زر الثلاث خطوط
-        ========================================== */}
 
-        <IconButton
-          size="large"
-          color="inherit"
-          aria-label="menu"
-          onClick={handleMenuOpen}
-          sx={{
-            marginRight: "10px",
-            borderRadius: "12px",
-
-            "&:hover": {
-              backgroundColor: "rgba(255,255,255,0.08)",
-            },
-          }}
-        >
-
-          <MenuIcon />
-
-        </IconButton>
-
-
-        {/* ==========================================
-            شعار المشروع
-        ========================================== */}
+        {/* =================================================
+            Logo
+        ================================================= */}
 
         <Box
+          onClick={goToTasks}
           sx={{
-            width: "40px",
-            height: "40px",
-            borderRadius: "12px",
-            backgroundColor: "#00897B",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            marginRight: "12px",
+            gap: 1,
+
+            cursor: "pointer",
+
+            mr: {
+              xs: 0,
+              md: 3,
+            },
+
+            flexGrow: {
+              xs: 1,
+              md: 0,
+            },
           }}
         >
 
           <TaskAltIcon
             sx={{
-              color: "#FFFFFF",
-              fontSize: "23px",
+              fontSize: 32,
+              color: "primary.main",
             }}
           />
+
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+
+              display: {
+                xs: "none",
+                sm: "block",
+              },
+            }}
+          >
+
+            {currentText.appName}
+
+          </Typography>
 
         </Box>
 
 
-        {/* ==========================================
-            اسم المشروع
-        ========================================== */}
-
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{
-            flexGrow: 1,
-            fontWeight: "800",
-            letterSpacing: "0.3px",
-            color: "#FFFFFF",
-            fontSize: {
-              xs: "17px",
-              sm: "20px",
-            },
-          }}
-        >
-          Task Management
-        </Typography>
-
-
-        {/* ==========================================
-            أزرار الكمبيوتر
-        ========================================== */}
+        {/* =================================================
+            Desktop Navigation
+        ================================================= */}
 
         <Box
           sx={{
             display: {
               xs: "none",
-              sm: "flex",
+              md: "flex",
             },
+
             alignItems: "center",
-            gap: "5px",
+
+            gap: 1,
+
+            flexGrow: 1,
           }}
         >
 
           {/* My Tasks */}
 
           <Button
-            onClick={handleProfile}
+            color="inherit"
+            startIcon={<TaskAltIcon />}
+            onClick={goToTasks}
             sx={{
-              color: "#FFFFFF",
-              textTransform: "none",
-              fontSize: "15px",
-              fontWeight: "600",
-              borderRadius: "10px",
-              padding: "8px 14px",
-
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.08)",
-              },
+              borderRadius: 2,
+              px: 2,
             }}
           >
-            My Tasks
+
+            {currentText.myTasks}
+
           </Button>
 
 
           {/* Chat */}
 
           <Button
-            onClick={handleChat}
+            color="inherit"
+            startIcon={<ChatIcon />}
+            onClick={goToChat}
             sx={{
-              color: "#FFFFFF",
-              textTransform: "none",
-              fontSize: "15px",
-              fontWeight: "600",
-              borderRadius: "10px",
-              padding: "8px 14px",
-
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.08)",
-              },
+              borderRadius: 2,
+              px: 2,
             }}
           >
-            Chat
+
+            {currentText.chat}
+
           </Button>
 
 
-          {/* زر Logout */}
+          {/* Admin - SUPERADMIN فقط */}
 
-          <Button
-            onClick={handleLogout}
-            sx={{
-              color: "#FFFFFF",
-              textTransform: "none",
-              fontSize: "15px",
-              fontWeight: "600",
-              borderRadius: "10px",
-              padding: "8px 14px",
+          {userRole === "SUPERADMIN" && (
 
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.08)",
-              },
-            }}
-          >
-            Logout
-          </Button>
+            <Button
+              color="inherit"
+              startIcon={
+                <AdminPanelSettingsIcon />
+              }
+              onClick={goToAdmin}
+              sx={{
+                borderRadius: 2,
+                px: 2,
+              }}
+            >
+
+              {currentText.admin}
+
+            </Button>
+
+          )}
 
         </Box>
 
 
-        {/* ==========================================
-            القائمة التي تظهر عند الضغط على الثلاث خطوط
-        ========================================== */}
+        {/* =================================================
+            Desktop Actions
+        ================================================= */}
 
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-          PaperProps={{
-            sx: {
-              marginTop: "8px",
-              minWidth: "210px",
-              borderRadius: "12px",
-              boxShadow: "0 8px 25px rgba(0,0,0,0.12)",
+        <Box
+          sx={{
+            display: {
+              xs: "none",
+              md: "flex",
             },
+
+            alignItems: "center",
+
+            gap: 1,
           }}
         >
 
-          {/* ==========================================
-              اسم المستخدم - قابل للضغط
-          ========================================== */}
+
+          {/* المستخدم */}
 
           <Box
-            onClick={handleProfile}
+            onClick={goToProfile}
             sx={{
-              padding: "14px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+
               cursor: "pointer",
-              borderRadius: "10px",
-              margin: "4px 6px",
+
+              px: 1.5,
+              py: 0.5,
+
+              borderRadius: 2,
 
               "&:hover": {
-                backgroundColor: "#F5F7FA",
+                backgroundColor:
+                  "rgba(255,255,255,0.08)",
               },
             }}
           >
 
-            <Typography
+            <Avatar
               sx={{
-                color: "#263238",
-                fontSize: "15px",
-                fontWeight: "700",
+                width: 34,
+                height: 34,
+
+                bgcolor: "secondary.main",
+
+                fontSize: 15,
               }}
             >
-              {userName || "User"}
-            </Typography>
+
+              {avatarLetter}
+
+            </Avatar>
+
 
             <Typography
+              variant="body2"
               sx={{
-                color: "#78909C",
-                fontSize: "12px",
-                marginTop: "3px",
+                fontWeight: 600,
+                maxWidth: 120,
+
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
               }}
             >
-              View Profile
+
+              {userName}
+
             </Typography>
 
           </Box>
 
 
-          {/* خط فاصل */}
+          {/* Dark Mode */}
 
-          <Divider />
-
-
-          {/* ==========================================
-              Tasks
-          ========================================== */}
-
-          <MenuItem
-            onClick={handleTasks}
-            sx={{
-              margin: "4px 6px",
-              borderRadius: "8px",
-            }}
+          <IconButton
+            color="inherit"
+            onClick={toggleDarkMode}
+            title={
+              darkMode
+                ? currentText.lightMode
+                : currentText.darkMode
+            }
           >
-            Tasks
-          </MenuItem>
+
+            {darkMode ? (
+
+              <LightModeIcon />
+
+            ) : (
+
+              <DarkModeIcon />
+
+            )}
+
+          </IconButton>
 
 
-          {/* ==========================================
-              Chat
-          ========================================== */}
+          {/* Language */}
 
-          <MenuItem
-            onClick={handleChat}
-            sx={{
-              margin: "4px 6px",
-              borderRadius: "8px",
-            }}
+          <IconButton
+            color="inherit"
+            onClick={toggleLanguage}
+            title={currentText.language}
           >
-            Chat
-          </MenuItem>
+
+            <LanguageIcon />
+
+          </IconButton>
 
 
-          {/* ==========================================
-              Logout
-          ========================================== */}
+          {/* Logout */}
 
-          <MenuItem
+          <Button
+            color="inherit"
+            startIcon={<LogoutIcon />}
             onClick={handleLogout}
             sx={{
-              margin: "4px 6px",
-              borderRadius: "8px",
+              borderRadius: 2,
+              px: 2,
             }}
           >
-            Logout
-          </MenuItem>
 
-        </Menu>
+            {currentText.logout}
+
+          </Button>
+
+        </Box>
+
+
+        {/* =================================================
+            Mobile Menu Button
+        ================================================= */}
+
+        <Box
+          sx={{
+            display: {
+              xs: "block",
+              md: "none",
+            },
+          }}
+        >
+
+          <IconButton
+            color="inherit"
+            onClick={handleMenuOpen}
+          >
+
+            <MenuIcon />
+
+          </IconButton>
+
+
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            PaperProps={{
+              sx: {
+                mt: 1,
+
+                minWidth: 220,
+
+                backgroundColor:
+                  "background.paper",
+
+                color: "text.primary",
+              },
+            }}
+          >
+
+
+            {/* المستخدم */}
+
+            <MenuItem
+              onClick={goToProfile}
+              sx={{
+                gap: 1,
+              }}
+            >
+
+              <PersonIcon fontSize="small" />
+
+              <Box>
+
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                  }}
+                >
+
+                  {userName}
+
+                </Typography>
+
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+
+                  {currentText.profile}
+
+                </Typography>
+
+              </Box>
+
+            </MenuItem>
+
+
+            <Divider />
+
+
+            {/* My Tasks */}
+
+            <MenuItem onClick={goToTasks}>
+
+              <TaskAltIcon
+                fontSize="small"
+                sx={{
+                  mr: 1,
+                }}
+              />
+
+              {currentText.myTasks}
+
+            </MenuItem>
+
+
+            {/* Chat */}
+
+            <MenuItem onClick={goToChat}>
+
+              <ChatIcon
+                fontSize="small"
+                sx={{
+                  mr: 1,
+                }}
+              />
+
+              {currentText.chat}
+
+            </MenuItem>
+
+
+            {/* Admin */}
+
+            {userRole === "SUPERADMIN" && (
+
+              <MenuItem onClick={goToAdmin}>
+
+                <AdminPanelSettingsIcon
+                  fontSize="small"
+                  sx={{
+                    mr: 1,
+                  }}
+                />
+
+                {currentText.admin}
+
+              </MenuItem>
+
+            )}
+
+
+            <Divider />
+
+
+            {/* Dark Mode */}
+
+            <MenuItem
+              onClick={() => {
+
+                toggleDarkMode();
+
+                handleMenuClose();
+
+              }}
+            >
+
+              {darkMode ? (
+
+                <LightModeIcon
+                  fontSize="small"
+                  sx={{
+                    mr: 1,
+                  }}
+                />
+
+              ) : (
+
+                <DarkModeIcon
+                  fontSize="small"
+                  sx={{
+                    mr: 1,
+                  }}
+                />
+
+              )}
+
+              {darkMode
+                ? currentText.lightMode
+                : currentText.darkMode}
+
+            </MenuItem>
+
+
+            {/* Language */}
+
+            <MenuItem
+              onClick={() => {
+
+                toggleLanguage();
+
+                handleMenuClose();
+
+              }}
+            >
+
+              <LanguageIcon
+                fontSize="small"
+                sx={{
+                  mr: 1,
+                }}
+              />
+
+              {currentText.language}
+
+            </MenuItem>
+
+
+            <Divider />
+
+
+            {/* Logout */}
+
+            <MenuItem onClick={handleLogout}>
+
+              <LogoutIcon
+                fontSize="small"
+                sx={{
+                  mr: 1,
+                }}
+              />
+
+              {currentText.logout}
+
+            </MenuItem>
+
+          </Menu>
+
+        </Box>
 
       </Toolbar>
 
     </AppBar>
-
   );
-
 }
-
-export default Navbar;

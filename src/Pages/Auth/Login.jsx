@@ -8,356 +8,390 @@ import Button from "@mui/material/Button";
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
 
-import TaskAltIcon from "@mui/icons-material/TaskAlt";
-import LoginIcon from "@mui/icons-material/Login";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
-import Navbar from "../../Components/Navbar";
-
-import { supabase } from '../../supabaseClient';
+import { supabase } from "../../supabaseClient";
 
 import { Link, useNavigate } from "react-router-dom";
 
 function Login() {
 
-// تخزين البريد الإلكتروني
-const [email, setEmail] = useState("");
+  // تخزين البريد الإلكتروني
+  const [email, setEmail] = useState("");
 
-// تخزين كلمة المرور
-const [password, setPassword] = useState("");
+  // تخزين كلمة المرور
+  const [password, setPassword] = useState("");
 
-// التحكم في إظهار كلمة المرور
-const [showPassword, setShowPassword] = useState(false);
+  // التحكم في إظهار كلمة المرور
+  const [showPassword, setShowPassword] = useState(false);
 
-// تخزين رسالة الخطأ
-const [error, setError] = useState("");
+  // تخزين رسالة الخطأ
+  const [error, setError] = useState("");
 
-// الانتقال بين الصفحات
-const navigate = useNavigate();
+  // الانتقال بين الصفحات
+  const navigate = useNavigate();
 
-// ==========================================
-// تسجيل الدخول
-// ==========================================
+  // ==========================================
+  // تسجيل الدخول
+  // ==========================================
 
-async function handleLogin(e) {
+  async function handleLogin(e) {
 
+    e.preventDefault();
 
-e.preventDefault();
+    // حذف رسالة الخطأ القديمة
+    setError("");
 
-setError("");
+    // تسجيل الدخول باستخدام Supabase
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
+    });
 
-const { error } = await supabase.auth.signInWithPassword({
-  email: email,
-  password: password,
-});
+    // إذا حدث خطأ
+    if (error) {
 
-if (error) {
+      setError(error.message);
 
-  setError(error.message);
+      return;
+    }
 
-  return;
-}
+    // الانتقال إلى الصفحة الرئيسية
+    navigate("/");
+  }
 
-navigate("/");
-
-
-}
-
-return (
-
-
-<Box
-  sx={{
-    minHeight: "70vh",
-    backgroundColor: "#F5F7FA",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: {
-      xs: "30px 16px",
-      sm: "45px 20px",
-    },
-  }}
->
-
-  <Paper
-    elevation={0}
-    sx={{
-      width: "100%",
-      maxWidth: "430px",
-      padding: {
-        xs: "28px 22px",
-        sm: "38px",
-      },
-      borderRadius: "20px",
-      backgroundColor: "#FFFFFF",
-      border: "1px solid #E8ECEF",
-      boxShadow:
-        "0 8px 30px rgba(38, 50, 56, 0.08)",
-    }}
-  >
-
-    {/* أيقونة تسجيل الدخول */}
+  return (
 
     <Box
       sx={{
-        width: "65px",
-        height: "65px",
-        borderRadius: "18px",
-        backgroundColor: "#E0F2F1",
+        minHeight: "70vh",
+
+        // خلفية الصفحة
+        backgroundColor: "#F5F7FA",
+
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        margin: "0 auto 18px",
+
+        padding: {
+          xs: "30px 16px",
+          sm: "50px 20px",
+        },
       }}
     >
 
-      <TaskAltIcon
+      {/* ==========================================
+          المربع الرئيسي
+          ========================================== */}
+
+      <Paper
+        elevation={0}
         sx={{
-          color: "#00897B",
-          fontSize: "34px",
-        }}
-      />
+          width: "100%",
+          maxWidth: "430px",
 
-    </Box>
-
-
-    {/* العنوان */}
-
-    <Typography
-      sx={{
-        textAlign: "center",
-        fontSize: "27px",
-        fontWeight: "800",
-        color: "#263238",
-      }}
-    >
-      Welcome Back
-    </Typography>
-
-
-    <Typography
-      sx={{
-        textAlign: "center",
-        color: "#78909C",
-        fontSize: "14px",
-        marginTop: "6px",
-        marginBottom: "28px",
-      }}
-    >
-      Login to manage your tasks
-    </Typography>
-
-
-    {/* رسالة الخطأ */}
-
-    {error && (
-
-      <Box
-        sx={{
-          backgroundColor: "#FFEBEE",
-          border: "1px solid #FFCDD2",
-          color: "#D32F2F",
-          borderRadius: "10px",
-          padding: "12px",
-          marginBottom: "18px",
-          fontSize: "13px",
-        }}
-      >
-        {error}
-      </Box>
-
-    )}
-
-
-    {/* Form */}
-
-    <Box
-      component="form"
-      onSubmit={handleLogin}
-    >
-
-      {/* البريد الإلكتروني */}
-
-      <TextField
-        fullWidth
-        label="Email"
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-        sx={{
-          marginBottom: "18px",
-
-          "& .MuiOutlinedInput-root": {
-            borderRadius: "12px",
-
-            "&:hover fieldset": {
-              borderColor: "#00897B",
-            },
-
-            "&.Mui-focused fieldset": {
-              borderColor: "#00897B",
-            },
+          padding: {
+            xs: "30px 24px",
+            sm: "40px",
           },
 
-          "& label.Mui-focused": {
-            color: "#00897B",
-          },
-        }}
-      />
+          borderRadius: "20px",
 
+          // لون المربع المميز
+          backgroundColor: "#E0F2F1",
 
-      {/* كلمة المرور */}
+          // حدود المربع
+          border: "2px solid #80CBC4",
 
-      <TextField
-        fullWidth
-        label="Password"
-        type={showPassword ? "text" : "password"}
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-        sx={{
-          marginBottom: "8px",
-
-          "& .MuiOutlinedInput-root": {
-            borderRadius: "12px",
-
-            "&:hover fieldset": {
-              borderColor: "#00897B",
-            },
-
-            "&.Mui-focused fieldset": {
-              borderColor: "#00897B",
-            },
-          },
-
-          "& label.Mui-focused": {
-            color: "#00897B",
-          },
-        }}
-
-        slotProps={{
-          input: {
-            endAdornment: (
-
-              <InputAdornment position="end">
-
-                <IconButton
-                  onClick={() =>
-                    setShowPassword(!showPassword)
-                  }
-                  edge="end"
-                >
-
-                  {showPassword
-                    ? <VisibilityOff />
-                    : <Visibility />}
-
-                </IconButton>
-
-              </InputAdornment>
-
-            ),
-          },
-        }}
-      />
-
-
-      {/* نسيت كلمة المرور */}
-
-      <Box
-        sx={{
-          textAlign: "right",
-          marginBottom: "20px",
+          // ظل المربع
+          boxShadow:
+            "0 12px 35px rgba(0, 137, 123, 0.20)",
         }}
       >
 
-        <Box
-          component={Link}
-          to="/forgot-password"
+        {/* ==========================================
+            العنوان
+            ========================================== */}
+
+        <Typography
           sx={{
-            color: "#00897B",
-            fontSize: "13px",
-            fontWeight: "600",
-            textDecoration: "none",
-
-            "&:hover": {
-              textDecoration: "underline",
-            },
+            textAlign: "center",
+            fontSize: "28px",
+            fontWeight: "700",
+            color: "#263238",
+            marginBottom: "8px",
           }}
         >
-          Forgot Password?
+          Welcome Back
+        </Typography>
+
+
+        {/* الوصف */}
+
+        <Typography
+          sx={{
+            textAlign: "center",
+            color: "#546E7A",
+            fontSize: "14px",
+            marginBottom: "30px",
+          }}
+        >
+          Login to manage your tasks
+        </Typography>
+
+
+        {/* ==========================================
+            رسالة الخطأ
+            ========================================== */}
+
+        {error && (
+
+          <Box
+            sx={{
+              backgroundColor: "#FFEBEE",
+              border: "1px solid #FFCDD2",
+              color: "#D32F2F",
+              borderRadius: "10px",
+              padding: "12px",
+              marginBottom: "18px",
+              fontSize: "13px",
+            }}
+          >
+            {error}
+          </Box>
+
+        )}
+
+
+        {/* ==========================================
+            Form
+            ========================================== */}
+
+        <Box
+          component="form"
+          onSubmit={handleLogin}
+        >
+
+          {/* ==========================================
+              البريد الإلكتروني
+              ========================================== */}
+
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: "600",
+              color: "#37474F",
+              marginBottom: "8px",
+            }}
+          >
+            Email
+          </Typography>
+
+
+          <TextField
+            fullWidth
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+
+            sx={{
+              marginBottom: "22px",
+
+              "& .MuiOutlinedInput-root": {
+
+                backgroundColor: "#FFFFFF",
+
+                borderRadius: "10px",
+
+                "&:hover fieldset": {
+                  borderColor: "#00897B",
+                },
+
+                "&.Mui-focused fieldset": {
+                  borderColor: "#00897B",
+                },
+              },
+            }}
+          />
+
+
+          {/* ==========================================
+              كلمة المرور
+              ========================================== */}
+
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: "600",
+              color: "#37474F",
+              marginBottom: "8px",
+            }}
+          >
+            Password
+          </Typography>
+
+
+          <TextField
+            fullWidth
+            type={showPassword ? "text" : "password"}
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+
+            sx={{
+              marginBottom: "8px",
+
+              "& .MuiOutlinedInput-root": {
+
+                backgroundColor: "#FFFFFF",
+
+                borderRadius: "10px",
+
+                "&:hover fieldset": {
+                  borderColor: "#00897B",
+                },
+
+                "&.Mui-focused fieldset": {
+                  borderColor: "#00897B",
+                },
+              },
+            }}
+
+            slotProps={{
+              input: {
+
+                endAdornment: (
+
+                  <InputAdornment position="end">
+
+                    <IconButton
+                      onClick={() =>
+                        setShowPassword(!showPassword)
+                      }
+                      edge="end"
+                    >
+
+                      {showPassword
+                        ? <VisibilityOff />
+                        : <Visibility />}
+
+                    </IconButton>
+
+                  </InputAdornment>
+
+                ),
+              },
+            }}
+          />
+
+
+          {/* ==========================================
+              نسيت كلمة المرور
+              ========================================== */}
+
+          <Box
+            sx={{
+              textAlign: "right",
+              marginBottom: "22px",
+            }}
+          >
+
+            <Box
+              component={Link}
+              to="/forgot-password"
+              sx={{
+                color: "#00796B",
+                fontSize: "13px",
+                fontWeight: "600",
+                textDecoration: "none",
+
+                "&:hover": {
+                  textDecoration: "underline",
+                },
+              }}
+            >
+              Forgot Password?
+            </Box>
+
+          </Box>
+
+
+          {/* ==========================================
+              زر تسجيل الدخول
+              ========================================== */}
+
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+
+            sx={{
+              height: "50px",
+
+              borderRadius: "10px",
+
+              backgroundColor: "#00897B",
+
+              textTransform: "none",
+
+              fontSize: "15px",
+
+              fontWeight: "bold",
+
+              boxShadow: "none",
+
+              "&:hover": {
+                backgroundColor: "#00695C",
+                boxShadow: "none",
+              },
+            }}
+          >
+            Login
+          </Button>
+
         </Box>
 
-      </Box>
 
+        {/* ==========================================
+            رابط التسجيل
+            ========================================== */}
 
-      {/* زر تسجيل الدخول */}
+        <Typography
+          sx={{
+            textAlign: "center",
+            color: "#546E7A",
+            fontSize: "14px",
+            marginTop: "24px",
+          }}
+        >
+          Don't have an account?{" "}
 
-      <Button
-        type="submit"
-        fullWidth
-        variant="contained"
-        startIcon={<LoginIcon />}
-        sx={{
-          height: "52px",
-          borderRadius: "12px",
-          backgroundColor: "#00897B",
-          textTransform: "none",
-          fontSize: "15px",
-          fontWeight: "bold",
-          boxShadow: "none",
+          <Box
+            component={Link}
+            to="/register"
+            sx={{
+              color: "#00796B",
+              fontWeight: "bold",
+              textDecoration: "none",
 
-          "&:hover": {
-            backgroundColor: "#00695C",
-            boxShadow: "none",
-          },
-        }}
-      >
-        Login
-      </Button>
+              "&:hover": {
+                textDecoration: "underline",
+              },
+            }}
+          >
+            Register
+          </Box>
+
+        </Typography>
+
+      </Paper>
 
     </Box>
-
-
-    {/* رابط التسجيل */}
-
-    <Typography
-      sx={{
-        textAlign: "center",
-        color: "#78909C",
-        fontSize: "14px",
-        marginTop: "24px",
-      }}
-    >
-      Don't have an account?{" "}
-
-      <Box
-        component={Link}
-        to="/register"
-        sx={{
-          color: "#00897B",
-          fontWeight: "bold",
-          textDecoration: "none",
-
-          "&:hover": {
-            textDecoration: "underline",
-          },
-        }}
-      >
-        Register
-      </Box>
-
-    </Typography>
-
-  </Paper>
-
-</Box>
-
-
-);
+  );
 }
 
 export default Login;

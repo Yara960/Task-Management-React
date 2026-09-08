@@ -1,592 +1,1155 @@
-import { useState, useEffect } from "react";
-
-// استيراد Supabase
+import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 
-// استيراد Material UI
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import Avatar from "@mui/material/Avatar";
+import Divider from "@mui/material/Divider";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemAvatar from "@mui/material/ListItemAvatar";
+import ListItemText from "@mui/material/ListItemText";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
 
-// استيراد الأيقونات
 import SendIcon from "@mui/icons-material/Send";
-import ChatIcon from "@mui/icons-material/Chat";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import CheckIcon from "@mui/icons-material/Check";
+import ChatIcon from "@mui/icons-material/Chat";
+import PersonIcon from "@mui/icons-material/Person";
+import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
 
-function Chat() {
-  // النص الذي يكتبه المستخدم
-  const [message, setMessage] = useState("");
+export default function Chat() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
 
-  // قائمة الرسائل
+  const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
 
-  // المستخدم الحالي
-  const [currentUser, setCurrentUser] = useState(null);
+  const [search, setSearch] = useState("");
 
-  // رقم الرسالة التي يتم تعديلها
-  const [editingId, setEditingId] = useState(null);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
-  // النص أثناء التعديل
+  // حالات التعديل
+  const [editOpen, setEditOpen] = useState(false);
+  const [editId, setEditId] = useState(null);
   const [editMessage, setEditMessage] = useState("");
 
-  // ==========================================
+  // حالات الحذف
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+
+  // الألوان المستخدمة في جميع الصفحات
+  const colors = {
+    background: "#0F172A",
+    card: "#1E293B",
+    field: "#273449",
+    border: "#334155",
+    primary: "#80CBC4",
+    secondary: "#F48FB1",
+    text: "#FFFFFF",
+    muted: "#94A3B8",
+    delete: "#EF5350",
+  };
+
   // جلب المستخدم الحالي
-  // ==========================================
+  useEffect(() => {
+    getCurrentUser();
+  }, []);
 
+  // جلب المستخدمين
+  useEffect(() => {
+    if (currentUser) {
+      getUsers();
+    }
+  }, [currentUser]);
+
+  // جلب الرسائل عند اختيار مستخدم
+  useEffect(() => {
+    if (currentUser && selectedUser) {
+      getMessages(selectedUser);
+    }
+  }, [currentUser, selectedUser]);
+
+  // Realtime للمحادثة
+  useEffect(() => {
+    if (!currentUser || !selectedUser) return;
+
+    const channel = supabase
+      .channel(
+        "chat-" +
+          currentUser.id +
+          "-" +
+          selectedUser.id
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "messages",
+        },
+        (payload) => {
+          const newMessage = payload.new || {};
+          const oldMessage = payload.old || {};
+
+          const isConversationMessage =
+            (newMessage.sender_id === currentUser.id &&
+              newMessage.receiver_id === selectedUser.id) ||
+            (newMessage.sender_id === selectedUser.id &&
+              newMessage.receiver_id === currentUser.id) ||
+            (oldMessage.sender_id === currentUser.id &&
+              oldMessage.receiver_id === selectedUser.id) ||
+            (oldMessage.sender_id === selectedUser.id &&
+              oldMessage.receiver_id === currentUser.id);
+
+          if (isConversationMessage) {
+            getMessages(selectedUser);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log("Realtime status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, selectedUser]);
+
+  // معرفة المستخدم الحالي
   async function getCurrentUser() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
 
-    setCurrentUser(user);
+    if (error) {
+      console.error("Error getting user:", error);
+      return;
+    }
+
+    setCurrentUser(data.user);
   }
 
-  // ==========================================
-  // جلب الرسائل من Supabase
-  // ==========================================
+  // جلب المستخدمين
+  async function getUsers() {
+    setLoadingUsers(true);
 
-  async function getMessages() {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, display_name, email");
+
+    if (error) {
+      console.error("Error getting users:", error);
+      setLoadingUsers(false);
+      return;
+    }
+
+    // عدم إظهار المستخدم الحالي
+    const otherUsers = data.filter(
+      (user) => user.id !== currentUser.id
+    );
+
+    setUsers(otherUsers);
+    setLoadingUsers(false);
+  }
+
+  // جلب رسائل المحادثة
+  async function getMessages(userToChat) {
+    setLoadingMessages(true);
+
+    const conversationFilter =
+      "and(sender_id.eq." +
+      currentUser.id +
+      ",receiver_id.eq." +
+      userToChat.id +
+      "),and(sender_id.eq." +
+      userToChat.id +
+      ",receiver_id.eq." +
+      currentUser.id +
+      ")";
+
     const { data, error } = await supabase
       .from("messages")
       .select("*")
+      .or(conversationFilter)
       .order("created_at", {
         ascending: true,
       });
 
     if (error) {
-      console.log("Get messages error:", error);
+      console.error("Error getting messages:", error);
+      setLoadingMessages(false);
       return;
     }
 
     setMessages(data || []);
+    setLoadingMessages(false);
   }
 
-  // ==========================================
-  // تشغيل جلب البيانات عند فتح الصفحة
-  // ==========================================
-
-  useEffect(() => {
-    getCurrentUser();
-    getMessages();
-  }, []);
-
-  // ==========================================
-  // إرسال رسالة
-  // ==========================================
-
+  // إرسال الرسالة
   async function sendMessage() {
-    // التأكد أن الرسالة ليست فارغة
-    if (!message.trim()) {
+    if (!message.trim() || !selectedUser || !currentUser) {
       return;
     }
 
-    // جلب المستخدم الحالي
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    // التأكد أن المستخدم مسجل دخول
-    if (!user) {
-      return;
-    }
-
-    // إضافة الرسالة إلى Supabase
     const { error } = await supabase
       .from("messages")
       .insert([
         {
-          sender_id: user.id,
+          sender_id: currentUser.id,
+          receiver_id: selectedUser.id,
           message: message.trim(),
         },
       ]);
 
-    // التحقق من وجود خطأ
     if (error) {
-      console.log("Send message error:", error);
+      console.error("Error sending message:", error);
       return;
     }
 
-    // تنظيف خانة الكتابة
     setMessage("");
-
-    // تحديث الرسائل
-    getMessages();
   }
 
-  // ==========================================
-  // بدء تعديل الرسالة
-  // ==========================================
-
-  function startEdit(item) {
-    setEditingId(item.id);
-    setEditMessage(item.message);
+  // إرسال بالضغط على Enter
+  function handleKeyDown(event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage();
+    }
   }
 
-  // ==========================================
-  // إلغاء التعديل
-  // ==========================================
+  // فتح التعديل
+  function openEdit(messageItem) {
+    setEditId(messageItem.id);
+    setEditMessage(messageItem.message);
+    setEditOpen(true);
+  }
 
-  function cancelEdit() {
-    setEditingId(null);
+  // إغلاق التعديل
+  function closeEdit() {
+    setEditOpen(false);
+    setEditId(null);
     setEditMessage("");
   }
 
-  // ==========================================
-  // حفظ تعديل الرسالة
-  // ==========================================
-
-  async function updateMessage(id) {
-    // التأكد أن الرسالة ليست فارغة
+  // تحديث الرسالة
+  async function updateMessage() {
     if (!editMessage.trim()) {
       return;
     }
 
-    // التأكد من وجود المستخدم
-    if (!currentUser) {
-      return;
-    }
-
-    // تحديث الرسالة في Supabase
     const { error } = await supabase
       .from("messages")
       .update({
         message: editMessage.trim(),
       })
-      .eq("id", id)
+      .eq("id", editId)
       .eq("sender_id", currentUser.id);
 
-    // التحقق من وجود خطأ
     if (error) {
-      console.log("Update message error:", error);
+      console.error("Error updating message:", error);
       return;
     }
 
-    // تحديث الرسالة في الصفحة مباشرة
-    setMessages((prevMessages) =>
-      prevMessages.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              message: editMessage.trim(),
-            }
-          : item
-      )
-    );
-
-    // إغلاق وضع التعديل
-    setEditingId(null);
-    setEditMessage("");
+    closeEdit();
   }
 
-  // ==========================================
+  // فتح نافذة تأكيد الحذف
+  function openDelete(messageId) {
+    setDeleteId(messageId);
+    setDeleteOpen(true);
+  }
+
+  // إغلاق نافذة الحذف
+  function closeDelete() {
+    setDeleteOpen(false);
+    setDeleteId(null);
+  }
+
   // حذف الرسالة
-  // ==========================================
-
-  async function deleteMessage(id) {
-    // التأكد من وجود المستخدم
-    if (!currentUser) {
-      return;
-    }
-
-    // حذف الرسالة من Supabase
+  async function confirmDelete() {
     const { error } = await supabase
       .from("messages")
       .delete()
-      .eq("id", id)
+      .eq("id", deleteId)
       .eq("sender_id", currentUser.id);
 
-    // التحقق من وجود خطأ
     if (error) {
-      console.log("Delete message error:", error);
+      console.error("Error deleting message:", error);
       return;
     }
 
-    // حذف الرسالة من الشاشة
-    setMessages((prevMessages) =>
-      prevMessages.filter((item) => item.id !== id)
+    closeDelete();
+  }
+
+  // الحصول على اسم المستخدم
+  function getUserName(user) {
+    return (
+      user.display_name ||
+      user.email ||
+      "User"
     );
   }
+
+  // أول حرف من الاسم
+  function getInitial(user) {
+    return getUserName(user)
+      .charAt(0)
+      .toUpperCase();
+  }
+
+  // البحث عن المستخدمين
+  const filteredUsers = users.filter((user) => {
+    const name = user.display_name || "";
+    const email = user.email || "";
+
+    return (
+      name.toLowerCase().includes(search.toLowerCase()) ||
+      email.toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        backgroundColor: "#F5F7FA",
-        display: "flex",
-        flexDirection: "column",
+        minHeight: "calc(100vh - 64px)",
+        p: { xs: 2, md: 4 },
+        backgroundColor: colors.background,
       }}
     >
-      {/* محتوى الدردشة */}
-      <Box
+      <Paper
+        elevation={0}
         sx={{
-          width: "100%",
-          maxWidth: "900px",
-          margin: "0 auto",
-          padding: {
-            xs: "25px 16px",
-            sm: "40px 25px",
-          },
-          flex: 1,
+          maxWidth: 1200,
+          height: { xs: "auto", md: "75vh" },
+          minHeight: { xs: 650, md: 600 },
+          mx: "auto",
           display: "flex",
-          flexDirection: "column",
+          overflow: "hidden",
+          borderRadius: 3,
+          backgroundColor: colors.card,
+          border: `1px solid ${colors.border}`,
         }}
       >
-        {/* عنوان الصفحة */}
+        {/* قائمة المستخدمين */}
         <Box
           sx={{
-            marginBottom: "25px",
-          }}
-        >
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: "800",
-              color: "#263238",
-              marginBottom: "6px",
-              fontSize: {
-                xs: "28px",
-                sm: "34px",
-              },
-            }}
-          >
-            Chat
-          </Typography>
-
-          <Typography
-            sx={{
-              color: "#78909C",
-              fontSize: "15px",
-            }}
-          >
-            Send and receive messages.
-          </Typography>
-        </Box>
-
-        {/* صندوق الدردشة */}
-        <Paper
-          elevation={0}
-          sx={{
-            flex: 1,
-            minHeight: "500px",
-            borderRadius: "18px",
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #E8ECEF",
+            width: { xs: "38%", sm: 290 },
+            minWidth: { xs: 130, sm: 250 },
+            borderRight: `1px solid ${colors.border}`,
+            backgroundColor: colors.card,
             display: "flex",
             flexDirection: "column",
-            overflow: "hidden",
           }}
         >
-          {/* رأس الدردشة */}
+          {/* عنوان القائمة */}
           <Box
             sx={{
-              padding: "18px 20px",
-              borderBottom: "1px solid #E8ECEF",
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
+              p: 2,
+              backgroundColor: colors.card,
+              borderBottom: `1px solid ${colors.border}`,
             }}
           >
             <Box
               sx={{
-                width: "42px",
-                height: "42px",
-                borderRadius: "12px",
-                backgroundColor: "#E0F2F1",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
+                gap: 1,
               }}
             >
               <ChatIcon
                 sx={{
-                  color: "#00897B",
+                  color: colors.primary,
                 }}
               />
-            </Box>
 
-            <Box>
               <Typography
+                variant="h6"
                 sx={{
                   fontWeight: "bold",
-                  color: "#263238",
+                  color: colors.text,
                 }}
               >
-                Messages
-              </Typography>
-
-              <Typography
-                sx={{
-                  color: "#90A4AE",
-                  fontSize: "12px",
-                }}
-              >
-                Start a conversation
+                Chats
               </Typography>
             </Box>
+
+            <Typography
+              variant="body2"
+              sx={{
+                mt: 0.5,
+                color: colors.muted,
+              }}
+            >
+              Choose a user to chat
+            </Typography>
           </Box>
 
-          {/* الرسائل */}
+          {/* مربع البحث */}
           <Box
             sx={{
-              flex: 1,
-              padding: "20px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-              overflowY: "auto",
+              p: 1.5,
+              backgroundColor: colors.card,
             }}
           >
-            {messages.length === 0 ? (
+            <TextField
+              fullWidth
+              size="small"
+              value={search}
+              onChange={(event) =>
+                setSearch(event.target.value)
+              }
+              placeholder="Search users..."
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon
+                      sx={{
+                        color: colors.muted,
+                      }}
+                    />
+                  </InputAdornment>
+                ),
+
+                endAdornment: search && (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={() => setSearch("")}
+                      sx={{
+                        color: colors.muted,
+                      }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  backgroundColor: colors.field,
+
+                  "& fieldset": {
+                    borderColor: colors.border,
+                  },
+
+                  "&:hover fieldset": {
+                    borderColor: colors.primary,
+                  },
+
+                  "&.Mui-focused fieldset": {
+                    borderColor: colors.primary,
+                  },
+                },
+
+                "& .MuiInputBase-input": {
+                  color: colors.text,
+                },
+
+                "& .MuiInputBase-input::placeholder": {
+                  color: colors.muted,
+                  opacity: 1,
+                },
+              }}
+            />
+          </Box>
+
+          <Divider
+            sx={{
+              borderColor: colors.border,
+            }}
+          />
+
+          {/* قائمة المستخدمين */}
+          <List
+            sx={{
+              p: 0,
+              overflowY: "auto",
+              flex: 1,
+            }}
+          >
+            {loadingUsers ? (
               <Box
                 sx={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  p: 3,
+                  textAlign: "center",
                 }}
               >
-                <ChatIcon
+                <Typography
                   sx={{
-                    fontSize: "55px",
-                    color: "#B0BEC5",
-                    marginBottom: "10px",
+                    color: colors.muted,
+                  }}
+                >
+                  Loading users...
+                </Typography>
+              </Box>
+            ) : filteredUsers.length === 0 ? (
+              <Box
+                sx={{
+                  p: 3,
+                  textAlign: "center",
+                }}
+              >
+                <PersonIcon
+                  sx={{
+                    fontSize: 45,
+                    color: colors.muted,
                   }}
                 />
 
                 <Typography
                   sx={{
-                    fontWeight: "bold",
-                    color: "#607D8B",
-                    fontSize: "18px",
+                    mt: 1,
+                    color: colors.muted,
                   }}
                 >
-                  No messages yet
-                </Typography>
-
-                <Typography
-                  sx={{
-                    color: "#90A4AE",
-                    fontSize: "14px",
-                    marginTop: "5px",
-                  }}
-                >
-                  Send your first message.
+                  {search
+                    ? "No users found"
+                    : "No users available"}
                 </Typography>
               </Box>
             ) : (
-              messages.map((item) => {
-                // التحقق أن الرسالة تخص المستخدم الحالي
-                const isMyMessage =
-                  currentUser &&
-                  item.sender_id === currentUser.id;
+              filteredUsers.map((user) => (
+                <ListItemButton
+                  key={user.id}
+                  selected={
+                    selectedUser?.id === user.id
+                  }
+                  onClick={() => setSelectedUser(user)}
+                  sx={{
+                    py: 1.5,
+                    px: 1.5,
+                    borderLeft: "3px solid transparent",
 
-                return (
-                  <Box
-                    key={item.id}
-                    sx={{
-                      display: "flex",
-                      justifyContent: isMyMessage
-                        ? "flex-end"
-                        : "flex-start",
-                    }}
-                  >
-                    <Box
+                    "&.Mui-selected": {
+                      backgroundColor: "#273B46",
+                      borderLeft: `3px solid ${colors.primary}`,
+                    },
+
+                    "&.Mui-selected:hover": {
+                      backgroundColor: "#2B414C",
+                    },
+
+                    "&:hover": {
+                      backgroundColor: "#243344",
+                    },
+                  }}
+                >
+                  <ListItemAvatar>
+                    <Avatar
                       sx={{
-                        maxWidth: "70%",
+                        backgroundColor: colors.primary,
+                        color: "#0F172A",
+                        fontWeight: "bold",
                       }}
                     >
-                      {editingId === item.id ? (
-                        /* خانة تعديل الرسالة */
+                      {getInitial(user)}
+                    </Avatar>
+                  </ListItemAvatar>
+
+                  <ListItemText
+                    primary={
+                      <Typography
+                        sx={{
+                          fontWeight:
+                            selectedUser?.id === user.id
+                              ? "bold"
+                              : "normal",
+
+                          color: colors.text,
+
+                          fontSize: {
+                            xs: 13,
+                            sm: 15,
+                          },
+
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {getUserName(user)}
+                      </Typography>
+                    }
+                  />
+                </ListItemButton>
+              ))
+            )}
+          </List>
+        </Box>
+
+        {/* منطقة المحادثة */}
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            minWidth: 0,
+            backgroundColor: colors.background,
+          }}
+        >
+          {!selectedUser ? (
+            // لم يتم اختيار مستخدم
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                p: 3,
+                textAlign: "center",
+              }}
+            >
+              <Avatar
+                sx={{
+                  width: 85,
+                  height: 85,
+                  mb: 2,
+                  backgroundColor: colors.primary,
+                  color: colors.background,
+                }}
+              >
+                <ChatIcon sx={{ fontSize: 45 }} />
+              </Avatar>
+
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: "bold",
+                  color: colors.text,
+                }}
+              >
+                Welcome to Chat
+              </Typography>
+
+              <Typography
+                sx={{
+                  mt: 1,
+                  maxWidth: 400,
+                  color: colors.muted,
+                }}
+              >
+                Search for a user and select them
+                to start a conversation.
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              {/* Header المحادثة */}
+              <Box
+                sx={{
+                  p: 1.5,
+                  px: { xs: 1.5, md: 2.5 },
+                  backgroundColor: colors.card,
+                  borderBottom:
+                    `1px solid ${colors.border}`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                }}
+              >
+                <Avatar
+                  sx={{
+                    backgroundColor: colors.primary,
+                    color: colors.background,
+                    fontWeight: "bold",
+                  }}
+                >
+                  {getInitial(selectedUser)}
+                </Avatar>
+
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    sx={{
+                      fontWeight: "bold",
+                      color: colors.text,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {getUserName(selectedUser)}
+                  </Typography>
+
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: colors.muted,
+                    }}
+                  >
+                    Start chatting
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* الرسائل */}
+              <Box
+                sx={{
+                  flex: 1,
+                  overflowY: "auto",
+                  p: { xs: 1.5, md: 3 },
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1.5,
+                }}
+              >
+                {loadingMessages ? (
+                  <Box
+                    sx={{
+                      flex: 1,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: colors.muted,
+                      }}
+                    >
+                      Loading messages...
+                    </Typography>
+                  </Box>
+                ) : messages.length === 0 ? (
+                  <Box
+                    sx={{
+                      flex: 1,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      textAlign: "center",
+                    }}
+                  >
+                    <Box>
+                      <ChatIcon
+                        sx={{
+                          fontSize: 50,
+                          color: colors.muted,
+                        }}
+                      />
+
+                      <Typography
+                        sx={{
+                          mt: 1,
+                          color: colors.muted,
+                        }}
+                      >
+                        No messages yet
+                      </Typography>
+
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: colors.muted,
+                        }}
+                      >
+                        Send the first message!
+                      </Typography>
+                    </Box>
+                  </Box>
+                ) : (
+                  messages.map((item) => {
+                    const isMine =
+                      item.sender_id ===
+                      currentUser.id;
+
+                    return (
+                      <Box
+                        key={item.id}
+                        sx={{
+                          display: "flex",
+                          justifyContent: isMine
+                            ? "flex-end"
+                            : "flex-start",
+                        }}
+                      >
                         <Box
                           sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "5px",
+                            maxWidth: {
+                              xs: "85%",
+                              sm: "70%",
+                            },
                           }}
                         >
-                          <TextField
-                            size="small"
-                            value={editMessage}
-                            onChange={(e) =>
-                              setEditMessage(e.target.value)
-                            }
-                            autoFocus
+                          <Paper
+                            elevation={0}
                             sx={{
-                              backgroundColor: "#FFFFFF",
-                              "& .MuiOutlinedInput-root": {
-                                borderRadius: "10px",
-                                "&.Mui-focused fieldset": {
-                                  borderColor: "#00897B",
-                                },
-                              },
-                            }}
-                          />
+                              p: 1.3,
+                              px: 1.7,
+                              borderRadius: isMine
+                                ? "18px 18px 4px 18px"
+                                : "18px 18px 18px 4px",
 
-                          {/* زر حفظ التعديل */}
-                          <IconButton
-                            onClick={() =>
-                              updateMessage(item.id)
-                            }
-                            sx={{
-                              color: "#00897B",
-                            }}
-                          >
-                            <CheckIcon />
-                          </IconButton>
+                              backgroundColor:
+                                isMine
+                                  ? colors.primary
+                                  : colors.card,
 
-                          {/* زر إلغاء التعديل */}
-                          <IconButton
-                            onClick={cancelEdit}
-                            sx={{
-                              color: "#78909C",
-                            }}
-                          >
-                            <CloseIcon />
-                          </IconButton>
-                        </Box>
-                      ) : (
-                        <>
-                          {/* الرسالة */}
-                          <Box
-                            sx={{
-                              backgroundColor: isMyMessage
-                                ? "#00897B"
-                                : "#ECEFF1",
-                              color: isMyMessage
-                                ? "#FFFFFF"
-                                : "#263238",
-                              padding: "10px 15px",
-                              borderRadius: isMyMessage
-                                ? "15px 15px 4px 15px"
-                                : "15px 15px 15px 4px",
+                              color: isMine
+                                ? colors.background
+                                : colors.text,
+
+                              border: isMine
+                                ? "none"
+                                : `1px solid ${colors.border}`,
                             }}
                           >
                             <Typography
                               sx={{
-                                fontSize: "15px",
+                                whiteSpace: "pre-wrap",
                                 wordBreak: "break-word",
+                                lineHeight: 1.5,
                               }}
                             >
                               {item.message}
                             </Typography>
-                          </Box>
+                          </Paper>
 
-                          {/* أزرار التعديل والحذف لرسائلي فقط */}
-                          {isMyMessage && (
+                          {/* التعديل والحذف لرسائل المستخدم */}
+                          {isMine && (
                             <Box
                               sx={{
                                 display: "flex",
-                                justifyContent: "flex-end",
-                                gap: "2px",
-                                marginTop: "2px",
+                                justifyContent:
+                                  "flex-end",
+                                gap: 0.3,
+                                mt: 0.3,
                               }}
                             >
                               {/* زر التعديل */}
                               <IconButton
                                 size="small"
                                 onClick={() =>
-                                  startEdit(item)
+                                  openEdit(item)
                                 }
                                 sx={{
-                                  color: "#78909C",
+                                  color: colors.primary,
+
+                                  "&:hover": {
+                                    backgroundColor:
+                                      "rgba(128,203,196,0.1)",
+                                  },
                                 }}
                               >
-                                <EditIcon
-                                  sx={{
-                                    fontSize: "17px",
-                                  }}
-                                />
+                                <EditIcon fontSize="small" />
                               </IconButton>
 
                               {/* زر الحذف */}
                               <IconButton
                                 size="small"
                                 onClick={() =>
-                                  deleteMessage(item.id)
+                                  openDelete(item.id)
                                 }
                                 sx={{
-                                  color: "#78909C",
+                                  color: colors.delete,
+
+                                  "&:hover": {
+                                    backgroundColor:
+                                      "rgba(239,83,80,0.1)",
+                                  },
                                 }}
                               >
-                                <DeleteIcon
-                                  sx={{
-                                    fontSize: "17px",
-                                  }}
-                                />
+                                <DeleteIcon fontSize="small" />
                               </IconButton>
                             </Box>
                           )}
-                        </>
-                      )}
-                    </Box>
-                  </Box>
-                );
-              })
-            )}
-          </Box>
+                        </Box>
+                      </Box>
+                    );
+                  })
+                )}
+              </Box>
 
-          {/* كتابة الرسالة */}
-          <Box
+              {/* كتابة وإرسال الرسالة */}
+              <Box
+                sx={{
+                  p: { xs: 1, md: 1.5 },
+                  backgroundColor: colors.card,
+                  borderTop:
+                    `1px solid ${colors.border}`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <TextField
+                  fullWidth
+                  multiline
+                  maxRows={4}
+                  value={message}
+                  onChange={(event) =>
+                    setMessage(event.target.value)
+                  }
+                  onKeyDown={handleKeyDown}
+                  placeholder="Write a message..."
+                  size="small"
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                      backgroundColor: colors.field,
+
+                      "& fieldset": {
+                        borderColor: colors.border,
+                      },
+
+                      "&:hover fieldset": {
+                        borderColor: colors.primary,
+                      },
+
+                      "&.Mui-focused fieldset": {
+                        borderColor: colors.primary,
+                      },
+                    },
+
+                    "& .MuiInputBase-input": {
+                      color: colors.text,
+                    },
+
+                    "& .MuiInputBase-input::placeholder": {
+                      color: colors.muted,
+                      opacity: 1,
+                    },
+                  }}
+                />
+
+                <Button
+                  variant="contained"
+                  onClick={sendMessage}
+                  disabled={!message.trim()}
+                  sx={{
+                    minWidth: {
+                      xs: 45,
+                      sm: 90,
+                    },
+
+                    height: 42,
+                    borderRadius: 2,
+                    textTransform: "none",
+                    fontWeight: "bold",
+
+                    backgroundColor: colors.primary,
+                    color: colors.background,
+
+                    "&:hover": {
+                      backgroundColor: "#6DB8B1",
+                    },
+
+                    "&.Mui-disabled": {
+                      backgroundColor: "#334155",
+                      color: "#64748B",
+                    },
+                  }}
+                >
+                  <SendIcon
+                    sx={{
+                      display: {
+                        xs: "block",
+                        sm: "none",
+                      },
+                    }}
+                  />
+
+                  <Box
+                    component="span"
+                    sx={{
+                      display: {
+                        xs: "none",
+                        sm: "block",
+                      },
+                    }}
+                  >
+                    Send
+                  </Box>
+                </Button>
+              </Box>
+            </>
+          )}
+        </Box>
+      </Paper>
+
+      {/* نافذة تعديل الرسالة */}
+      <Dialog
+        open={editOpen}
+        onClose={closeEdit}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            backgroundColor: colors.card,
+            color: colors.text,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 3,
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            color: colors.text,
+            fontWeight: "bold",
+          }}
+        >
+          Edit Message
+        </DialogTitle>
+
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            multiline
+            minRows={3}
+            value={editMessage}
+            onChange={(event) =>
+              setEditMessage(event.target.value)
+            }
             sx={{
-              padding: "15px",
-              borderTop: "1px solid #E8ECEF",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
+              mt: 1,
+
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                backgroundColor: colors.field,
+
+                "& fieldset": {
+                  borderColor: colors.border,
+                },
+
+                "&:hover fieldset": {
+                  borderColor: colors.primary,
+                },
+
+                "&.Mui-focused fieldset": {
+                  borderColor: colors.primary,
+                },
+              },
+
+              "& .MuiInputBase-input": {
+                color: colors.text,
+              },
+            }}
+          />
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 2,
+          }}
+        >
+          <Button
+            onClick={closeEdit}
+            sx={{
+              textTransform: "none",
+              color: colors.muted,
+
+              "&:hover": {
+                backgroundColor: "#273449",
+              },
             }}
           >
-            <TextField
-              fullWidth
-              placeholder="Write a message..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  sendMessage();
-                }
-              }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
+            Cancel
+          </Button>
 
-                  "&:hover fieldset": {
-                    borderColor: "#00897B",
-                  },
+          <Button
+            variant="contained"
+            onClick={updateMessage}
+            disabled={!editMessage.trim()}
+            sx={{
+              textTransform: "none",
+              borderRadius: 2,
+              backgroundColor: colors.primary,
+              color: colors.background,
 
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#00897B",
-                  },
-                },
-              }}
-            />
+              "&:hover": {
+                backgroundColor: "#6DB8B1",
+              },
+            }}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-            {/* زر الإرسال */}
-            <IconButton
-              onClick={sendMessage}
-              sx={{
-                width: "50px",
-                height: "50px",
-                backgroundColor: "#00897B",
-                color: "#FFFFFF",
+      {/* نافذة تأكيد حذف الرسالة */}
+      <Dialog
+        open={deleteOpen}
+        onClose={closeDelete}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            backgroundColor: colors.card,
+            color: colors.text,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 3,
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            color: colors.text,
+            fontWeight: "bold",
+          }}
+        >
+          Delete Message
+        </DialogTitle>
 
-                "&:hover": {
-                  backgroundColor: "#00695C",
-                },
-              }}
-            >
-              <SendIcon />
-            </IconButton>
-          </Box>
-        </Paper>
-      </Box>
+        <DialogContent>
+          <Typography
+            sx={{
+              color: colors.muted,
+            }}
+          >
+            Are you sure you want to delete this message?
+          </Typography>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 2,
+          }}
+        >
+          <Button
+            onClick={closeDelete}
+            sx={{
+              textTransform: "none",
+              color: colors.muted,
+
+              "&:hover": {
+                backgroundColor: "#273449",
+              },
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={confirmDelete}
+            sx={{
+              textTransform: "none",
+              borderRadius: 2,
+              backgroundColor: colors.delete,
+
+              "&:hover": {
+                backgroundColor: "#D32F2F",
+              },
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
-
-export default Chat;

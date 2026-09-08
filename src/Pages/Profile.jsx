@@ -1,4 +1,3 @@
-
 // استيراد useState و useEffect من React
 import { useState, useEffect } from "react";
 
@@ -21,21 +20,30 @@ import { supabase } from "../supabaseClient";
 // ==========================================
 
 function Profile() {
-
   // تخزين بيانات المستخدم
   const [user, setUser] = useState(null);
 
   // تخزين عدد المهام
   const [taskCount, setTaskCount] = useState(0);
 
+  // الألوان المستخدمة في جميع الصفحات
+  const colors = {
+    background: "#0F172A",
+    card: "#1E293B",
+    field: "#273449",
+    border: "#334155",
+    primary: "#80CBC4",
+    secondary: "#F48FB1",
+    text: "#FFFFFF",
+    muted: "#94A3B8",
+  };
+
   // ==========================================
   // جلب بيانات المستخدم وعدد المهام
   // ==========================================
 
   useEffect(() => {
-
     async function getProfileData() {
-
       // جلب المستخدم الحالي
       const {
         data: { user },
@@ -61,53 +69,45 @@ function Profile() {
 
       // التحقق من وجود خطأ
       if (error) {
-
         console.log("Get task count error:", error);
-
       } else {
-
         // حفظ عدد المهام
         setTaskCount(count || 0);
-
       }
     }
 
     // تشغيل جلب البيانات
     getProfileData();
-
   }, []);
-
 
   // ==========================================
   // واجهة صفحة Profile
   // ==========================================
 
   return (
-
     <Box
       sx={{
-        minHeight: "100vh",
-        backgroundColor: "#F5F7FA",
+        minHeight: "calc(100vh - 64px)",
+        backgroundColor: colors.background,
         display: "flex",
         flexDirection: "column",
       }}
     >
-
       {/* المحتوى الرئيسي */}
 
       <Box
         sx={{
           width: "100%",
-          maxWidth: "900px",
+          maxWidth: "1200px",
           margin: "0 auto",
           padding: {
             xs: "30px 16px",
-            sm: "50px 25px",
+            sm: "40px 25px",
+            md: "40px",
           },
           flex: 1,
         }}
       >
-
         {/* ==========================================
             عنوان الصفحة
         ========================================== */}
@@ -117,12 +117,11 @@ function Profile() {
             marginBottom: "30px",
           }}
         >
-
           <Typography
             variant="h4"
             sx={{
               fontWeight: "800",
-              color: "#263238",
+              color: colors.text,
               marginBottom: "6px",
               fontSize: {
                 xs: "28px",
@@ -135,15 +134,13 @@ function Profile() {
 
           <Typography
             sx={{
-              color: "#78909C",
+              color: colors.muted,
               fontSize: "15px",
             }}
           >
             View your account information and task statistics.
           </Typography>
-
         </Box>
-
 
         {/* ==========================================
             بطاقة الملف الشخصي
@@ -152,9 +149,9 @@ function Profile() {
         <Paper
           elevation={0}
           sx={{
-            borderRadius: "20px",
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #E8ECEF",
+            borderRadius: 3,
+            backgroundColor: colors.card,
+            border: `1px solid ${colors.border}`,
             padding: {
               xs: "25px 20px",
               sm: "35px",
@@ -162,7 +159,6 @@ function Profile() {
             marginBottom: "20px",
           }}
         >
-
           <Box
             sx={{
               display: "flex",
@@ -170,7 +166,6 @@ function Profile() {
               gap: "20px",
             }}
           >
-
             {/* صورة المستخدم */}
 
             <Avatar
@@ -183,11 +178,10 @@ function Profile() {
                   xs: 65,
                   sm: 75,
                 },
-                backgroundColor: "#E0F2F1",
-                color: "#00897B",
+                backgroundColor: colors.primary,
+                color: colors.background,
               }}
             >
-
               <PersonIcon
                 sx={{
                   fontSize: {
@@ -196,14 +190,11 @@ function Profile() {
                   },
                 }}
               />
-
             </Avatar>
-
 
             {/* معلومات المستخدم */}
 
-            <Box>
-
+            <Box sx={{ minWidth: 0 }}>
               <Typography
                 sx={{
                   fontSize: {
@@ -211,8 +202,11 @@ function Profile() {
                     sm: "24px",
                   },
                   fontWeight: "800",
-                  color: "#263238",
+                  color: colors.text,
                   marginBottom: "5px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {user?.user_metadata?.name ||
@@ -222,19 +216,18 @@ function Profile() {
 
               <Typography
                 sx={{
-                  color: "#78909C",
+                  color: colors.muted,
                   fontSize: "14px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {user?.email}
               </Typography>
-
             </Box>
-
           </Box>
-
         </Paper>
-
 
         {/* ==========================================
             بطاقة عدد المهام
@@ -243,16 +236,15 @@ function Profile() {
         <Paper
           elevation={0}
           sx={{
-            borderRadius: "20px",
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #E8ECEF",
+            borderRadius: 3,
+            backgroundColor: colors.card,
+            border: `1px solid ${colors.border}`,
             padding: {
               xs: "25px 20px",
               sm: "30px",
             },
           }}
         >
-
           <Box
             sx={{
               display: "flex",
@@ -262,7 +254,6 @@ function Profile() {
               flexWrap: "wrap",
             }}
           >
-
             {/* عنوان الإحصائية */}
 
             <Box
@@ -272,36 +263,32 @@ function Profile() {
                 gap: "15px",
               }}
             >
-
               <Box
                 sx={{
                   width: "55px",
                   height: "55px",
-                  borderRadius: "15px",
-                  backgroundColor: "#E0F2F1",
+                  borderRadius: "14px",
+                  backgroundColor: colors.field,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  border: `1px solid ${colors.border}`,
                 }}
               >
-
                 <TaskAltIcon
                   sx={{
-                    color: "#00897B",
+                    color: colors.primary,
                     fontSize: "30px",
                   }}
                 />
-
               </Box>
 
-
               <Box>
-
                 <Typography
                   sx={{
                     fontSize: "17px",
                     fontWeight: "700",
-                    color: "#37474F",
+                    color: colors.text,
                   }}
                 >
                   Total Tasks
@@ -309,18 +296,15 @@ function Profile() {
 
                 <Typography
                   sx={{
-                    color: "#90A4AE",
+                    color: colors.muted,
                     fontSize: "13px",
                     marginTop: "3px",
                   }}
                 >
                   Your total number of tasks
                 </Typography>
-
               </Box>
-
             </Box>
-
 
             {/* عدد المهام */}
 
@@ -331,29 +315,24 @@ function Profile() {
               sx={{
                 height: "48px",
                 padding: "0 12px",
-                borderRadius: "14px",
-                backgroundColor: "#E0F2F1",
-                color: "#00695C",
+                borderRadius: "12px",
+                backgroundColor: colors.field,
+                color: colors.primary,
                 fontSize: "18px",
                 fontWeight: "800",
+                border: `1px solid ${colors.border}`,
 
                 "& .MuiChip-label": {
                   padding: "0 8px",
                 },
               }}
             />
-
           </Box>
-
         </Paper>
-
       </Box>
-
     </Box>
   );
 }
 
-
 // تصدير صفحة Profile
 export default Profile;
-

@@ -1,4 +1,3 @@
-
 // استيراد useState من React
 import { useState } from "react";
 
@@ -12,7 +11,6 @@ import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
 
 // استيراد الأيقونات
-import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -63,31 +61,66 @@ function Register() {
 
     // التأكد من إدخال الاسم
     if (!name.trim()) {
-
       setError("Please enter your name.");
-
       return;
     }
 
 
-    // إنشاء الحساب عن طريق Supabase
-    const { error } = await supabase.auth.signUp({
+    // ==========================================
+    // إنشاء الحساب في Supabase Authentication
+    // ==========================================
+
+    const {
+      data,
+      error: signUpError,
+    } = await supabase.auth.signUp({
       email: email,
       password: password,
 
       // تخزين الاسم مع بيانات المستخدم
       options: {
         data: {
-          name: name,
+          name: name.trim(),
         },
       },
     });
 
 
-    // إذا حدث خطأ
-    if (error) {
+    // إذا حدث خطأ أثناء إنشاء الحساب
+    if (signUpError) {
+      setError(signUpError.message);
+      return;
+    }
 
-      setError(error.message);
+
+    // التأكد من وجود المستخدم
+    if (!data.user) {
+      setError("Unable to create account.");
+      return;
+    }
+
+
+    // ==========================================
+    // إضافة المستخدم إلى جدول profiles
+    // ==========================================
+
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .insert([
+        {
+          id: data.user.id,
+          display_name: name.trim(),
+          email: email,
+        },
+      ]);
+
+
+    // إذا حدث خطأ في profiles
+    if (profileError) {
+
+      console.log("Profile error:", profileError);
+
+      setError(profileError.message);
 
       return;
     }
@@ -107,87 +140,84 @@ function Register() {
     <Box
       sx={{
         minHeight: "70vh",
+
+        // خلفية الصفحة
         backgroundColor: "#F5F7FA",
+
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+
         padding: {
           xs: "30px 16px",
-          sm: "45px 20px",
+          sm: "50px 20px",
         },
       }}
     >
+
+      {/* ==========================================
+          المربع الرئيسي
+          ========================================== */}
 
       <Paper
         elevation={0}
         sx={{
           width: "100%",
           maxWidth: "430px",
+
           padding: {
-            xs: "28px 22px",
-            sm: "38px",
+            xs: "30px 24px",
+            sm: "40px",
           },
+
           borderRadius: "20px",
-          backgroundColor: "#FFFFFF",
-          border: "1px solid #E8ECEF",
+
+          // لون المربع المميز
+          backgroundColor: "#E0F2F1",
+
+          // حدود المربع
+          border: "2px solid #80CBC4",
+
+          // ظل المربع
           boxShadow:
-            "0 8px 30px rgba(38, 50, 56, 0.08)",
+            "0 12px 35px rgba(0, 137, 123, 0.20)",
         }}
       >
 
-        {/* أيقونة التسجيل */}
-
-        <Box
-          sx={{
-            width: "65px",
-            height: "65px",
-            borderRadius: "18px",
-            backgroundColor: "#E0F2F1",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            margin: "0 auto 18px",
-          }}
-        >
-
-          <TaskAltIcon
-            sx={{
-              color: "#00897B",
-              fontSize: "34px",
-            }}
-          />
-
-        </Box>
-
-
-        {/* العنوان */}
+        {/* ==========================================
+            العنوان
+            ========================================== */}
 
         <Typography
           sx={{
             textAlign: "center",
-            fontSize: "27px",
-            fontWeight: "800",
+            fontSize: "28px",
+            fontWeight: "700",
             color: "#263238",
+            marginBottom: "8px",
           }}
         >
           Create Account
         </Typography>
 
 
+        {/* الوصف */}
+
         <Typography
           sx={{
             textAlign: "center",
-            color: "#78909C",
+            color: "#546E7A",
             fontSize: "14px",
-            marginTop: "6px",
-            marginBottom: "28px",
+            marginBottom: "30px",
           }}
         >
           Create your account to start managing tasks
         </Typography>
 
 
-        {/* رسالة الخطأ */}
+        {/* ==========================================
+            رسالة الخطأ
+            ========================================== */}
 
         {error && (
 
@@ -208,89 +238,47 @@ function Register() {
         )}
 
 
-        {/* Form */}
+        {/* ==========================================
+            Form
+            ========================================== */}
 
         <Box
           component="form"
           onSubmit={handleRegister}
         >
 
-          {/* الاسم */}
+          {/* ==========================================
+              الاسم
+              ========================================== */}
+
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: "600",
+              color: "#37474F",
+              marginBottom: "8px",
+            }}
+          >
+            Name
+          </Typography>
+
 
           <TextField
             fullWidth
-            label="Name"
             type="text"
+            placeholder="Enter your name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            sx={{
-              marginBottom: "18px",
 
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
-
-                "&:hover fieldset": {
-                  borderColor: "#00897B",
-                },
-
-                "&.Mui-focused fieldset": {
-                  borderColor: "#00897B",
-                },
-              },
-
-              "& label.Mui-focused": {
-                color: "#00897B",
-              },
-            }}
-          />
-
-
-          {/* البريد الإلكتروني */}
-
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            sx={{
-              marginBottom: "18px",
-
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
-
-                "&:hover fieldset": {
-                  borderColor: "#00897B",
-                },
-
-                "&.Mui-focused fieldset": {
-                  borderColor: "#00897B",
-                },
-              },
-
-              "& label.Mui-focused": {
-                color: "#00897B",
-              },
-            }}
-          />
-
-
-          {/* كلمة المرور */}
-
-          <TextField
-            fullWidth
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
             sx={{
               marginBottom: "22px",
 
               "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
+
+                backgroundColor: "#FFFFFF",
+
+                borderRadius: "10px",
 
                 "&:hover fieldset": {
                   borderColor: "#00897B",
@@ -300,14 +288,101 @@ function Register() {
                   borderColor: "#00897B",
                 },
               },
+            }}
+          />
 
-              "& label.Mui-focused": {
-                color: "#00897B",
+
+          {/* ==========================================
+              البريد الإلكتروني
+              ========================================== */}
+
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: "600",
+              color: "#37474F",
+              marginBottom: "8px",
+            }}
+          >
+            Email
+          </Typography>
+
+
+          <TextField
+            fullWidth
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+
+            sx={{
+              marginBottom: "22px",
+
+              "& .MuiOutlinedInput-root": {
+
+                backgroundColor: "#FFFFFF",
+
+                borderRadius: "10px",
+
+                "&:hover fieldset": {
+                  borderColor: "#00897B",
+                },
+
+                "&.Mui-focused fieldset": {
+                  borderColor: "#00897B",
+                },
+              },
+            }}
+          />
+
+
+          {/* ==========================================
+              كلمة المرور
+              ========================================== */}
+
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: "600",
+              color: "#37474F",
+              marginBottom: "8px",
+            }}
+          >
+            Password
+          </Typography>
+
+
+          <TextField
+            fullWidth
+            type={showPassword ? "text" : "password"}
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+
+            sx={{
+              marginBottom: "22px",
+
+              "& .MuiOutlinedInput-root": {
+
+                backgroundColor: "#FFFFFF",
+
+                borderRadius: "10px",
+
+                "&:hover fieldset": {
+                  borderColor: "#00897B",
+                },
+
+                "&.Mui-focused fieldset": {
+                  borderColor: "#00897B",
+                },
               },
             }}
 
             slotProps={{
               input: {
+
                 endAdornment: (
 
                   <InputAdornment position="end">
@@ -333,20 +408,28 @@ function Register() {
           />
 
 
-          {/* زر إنشاء الحساب */}
+          {/* ==========================================
+              زر إنشاء الحساب
+              ========================================== */}
 
           <Button
             type="submit"
             fullWidth
             variant="contained"
-            startIcon={<PersonAddIcon />}
+
             sx={{
-              height: "52px",
-              borderRadius: "12px",
+              height: "50px",
+
+              borderRadius: "10px",
+
               backgroundColor: "#00897B",
+
               textTransform: "none",
+
               fontSize: "15px",
+
               fontWeight: "bold",
+
               boxShadow: "none",
 
               "&:hover": {
@@ -361,12 +444,14 @@ function Register() {
         </Box>
 
 
-        {/* رابط Login */}
+        {/* ==========================================
+            رابط Login
+            ========================================== */}
 
         <Typography
           sx={{
             textAlign: "center",
-            color: "#78909C",
+            color: "#546E7A",
             fontSize: "14px",
             marginTop: "24px",
           }}
@@ -377,7 +462,7 @@ function Register() {
             component={Link}
             to="/login"
             sx={{
-              color: "#00897B",
+              color: "#00796B",
               fontWeight: "bold",
               textDecoration: "none",
 
@@ -398,4 +483,3 @@ function Register() {
 }
 
 export default Register;
-

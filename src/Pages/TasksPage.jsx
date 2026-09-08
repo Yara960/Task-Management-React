@@ -1,11 +1,9 @@
+
 // استيراد useState و useEffect من React
 import { useState, useEffect } from "react";
 
 // استيراد Supabase
 import { supabase } from "../supabaseClient";
-
-// استيراد تنسيق الصفحة
-import "../App.css";
 
 // استيراد Material UI
 import Box from "@mui/material/Box";
@@ -17,6 +15,10 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import Checkbox from "@mui/material/Checkbox";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
 
 // استيراد Dialog
 import Dialog from "@mui/material/Dialog";
@@ -33,32 +35,30 @@ import TaskAltIcon from "@mui/icons-material/TaskAlt";
 // استيراد Navbar
 import Navbar from "../Components/Navbar";
 
-// ==========================================
-// صفحة المهام
-// ==========================================
-
 function TasksPage() {
 
-  // المهمة الجديدة
-  const [task, setTask] = useState("");
+  // ==========================================
+  // الحالات
+  // ==========================================
 
-  // قائمة المهام
+  const [task, setTask] = useState("");
+  const [priority, setPriority] = useState("NORMAL");
+  const [taskError, setTaskError] = useState("");
+
   const [tasks, setTasks] = useState([]);
 
-  // ID المهمة التي نعدلها
+  // التعديل
   const [editingId, setEditingId] = useState(null);
+  const [editTask, setEditTask] = useState("");
+  const [editPriority, setEditPriority] = useState("NORMAL");
+  const [editTaskError, setEditTaskError] = useState("");
 
-  // ID المهمة التي نريد حذفها
+  // الحذف
   const [deleteId, setDeleteId] = useState(null);
-
-  // التحكم في نافذة تأكيد الحذف
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
-  // التحكم في نافذة التعديل
+  // Dialog التعديل
   const [openEditDialog, setOpenEditDialog] = useState(false);
-
-  // النص الجديد للمهمة
-  const [editTask, setEditTask] = useState("");
 
 
   // ==========================================
@@ -79,28 +79,23 @@ function TasksPage() {
       .from("tasks")
       .select("*")
       .eq("user_id", user.id)
-      .is("deleted_at", null);
+      .is("deleted_at", null)
+      .order("id", { ascending: false });
 
     if (error) {
-
       console.log("Get tasks error:", error);
-
     } else {
-
       setTasks(data || []);
-
     }
   }
 
 
   // ==========================================
-  // تشغيل getTasks عند فتح الصفحة
+  // تشغيل جلب المهام عند فتح الصفحة
   // ==========================================
 
   useEffect(() => {
-
     getTasks();
-
   }, []);
 
 
@@ -111,8 +106,11 @@ function TasksPage() {
   async function addTask() {
 
     if (!task.trim()) {
+      setTaskError("Task is required");
       return;
     }
+
+    setTaskError("");
 
     const {
       data: { user },
@@ -127,6 +125,7 @@ function TasksPage() {
       .insert([
         {
           task: task.trim(),
+          priority: priority,
           completed: false,
           user_id: user.id,
         },
@@ -139,9 +138,10 @@ function TasksPage() {
     } else {
 
       setTask("");
+      setPriority("NORMAL");
+      setTaskError("");
 
       getTasks();
-
     }
   }
 
@@ -161,25 +161,20 @@ function TasksPage() {
       .eq("id", task.id);
 
     if (error) {
-
       console.log("Toggle task error:", error);
-
     } else {
-
       getTasks();
-
     }
   }
 
 
   // ==========================================
-  // فتح نافذة تأكيد الحذف
+  // فتح نافذة الحذف
   // ==========================================
 
   function confirmDelete(id) {
 
     setDeleteId(id);
-
     setOpenDeleteDialog(true);
   }
 
@@ -194,7 +189,7 @@ function TasksPage() {
       return;
     }
 
-    // تسجيل وقت الحذف بدل حذف الصف نهائيًا
+    // Soft Delete
     const { error } = await supabase
       .from("tasks")
       .update({
@@ -205,33 +200,30 @@ function TasksPage() {
     if (error) {
 
       console.log("Delete error:", error);
-
       return;
     }
 
-    // إزالة المهمة من الصفحة
     setTasks((currentTasks) =>
-      currentTasks.filter((task) => task.id !== deleteId)
+      currentTasks.filter(
+        (task) => task.id !== deleteId
+      )
     );
 
-    // إغلاق نافذة الحذف
     setOpenDeleteDialog(false);
-
-    // تنظيف ID
     setDeleteId(null);
   }
 
 
   // ==========================================
-  // فتح نافذة تعديل المهمة
+  // فتح نافذة التعديل
   // ==========================================
 
   function startEdit(task) {
 
     setEditingId(task.id);
-
     setEditTask(task.task);
-
+    setEditPriority(task.priority || "NORMAL");
+    setEditTaskError("");
     setOpenEditDialog(true);
   }
 
@@ -242,16 +234,23 @@ function TasksPage() {
 
   async function updateTask() {
 
-    if (!editTask.trim() || !editingId) {
+    if (!editTask.trim()) {
+
+      setEditTaskError("Task is required");
       return;
     }
+
+    if (!editingId) {
+      return;
+    }
+
+    setEditTaskError("");
 
     const { data, error } = await supabase
       .from("tasks")
       .update({
         task: editTask.trim(),
-
-        // تسجيل وقت آخر تعديل
+        priority: editPriority,
         updated_at: new Date().toISOString(),
       })
       .eq("id", editingId)
@@ -261,61 +260,84 @@ function TasksPage() {
     if (error) {
 
       console.log("Update error:", error);
-
       return;
     }
 
-    // تحديث المهمة في الصفحة مباشرة
     setTasks((currentTasks) =>
       currentTasks.map((task) =>
-        task.id === editingId ? data : task
+        task.id === editingId
+          ? data
+          : task
       )
     );
 
-    // إغلاق نافذة التعديل
     setOpenEditDialog(false);
 
-    // تنظيف البيانات
     setEditingId(null);
-
     setEditTask("");
+    setEditPriority("NORMAL");
+    setEditTaskError("");
   }
 
 
   // ==========================================
-  // واجهة الصفحة
+  // إغلاق Dialog التعديل
+  // ==========================================
+
+  function closeEditDialog() {
+
+    setOpenEditDialog(false);
+    setEditingId(null);
+    setEditTask("");
+    setEditPriority("NORMAL");
+    setEditTaskError("");
+  }
+
+
+  // ==========================================
+  // إغلاق Dialog الحذف
+  // ==========================================
+
+  function closeDeleteDialog() {
+
+    setOpenDeleteDialog(false);
+    setDeleteId(null);
+  }
+
+
+  // ==========================================
+  // الواجهة
   // ==========================================
 
   return (
-
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#F5F7FA",
-        display: "flex",
-        flexDirection: "column",
+        backgroundColor: "#0F172A",
+        color: "#FFFFFF",
       }}
     >
 
       
 
 
-      {/* المحتوى الرئيسي */}
-
+      {/* المحتوى */}
       <Box
         sx={{
-          width: "100%",
-          maxWidth: "1000px",
-          margin: "0 auto",
           padding: {
-            xs: "30px 16px",
-            sm: "45px 25px",
+            xs: 2,
+            sm: 3,
+            md: 4,
           },
-          flex: 1,
+
+          maxWidth: 1200,
+          margin: "auto",
         }}
       >
 
-        {/* عنوان الصفحة */}
+        {/* ==========================================
+            العنوان
+        ========================================== */}
 
         <Box
           sx={{
@@ -323,8 +345,8 @@ function TasksPage() {
             justifyContent: "space-between",
             alignItems: "center",
             flexWrap: "wrap",
-            gap: "15px",
-            marginBottom: "30px",
+            gap: 2,
+            marginBottom: 4,
           }}
         >
 
@@ -333,13 +355,9 @@ function TasksPage() {
             <Typography
               variant="h4"
               sx={{
-                fontWeight: "800",
-                color: "#263238",
-                marginBottom: "6px",
-                fontSize: {
-                  xs: "28px",
-                  sm: "34px",
-                },
+                fontWeight: "bold",
+                color: "#FFFFFF",
+                marginBottom: 1,
               }}
             >
               Tasks
@@ -347,8 +365,7 @@ function TasksPage() {
 
             <Typography
               sx={{
-                color: "#78909C",
-                fontSize: "15px",
+                color: "#94A3B8",
               }}
             >
               Manage your tasks easily and stay organized.
@@ -362,17 +379,18 @@ function TasksPage() {
           <Chip
             icon={<TaskAltIcon />}
             label={`${tasks.length} ${
-              tasks.length === 1 ? "Task" : "Tasks"
+              tasks.length === 1
+                ? "Task"
+                : "Tasks"
             }`}
             sx={{
-              backgroundColor: "#E0F2F1",
-              color: "#00695C",
+              backgroundColor: "#273449",
+              color: "#80CBC4",
               fontWeight: "bold",
-              padding: "5px 8px",
-              borderRadius: "20px",
+              border: "1px solid #334155",
 
               "& .MuiChip-icon": {
-                color: "#00897B",
+                color: "#80CBC4",
               },
             }}
           />
@@ -380,28 +398,32 @@ function TasksPage() {
         </Box>
 
 
-        {/* إضافة مهمة */}
+        {/* ==========================================
+            إضافة مهمة
+        ========================================== */}
 
         <Paper
           elevation={0}
           sx={{
             padding: {
-              xs: "20px",
-              sm: "25px",
+              xs: 2,
+              sm: 3,
             },
-            borderRadius: "18px",
-            backgroundColor: "#FFFFFF",
-            border: "1px solid #E8ECEF",
-            marginBottom: "30px",
+
+            marginBottom: 4,
+
+            backgroundColor: "#1E293B",
+            border: "1px solid #334155",
+            borderRadius: "16px",
           }}
         >
 
           <Typography
             sx={{
               fontWeight: "bold",
-              color: "#263238",
-              fontSize: "18px",
-              marginBottom: "15px",
+              color: "#FFFFFF",
+              marginBottom: 2,
+              fontSize: "20px",
             }}
           >
             Add New Task
@@ -412,7 +434,8 @@ function TasksPage() {
             sx={{
               display: "flex",
               alignItems: "center",
-              gap: "12px",
+              gap: 2,
+
               flexDirection: {
                 xs: "column",
                 sm: "row",
@@ -420,11 +443,23 @@ function TasksPage() {
             }}
           >
 
+            {/* Task input */}
+
             <TextField
               fullWidth
               label="What do you need to do?"
               value={task}
-              onChange={(e) => setTask(e.target.value)}
+              error={Boolean(taskError)}
+              helperText={taskError}
+              onChange={(e) => {
+
+                setTask(e.target.value);
+
+                if (e.target.value.trim()) {
+                  setTaskError("");
+                }
+
+              }}
               onKeyDown={(e) => {
 
                 if (e.key === "Enter") {
@@ -433,24 +468,105 @@ function TasksPage() {
 
               }}
               sx={{
+                "& .MuiInputLabel-root": {
+                  color: "#94A3B8",
+                },
+
+                "& .MuiInputLabel-root.Mui-focused": {
+                  color: "#80CBC4",
+                },
+
                 "& .MuiOutlinedInput-root": {
+                  backgroundColor: "#273449",
                   borderRadius: "12px",
+                  color: "#FFFFFF",
+
+                  "& fieldset": {
+                    borderColor: "#334155",
+                  },
 
                   "&:hover fieldset": {
-                    borderColor: "#00897B",
+                    borderColor: "#80CBC4",
                   },
 
                   "&.Mui-focused fieldset": {
-                    borderColor: "#00897B",
+                    borderColor: "#80CBC4",
                   },
                 },
 
-                "& label.Mui-focused": {
-                  color: "#00897B",
+                "& .MuiFormHelperText-root": {
+                  color: "#EF5350",
                 },
               }}
             />
 
+
+            {/* Priority */}
+
+            <FormControl
+              sx={{
+                minWidth: {
+                  xs: "100%",
+                  sm: 160,
+                },
+              }}
+            >
+
+              <InputLabel
+                sx={{
+                  color: "#94A3B8",
+
+                  "&.Mui-focused": {
+                    color: "#80CBC4",
+                  },
+                }}
+              >
+                Priority
+              </InputLabel>
+
+              <Select
+                value={priority}
+                label="Priority"
+                onChange={(e) =>
+                  setPriority(e.target.value)
+                }
+                sx={{
+                  backgroundColor: "#273449",
+                  color: "#FFFFFF",
+                  borderRadius: "12px",
+
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#334155",
+                  },
+
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#80CBC4",
+                  },
+
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#80CBC4",
+                  },
+
+                  "& .MuiSvgIcon-root": {
+                    color: "#80CBC4",
+                  },
+                }}
+              >
+
+                <MenuItem value="NORMAL">
+                  Normal
+                </MenuItem>
+
+                <MenuItem value="URGENT">
+                  Urgent
+                </MenuItem>
+
+              </Select>
+
+            </FormControl>
+
+
+            {/* Add */}
 
             <Button
               onClick={addTask}
@@ -459,18 +575,22 @@ function TasksPage() {
               sx={{
                 minWidth: {
                   xs: "100%",
-                  sm: "135px",
+                  sm: 140,
                 },
-                height: "56px",
+
+                height: 56,
+
                 borderRadius: "12px",
-                backgroundColor: "#00897B",
+
+                backgroundColor: "#80CBC4",
+                color: "#0F172A",
+
                 textTransform: "none",
-                fontSize: "15px",
                 fontWeight: "bold",
                 boxShadow: "none",
 
                 "&:hover": {
-                  backgroundColor: "#00695C",
+                  backgroundColor: "#6FB8B1",
                   boxShadow: "none",
                 },
               }}
@@ -483,31 +603,25 @@ function TasksPage() {
         </Paper>
 
 
-        {/* عنوان قائمة المهام */}
+        {/* ==========================================
+            Your Tasks
+        ========================================== */}
 
-        <Box
+        <Typography
+          variant="h5"
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "15px",
+            fontWeight: "bold",
+            color: "#FFFFFF",
+            marginBottom: 2,
           }}
         >
-
-          <Typography
-            sx={{
-              fontSize: "20px",
-              fontWeight: "bold",
-              color: "#263238",
-            }}
-          >
-            Your Tasks
-          </Typography>
-
-        </Box>
+          Your Tasks
+        </Typography>
 
 
-        {/* قائمة المهام */}
+        {/* ==========================================
+            قائمة المهام
+        ========================================== */}
 
         {tasks.length > 0 ? (
 
@@ -515,7 +629,7 @@ function TasksPage() {
             sx={{
               display: "flex",
               flexDirection: "column",
-              gap: "14px",
+              gap: 2,
             }}
           >
 
@@ -525,30 +639,28 @@ function TasksPage() {
                 key={task.id}
                 elevation={0}
                 sx={{
+                  backgroundColor: "#1E293B",
+                  border: "1px solid #334155",
                   borderRadius: "16px",
 
-                  backgroundColor: task.completed
-                    ? "#F8FAFA"
-                    : "#FFFFFF",
-
-                  border: "1px solid #E8ECEF",
-                  transition: "all 0.2s ease",
+                  transition: "0.2s",
 
                   "&:hover": {
+                    borderColor: "#475569",
                     transform: "translateY(-2px)",
-                    boxShadow:
-                      "0 6px 20px rgba(38, 50, 56, 0.08)",
                   },
                 }}
               >
 
                 <CardContent
                   sx={{
-                    padding: "18px 20px !important",
+                    padding: "20px !important",
+
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    gap: "15px",
+
+                    gap: 2,
                     flexWrap: "wrap",
                   }}
                 >
@@ -559,7 +671,8 @@ function TasksPage() {
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "10px",
+                      gap: 1,
+
                       minWidth: 0,
                       flex: 1,
                     }}
@@ -569,47 +682,53 @@ function TasksPage() {
 
                     <Checkbox
                       checked={Boolean(task.completed)}
-                      onChange={() => toggleTask(task)}
+                      onChange={() =>
+                        toggleTask(task)
+                      }
                       sx={{
-                        color: "#B0BEC5",
+                        color: "#64748B",
 
                         "&.Mui-checked": {
-                          color: "#00897B",
+                          color: "#80CBC4",
                         },
 
                         "&:hover": {
-                          backgroundColor: "#E0F2F1",
+                          backgroundColor: "rgba(128,203,196,0.08)",
                         },
                       }}
                     />
 
 
-                    {/* أيقونة المهمة */}
+                    {/* Task icon */}
 
                     <Box
                       sx={{
-                        width: "42px",
-                        height: "42px",
-                        minWidth: "42px",
+                        width: 44,
+                        height: 44,
+                        minWidth: 44,
+
                         borderRadius: "12px",
-                        backgroundColor: "#E0F2F1",
+
+                        backgroundColor: "#273449",
+
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+
+                        border: "1px solid #334155",
                       }}
                     >
 
                       <TaskAltIcon
                         sx={{
-                          color: "#00897B",
-                          fontSize: "22px",
+                          color: "#80CBC4",
                         }}
                       />
 
                     </Box>
 
 
-                    {/* اسم المهمة */}
+                    {/* Task text */}
 
                     <Box
                       sx={{
@@ -620,18 +739,18 @@ function TasksPage() {
                       <Typography
                         sx={{
                           color: task.completed
-                            ? "#90A4AE"
-                            : "#263238",
+                            ? "#64748B"
+                            : "#FFFFFF",
 
-                          fontSize: "16px",
                           fontWeight: "600",
+                          fontSize: "16px",
+
                           wordBreak: "break-word",
 
-                          textDecoration: task.completed
-                            ? "line-through"
-                            : "none",
-
-                          transition: "all 0.2s ease",
+                          textDecoration:
+                            task.completed
+                              ? "line-through"
+                              : "none",
                         }}
                       >
                         {task.task}
@@ -640,9 +759,9 @@ function TasksPage() {
 
                       <Typography
                         sx={{
-                          color: "#90A4AE",
+                          color: "#64748B",
                           fontSize: "12px",
-                          marginTop: "3px",
+                          marginTop: "4px",
                         }}
                       >
                         {task.completed
@@ -656,31 +775,66 @@ function TasksPage() {
                   </Box>
 
 
-                  {/* أزرار التحكم */}
+                  {/* Priority */}
+
+                  <Chip
+                    label={
+                      task.priority === "URGENT"
+                        ? "Urgent"
+                        : "Normal"
+                    }
+                    size="small"
+                    sx={{
+                      fontWeight: "bold",
+
+                      backgroundColor:
+                        task.priority === "URGENT"
+                          ? "rgba(244,143,177,0.15)"
+                          : "rgba(128,203,196,0.12)",
+
+                      color:
+                        task.priority === "URGENT"
+                          ? "#F48FB1"
+                          : "#80CBC4",
+
+                      border:
+                        task.priority === "URGENT"
+                          ? "1px solid rgba(244,143,177,0.3)"
+                          : "1px solid rgba(128,203,196,0.25)",
+                    }}
+                  />
+
+
+                  {/* Buttons */}
 
                   <Box
                     sx={{
                       display: "flex",
-                      gap: "8px",
+                      gap: 1,
                     }}
                   >
 
                     {/* Edit */}
 
                     <Button
-                      onClick={() => startEdit(task)}
+                      onClick={() =>
+                        startEdit(task)
+                      }
                       variant="outlined"
                       startIcon={<EditIcon />}
                       sx={{
-                        color: "#1976D2",
-                        borderColor: "#BBDEFB",
+                        color: "#80CBC4",
+                        borderColor: "#334155",
+
                         borderRadius: "10px",
+
                         textTransform: "none",
                         fontWeight: "600",
 
                         "&:hover": {
-                          borderColor: "#1976D2",
-                          backgroundColor: "#E3F2FD",
+                          borderColor: "#80CBC4",
+                          backgroundColor:
+                            "rgba(128,203,196,0.08)",
                         },
                       }}
                     >
@@ -691,19 +845,24 @@ function TasksPage() {
                     {/* Delete */}
 
                     <Button
-                      onClick={() => confirmDelete(task.id)}
+                      onClick={() =>
+                        confirmDelete(task.id)
+                      }
                       variant="outlined"
                       startIcon={<DeleteIcon />}
                       sx={{
-                        color: "#D32F2F",
-                        borderColor: "#FFCDD2",
+                        color: "#EF5350",
+                        borderColor: "#7F1D1D",
+
                         borderRadius: "10px",
+
                         textTransform: "none",
                         fontWeight: "600",
 
                         "&:hover": {
-                          borderColor: "#D32F2F",
-                          backgroundColor: "#FFEBEE",
+                          borderColor: "#EF5350",
+                          backgroundColor:
+                            "rgba(239,83,80,0.08)",
                         },
                       }}
                     >
@@ -727,31 +886,40 @@ function TasksPage() {
           <Paper
             elevation={0}
             sx={{
-              padding: "50px 20px",
+              padding: "55px 20px",
+
               textAlign: "center",
+
+              backgroundColor: "#1E293B",
+              border: "1px solid #334155",
+
               borderRadius: "16px",
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #E8ECEF",
             }}
           >
 
             <Box
               sx={{
-                width: "65px",
-                height: "65px",
+                width: 65,
+                height: 65,
+
                 borderRadius: "50%",
-                backgroundColor: "#E0F2F1",
+
+                backgroundColor: "#273449",
+
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+
                 margin: "0 auto 15px",
+
+                border: "1px solid #334155",
               }}
             >
 
               <TaskAltIcon
                 sx={{
-                  fontSize: "32px",
-                  color: "#00897B",
+                  fontSize: 32,
+                  color: "#80CBC4",
                 }}
               />
 
@@ -761,9 +929,9 @@ function TasksPage() {
             <Typography
               sx={{
                 fontWeight: "bold",
-                color: "#37474F",
+                color: "#FFFFFF",
                 fontSize: "18px",
-                marginBottom: "6px",
+                marginBottom: 1,
               }}
             >
               No tasks yet
@@ -772,7 +940,7 @@ function TasksPage() {
 
             <Typography
               sx={{
-                color: "#90A4AE",
+                color: "#64748B",
                 fontSize: "14px",
               }}
             >
@@ -787,21 +955,24 @@ function TasksPage() {
 
 
       {/* ==========================================
-          Dialog تأكيد الحذف
+          Delete Dialog
       ========================================== */}
 
       <Dialog
         open={openDeleteDialog}
-        onClose={() => {
-          setOpenDeleteDialog(false);
-          setDeleteId(null);
-        }}
+        onClose={closeDeleteDialog}
         PaperProps={{
           sx: {
             width: "100%",
-            maxWidth: "430px",
-            borderRadius: "20px",
-            padding: "8px",
+            maxWidth: 430,
+
+            backgroundColor: "#1E293B",
+            color: "#FFFFFF",
+
+            border: "1px solid #334155",
+            borderRadius: "16px",
+
+            padding: 1,
           },
         }}
       >
@@ -809,8 +980,7 @@ function TasksPage() {
         <DialogTitle
           sx={{
             fontWeight: "bold",
-            color: "#263238",
-            fontSize: "21px",
+            color: "#FFFFFF",
           }}
         >
           Delete Task?
@@ -821,8 +991,7 @@ function TasksPage() {
 
           <Typography
             sx={{
-              color: "#607D8B",
-              fontSize: "15px",
+              color: "#94A3B8",
               lineHeight: 1.6,
             }}
           >
@@ -835,27 +1004,24 @@ function TasksPage() {
 
         <DialogActions
           sx={{
-            padding: "15px",
-            gap: "8px",
+            padding: 2,
+            gap: 1,
           }}
         >
 
           <Button
-            onClick={() => {
-              setOpenDeleteDialog(false);
-              setDeleteId(null);
-            }}
+            onClick={closeDeleteDialog}
             variant="outlined"
             sx={{
-              color: "#607D8B",
-              borderColor: "#CFD8DC",
+              color: "#94A3B8",
+              borderColor: "#334155",
+
               textTransform: "none",
               borderRadius: "10px",
-              padding: "8px 20px",
 
               "&:hover": {
-                borderColor: "#90A4AE",
-                backgroundColor: "#F5F7F8",
+                borderColor: "#64748B",
+                backgroundColor: "#273449",
               },
             }}
           >
@@ -868,13 +1034,15 @@ function TasksPage() {
             variant="contained"
             startIcon={<DeleteIcon />}
             sx={{
-              backgroundColor: "#D32F2F",
+              backgroundColor: "#EF5350",
+
+              color: "#FFFFFF",
+
               textTransform: "none",
               borderRadius: "10px",
-              padding: "8px 20px",
 
               "&:hover": {
-                backgroundColor: "#B71C1C",
+                backgroundColor: "#D32F2F",
               },
             }}
           >
@@ -887,22 +1055,24 @@ function TasksPage() {
 
 
       {/* ==========================================
-          Dialog تعديل المهمة
+          Edit Dialog
       ========================================== */}
 
       <Dialog
         open={openEditDialog}
-        onClose={() => {
-          setOpenEditDialog(false);
-          setEditingId(null);
-          setEditTask("");
-        }}
+        onClose={closeEditDialog}
         PaperProps={{
           sx: {
             width: "100%",
-            maxWidth: "430px",
-            borderRadius: "20px",
-            padding: "8px",
+            maxWidth: 430,
+
+            backgroundColor: "#1E293B",
+            color: "#FFFFFF",
+
+            border: "1px solid #334155",
+            borderRadius: "16px",
+
+            padding: 1,
           },
         }}
       >
@@ -910,8 +1080,7 @@ function TasksPage() {
         <DialogTitle
           sx={{
             fontWeight: "bold",
-            color: "#263238",
-            fontSize: "21px",
+            color: "#FFFFFF",
           }}
         >
           Edit Task
@@ -922,21 +1091,35 @@ function TasksPage() {
 
           <Typography
             sx={{
-              color: "#607D8B",
+              color: "#94A3B8",
               fontSize: "14px",
-              marginBottom: "15px",
+              marginBottom: 2,
             }}
           >
             Update your task below.
           </Typography>
 
 
+          {/* Task */}
+
           <TextField
             fullWidth
             label="Task"
             value={editTask}
-            onChange={(e) => setEditTask(e.target.value)}
+            error={Boolean(editTaskError)}
+            helperText={editTaskError}
             autoFocus
+
+            onChange={(e) => {
+
+              setEditTask(e.target.value);
+
+              if (e.target.value.trim()) {
+                setEditTaskError("");
+              }
+
+            }}
+
             onKeyDown={(e) => {
 
               if (e.key === "Enter") {
@@ -944,52 +1127,124 @@ function TasksPage() {
               }
 
             }}
+
             sx={{
+              marginBottom: 2,
+
+              "& .MuiInputLabel-root": {
+                color: "#94A3B8",
+              },
+
+              "& .MuiInputLabel-root.Mui-focused": {
+                color: "#80CBC4",
+              },
+
               "& .MuiOutlinedInput-root": {
+                backgroundColor: "#273449",
+                color: "#FFFFFF",
                 borderRadius: "12px",
 
+                "& fieldset": {
+                  borderColor: "#334155",
+                },
+
                 "&:hover fieldset": {
-                  borderColor: "#00897B",
+                  borderColor: "#80CBC4",
                 },
 
                 "&.Mui-focused fieldset": {
-                  borderColor: "#00897B",
+                  borderColor: "#80CBC4",
                 },
               },
 
-              "& label.Mui-focused": {
-                color: "#00897B",
+              "& .MuiFormHelperText-root": {
+                color: "#EF5350",
               },
             }}
           />
+
+
+          {/* Priority */}
+
+          <FormControl fullWidth>
+
+            <InputLabel
+              sx={{
+                color: "#94A3B8",
+
+                "&.Mui-focused": {
+                  color: "#80CBC4",
+                },
+              }}
+            >
+              Priority
+            </InputLabel>
+
+            <Select
+              value={editPriority}
+              label="Priority"
+              onChange={(e) =>
+                setEditPriority(e.target.value)
+              }
+              sx={{
+                backgroundColor: "#273449",
+                color: "#FFFFFF",
+
+                borderRadius: "12px",
+
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#334155",
+                },
+
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#80CBC4",
+                },
+
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#80CBC4",
+                },
+
+                "& .MuiSvgIcon-root": {
+                  color: "#80CBC4",
+                },
+              }}
+            >
+
+              <MenuItem value="NORMAL">
+                Normal
+              </MenuItem>
+
+              <MenuItem value="URGENT">
+                Urgent
+              </MenuItem>
+
+            </Select>
+
+          </FormControl>
 
         </DialogContent>
 
 
         <DialogActions
           sx={{
-            padding: "15px",
-            gap: "8px",
+            padding: 2,
+            gap: 1,
           }}
         >
 
           <Button
-            onClick={() => {
-              setOpenEditDialog(false);
-              setEditingId(null);
-              setEditTask("");
-            }}
+            onClick={closeEditDialog}
             variant="outlined"
             sx={{
-              color: "#607D8B",
-              borderColor: "#CFD8DC",
+              color: "#94A3B8",
+              borderColor: "#334155",
+
               textTransform: "none",
               borderRadius: "10px",
-              padding: "8px 20px",
 
               "&:hover": {
-                borderColor: "#90A4AE",
-                backgroundColor: "#F5F7F8",
+                borderColor: "#64748B",
+                backgroundColor: "#273449",
               },
             }}
           >
@@ -1002,13 +1257,14 @@ function TasksPage() {
             variant="contained"
             startIcon={<EditIcon />}
             sx={{
-              backgroundColor: "#00897B",
+              backgroundColor: "#80CBC4",
+              color: "#0F172A",
+
               textTransform: "none",
               borderRadius: "10px",
-              padding: "8px 20px",
 
               "&:hover": {
-                backgroundColor: "#00695C",
+                backgroundColor: "#6FB8B1",
               },
             }}
           >
@@ -1023,6 +1279,5 @@ function TasksPage() {
   );
 }
 
-
-// تصدير صفحة المهام
 export default TasksPage;
+
