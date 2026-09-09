@@ -37,6 +37,9 @@ function Profile() {
   // تخزين بيانات المستخدم
   const [user, setUser] = useState(null);
 
+  // تخزين صورة المستخدم
+  const [avatarUrl, setAvatarUrl] = useState("");
+
   // تخزين عدد المهام
   const [taskCount, setTaskCount] = useState(0);
 
@@ -103,7 +106,8 @@ function Profile() {
       saving: "Saving...",
 
       nameRequired: "Please enter your name.",
-      updateSuccess: "Your name has been updated successfully.",
+      updateSuccess:
+        "Your name has been updated successfully.",
       updateError: "Failed to update your name.",
     },
 
@@ -179,15 +183,54 @@ function Profile() {
       // حفظ بيانات المستخدم
       setUser(user);
 
-      // جلب الاسم الحالي
-      const currentName =
-        user?.user_metadata?.name ||
-        user?.user_metadata?.full_name ||
-        "";
+      // ==========================================
+      // جلب بيانات المستخدم من جدول profiles
+      // ==========================================
 
-      setName(currentName);
+      const {
+        data: profile,
+        error: profileError,
+      } = await supabase
+        .from("profiles")
+        .select("name, avatar_url")
+        .eq("id", user.id)
+        .single();
 
+      // التحقق من وجود خطأ
+      if (profileError) {
+        console.log(
+          "Get profile error:",
+          profileError
+        );
+      }
+
+      // إذا تم جلب بيانات profile بنجاح
+      if (profile) {
+        // حفظ رابط صورة المستخدم
+        setAvatarUrl(profile.avatar_url || "");
+
+        // جلب الاسم من profiles
+        const currentName =
+          profile.name ||
+          user?.user_metadata?.name ||
+          user?.user_metadata?.full_name ||
+          "";
+
+        setName(currentName);
+      } else {
+        // إذا لم توجد بيانات profile
+        const currentName =
+          user?.user_metadata?.name ||
+          user?.user_metadata?.full_name ||
+          "";
+
+        setName(currentName);
+      }
+
+      // ==========================================
       // جلب عدد مهام المستخدم الحالية
+      // ==========================================
+
       const { count, error } = await supabase
         .from("tasks")
         .select("*", {
@@ -251,12 +294,14 @@ function Profile() {
       // تحديث الاسم في Supabase Auth
       // ==========================================
 
-      const { data: updatedUser, error: authError } =
-        await supabase.auth.updateUser({
-          data: {
-            name: newName,
-          },
-        });
+      const {
+        data: updatedUser,
+        error: authError,
+      } = await supabase.auth.updateUser({
+        data: {
+          name: newName,
+        },
+      });
 
       // التحقق من خطأ Auth
       if (authError) {
@@ -274,12 +319,13 @@ function Profile() {
       // تحديث الاسم في جدول profiles
       // ==========================================
 
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          name: newName,
-        })
-        .eq("id", currentUser.id);
+      const { error: profileError } =
+        await supabase
+          .from("profiles")
+          .update({
+            name: newName,
+          })
+          .eq("id", currentUser.id);
 
       // التحقق من خطأ profiles
       if (profileError) {
@@ -409,9 +455,13 @@ function Profile() {
               gap: "20px",
             }}
           >
-            {/* صورة المستخدم */}
+            {/* ==========================================
+                صورة المستخدم
+            ========================================== */}
 
             <Avatar
+              src={avatarUrl || undefined}
+              alt={name}
               sx={{
                 width: {
                   xs: 65,
@@ -428,17 +478,22 @@ function Profile() {
                   : "#FFFFFF",
               }}
             >
-              <PersonIcon
-                sx={{
-                  fontSize: {
-                    xs: 35,
-                    sm: 42,
-                  },
-                }}
-              />
+              {/* إذا لم توجد صورة تظهر الأيقونة */}
+              {!avatarUrl && (
+                <PersonIcon
+                  sx={{
+                    fontSize: {
+                      xs: 35,
+                      sm: 42,
+                    },
+                  }}
+                />
+              )}
             </Avatar>
 
-            {/* معلومات المستخدم */}
+            {/* ==========================================
+                معلومات المستخدم
+            ========================================== */}
 
             <Box sx={{ minWidth: 0 }}>
               <Typography
@@ -456,7 +511,7 @@ function Profile() {
                 }}
               >
                 {user?.user_metadata?.name ||
-                  user?.user_metadata?.full_name ||
+                  name ||
                   currentText.user}
               </Typography>
 
