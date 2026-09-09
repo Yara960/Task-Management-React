@@ -1,68 +1,90 @@
-
+// استيراد React
 import { useEffect, useState } from "react";
 
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import InputLabel from "@mui/material/InputLabel";
-import Chip from "@mui/material/Chip";
-import Divider from "@mui/material/Divider";
-
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import PersonIcon from "@mui/icons-material/Person";
-import EmailIcon from "@mui/icons-material/Email";
-import TaskIcon from "@mui/icons-material/Task";
-
+// استيراد Theme من Material UI
 import { useTheme } from "@mui/material/styles";
 
+// استيراد Supabase
 import { supabase } from "../supabaseClient";
 
+// استيراد Material UI
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Paper from "@mui/material/Paper";
+import Avatar from "@mui/material/Avatar";
+import Chip from "@mui/material/Chip";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+
+// استيراد الأيقونات
+import PersonIcon from "@mui/icons-material/Person";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import BlockIcon from "@mui/icons-material/Block";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+
+// ======================================================
+// صفحة الأدمن
+// ======================================================
+
 function AdminPage() {
+  // الحصول على الثيم مباشرة من Material UI
   const theme = useTheme();
 
-  const [users, setUsers] = useState([]);
-  const [tasks, setTasks] = useState([]);
-
-  const [loadingUsers, setLoadingUsers] = useState(true);
-  const [loadingTasks, setLoadingTasks] = useState(true);
-
-  const [message, setMessage] = useState("");
-
-  // البحث عن المستخدمين
-  const [searchUser, setSearchUser] = useState("");
-
+  // ======================================================
   // اللغة
-  const [language, setLanguage] = useState(
-    () => localStorage.getItem("language") || "en"
-  );
+  // ======================================================
 
-  // ==========================================
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem("language") || "en";
+  });
+
+  // الاستماع لتغيير اللغة من Navbar
+  useEffect(() => {
+    const handleLanguageChange = (event) => {
+      setLanguage(event.detail);
+    };
+
+    window.addEventListener(
+      "languageChanged",
+      handleLanguageChange
+    );
+
+    return () => {
+      window.removeEventListener(
+        "languageChanged",
+        handleLanguageChange
+      );
+    };
+  }, []);
+
+  // ------------------------------------------
   // النصوص
-  // ==========================================
+  // ------------------------------------------
 
-  const text = {
+  const texts = {
     en: {
       adminDashboard: "Admin Dashboard",
-
       userManagement: "User Management",
       searchUser: "Search user by name or email",
+
       loadingUsers: "Loading users...",
       noUsersFound: "No users found",
 
       name: "Name",
       email: "Email",
       status: "Status",
+
       active: "Active",
       inactive: "Inactive",
-      role: "Role",
 
+      role: "Role",
       roleUser: "User",
       roleSuperAdmin: "Super Admin",
 
@@ -89,6 +111,12 @@ function AdminPage() {
 
       confirmDeleteTask:
         "Are you sure you want to delete this task?",
+
+      deleteUserTitle: "Delete Account",
+      deleteTaskTitle: "Delete Task",
+
+      cancel: "Cancel",
+      delete: "Delete",
 
       errorLoadingUsers:
         "Error loading users",
@@ -131,47 +159,75 @@ function AdminPage() {
     },
 
     ar: {
-      adminDashboard: "لوحة تحكم الإدارة",
-
+      adminDashboard: "لوحة تحكم الأدمن",
       userManagement: "إدارة المستخدمين",
+
       searchUser:
         "البحث عن مستخدم بالاسم أو البريد الإلكتروني",
-      loadingUsers: "جاري تحميل المستخدمين...",
-      noUsersFound: "لم يتم العثور على مستخدمين",
+
+      loadingUsers:
+        "جاري تحميل المستخدمين...",
+
+      noUsersFound:
+        "لا يوجد مستخدمون",
 
       name: "الاسم",
       email: "البريد الإلكتروني",
       status: "الحالة",
+
       active: "نشط",
       inactive: "غير نشط",
+
       role: "الصلاحية",
-
       roleUser: "مستخدم",
-      roleSuperAdmin: "مدير النظام",
+      roleSuperAdmin: "أدمن",
 
-      deactivateAccount: "تعطيل الحساب",
-      activateAccount: "تفعيل الحساب",
-      deleteAccount: "حذف الحساب",
+      deactivateAccount:
+        "تعطيل الحساب",
 
-      taskManagement: "إدارة المهام",
-      loadingTasks: "جاري تحميل المهام...",
-      noTasksFound: "لم يتم العثور على مهام",
+      activateAccount:
+        "تفعيل الحساب",
+
+      deleteAccount:
+        "حذف الحساب",
+
+      taskManagement:
+        "إدارة المهام",
+
+      loadingTasks:
+        "جاري تحميل المهام...",
+
+      noTasksFound:
+        "لا توجد مهام",
 
       task: "المهمة",
       priority: "الأولوية",
       normal: "عادية",
       urgent: "عاجلة",
 
-      updateTask: "تحديث المهمة",
-      deleteTask: "حذف المهمة",
+      updateTask:
+        "تعديل المهمة",
 
-      taskRequired: "المهمة مطلوبة",
+      deleteTask:
+        "حذف المهمة",
+
+      taskRequired:
+        "المهمة مطلوبة",
 
       confirmDeleteUser:
-        "هل أنت متأكد أنك تريد حذف هذا الحساب؟",
+        "هل أنت متأكد من رغبتك في حذف هذا الحساب؟",
 
       confirmDeleteTask:
-        "هل أنت متأكد أنك تريد حذف هذه المهمة؟",
+        "هل أنت متأكد من رغبتك في حذف هذه المهمة؟",
+
+      deleteUserTitle:
+        "حذف الحساب",
+
+      deleteTaskTitle:
+        "حذف المهمة",
+
+      cancel: "إلغاء",
+      delete: "حذف",
 
       errorLoadingUsers:
         "حدث خطأ أثناء تحميل المستخدمين",
@@ -201,10 +257,10 @@ function AdminPage() {
         "تم حذف الحساب بنجاح",
 
       errorUpdatingTask:
-        "حدث خطأ أثناء تحديث المهمة",
+        "حدث خطأ أثناء تعديل المهمة",
 
       taskUpdated:
-        "تم تحديث المهمة بنجاح",
+        "تم تعديل المهمة بنجاح",
 
       errorDeletingTask:
         "حدث خطأ أثناء حذف المهمة",
@@ -215,41 +271,87 @@ function AdminPage() {
   };
 
   const currentText =
-    language === "ar" ? text.ar : text.en;
+    texts[language] || texts.en;
 
-  // ==========================================
-  // الاستماع لتغيير اللغة
-  // ==========================================
+  // ======================================================
+  // الحالات
+  // ======================================================
+
+  const [users, setUsers] =
+    useState([]);
+
+  const [tasks, setTasks] =
+    useState([]);
+
+  const [loadingUsers, setLoadingUsers] =
+    useState(false);
+
+  const [loadingTasks, setLoadingTasks] =
+    useState(false);
+
+  const [searchUser, setSearchUser] =
+    useState("");
+
+  // حالة التنبيه
+  const [message, setMessage] =
+    useState("");
+
+  const [messageType, setMessageType] =
+    useState("success");
+
+  // ======================================================
+  // حالات نافذة الحذف
+  // ======================================================
+
+  const [deleteOpen, setDeleteOpen] =
+    useState(false);
+
+  const [deleteId, setDeleteId] =
+    useState(null);
+
+  const [deleteType, setDeleteType] =
+    useState(null);
+
+  // ======================================================
+  // إظهار التنبيه
+  // ======================================================
+
+  function showMessage(
+    newMessage,
+    type = "success"
+  ) {
+    setMessage(newMessage);
+    setMessageType(type);
+  }
+
+  // ======================================================
+  // إخفاء التنبيه بعد 4 ثواني
+  // ======================================================
 
   useEffect(() => {
-    const handleLanguageChange = (event) => {
-      setLanguage(event.detail);
-    };
+    if (!message) {
+      return;
+    }
 
-    window.addEventListener(
-      "languageChanged",
-      handleLanguageChange
-    );
+    const timer = setTimeout(() => {
+      setMessage("");
+    }, 4000);
 
-    return () => {
-      window.removeEventListener(
-        "languageChanged",
-        handleLanguageChange
-      );
-    };
-  }, []);
+    return () => clearTimeout(timer);
+  }, [message]);
 
-  // ==========================================
+  // ======================================================
   // جلب المستخدمين
-  // ==========================================
+  // ======================================================
 
   async function getUsers() {
     setLoadingUsers(true);
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("id");
+    const { data, error } =
+      await supabase
+        .from("profiles")
+        .select("*")
+        .order("id");
 
     if (error) {
       console.error(
@@ -257,8 +359,9 @@ function AdminPage() {
         error
       );
 
-      setMessage(
-        currentText.errorLoadingUsers
+      showMessage(
+        currentText.errorLoadingUsers,
+        "error"
       );
     } else {
       setUsers(data || []);
@@ -267,19 +370,20 @@ function AdminPage() {
     setLoadingUsers(false);
   }
 
-  // ==========================================
+  // ======================================================
   // جلب المهام
-  // ==========================================
+  // ======================================================
 
   async function getTasks() {
     setLoadingTasks(true);
 
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("*")
-      .order("id", {
-        ascending: false,
-      });
+    const { data, error } =
+      await supabase
+        .from("tasks")
+        .select("*")
+        .order("id", {
+          ascending: false,
+        });
 
     if (error) {
       console.error(
@@ -287,8 +391,9 @@ function AdminPage() {
         error
       );
 
-      setMessage(
-        currentText.errorLoadingTasks
+      showMessage(
+        currentText.errorLoadingTasks,
+        "error"
       );
     } else {
       setTasks(data || []);
@@ -297,26 +402,30 @@ function AdminPage() {
     setLoadingTasks(false);
   }
 
-  // ==========================================
-  // تشغيل جلب البيانات
-  // ==========================================
+  // ======================================================
+  // تحميل البيانات عند فتح الصفحة
+  // ======================================================
 
   useEffect(() => {
     getUsers();
     getTasks();
   }, []);
 
-  // ==========================================
+  // ======================================================
   // تغيير صلاحية المستخدم
-  // ==========================================
+  // ======================================================
 
-  async function changeRole(id, newRole) {
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        role: newRole,
-      })
-      .eq("id", id);
+  async function changeRole(
+    id,
+    newRole
+  ) {
+    const { error } =
+      await supabase
+        .from("profiles")
+        .update({
+          role: newRole,
+        })
+        .eq("id", id);
 
     if (error) {
       console.error(
@@ -324,37 +433,42 @@ function AdminPage() {
         error
       );
 
-      setMessage(
-        currentText.errorChangingRole
+      showMessage(
+        currentText.errorChangingRole,
+        "error"
       );
 
       return;
     }
 
-    setMessage(
-      currentText.roleChanged
-    );
+    await getUsers();
 
-    getUsers();
+    showMessage(
+      currentText.roleChanged,
+      "success"
+    );
   }
 
-  // ==========================================
+  // ======================================================
   // تفعيل / تعطيل المستخدم
-  // ==========================================
+  // ======================================================
 
   async function toggleUser(
     id,
     currentStatus
   ) {
     const newStatus =
-      currentStatus === 1 ? 0 : 1;
+      Number(currentStatus) === 1
+        ? 0
+        : 1;
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        is_active: newStatus,
-      })
-      .eq("id", id);
+    const { error } =
+      await supabase
+        .from("profiles")
+        .update({
+          is_active: newStatus,
+        })
+        .eq("id", id);
 
     if (error) {
       console.error(
@@ -362,64 +476,137 @@ function AdminPage() {
         error
       );
 
-      setMessage(
-        currentText.errorChangingStatus
+      showMessage(
+        currentText.errorChangingStatus,
+        "error"
       );
 
       return;
     }
 
-    setMessage(
+    await getUsers();
+
+    showMessage(
       newStatus === 1
         ? currentText.accountActivated
-        : currentText.accountDeactivated
+        : currentText.accountDeactivated,
+      "success"
     );
-
-    getUsers();
   }
 
-  // ==========================================
-  // حذف المستخدم
-  // ==========================================
+  // ======================================================
+  // فتح نافذة حذف المستخدم
+  // ======================================================
 
-  async function deleteUser(id) {
-    const confirmDelete =
-      window.confirm(
-        currentText.confirmDeleteUser
-      );
+  function openDeleteUser(id) {
+    setDeleteId(id);
+    setDeleteType("user");
+    setDeleteOpen(true);
+  }
 
-    if (!confirmDelete) {
+  // ======================================================
+  // فتح نافذة حذف المهمة
+  // ======================================================
+
+  function openDeleteTask(id) {
+    setDeleteId(id);
+    setDeleteType("task");
+    setDeleteOpen(true);
+  }
+
+  // ======================================================
+  // إغلاق نافذة الحذف
+  // ======================================================
+
+  function closeDelete() {
+    setDeleteOpen(false);
+    setDeleteId(null);
+    setDeleteType(null);
+  }
+
+  // ======================================================
+  // تأكيد الحذف
+  // ======================================================
+
+  async function confirmDelete() {
+    if (!deleteId || !deleteType) {
       return;
     }
 
-    const { error } = await supabase
-      .from("profiles")
-      .delete()
-      .eq("id", id);
+    // حذف المستخدم
+    if (deleteType === "user") {
+      const { error } =
+        await supabase
+          .from("profiles")
+          .delete()
+          .eq("id", deleteId);
 
-    if (error) {
-      console.error(
-        "Error deleting user:",
-        error
-      );
+      if (error) {
+        console.error(
+          "Error deleting user:",
+          error
+        );
 
-      setMessage(
-        currentText.errorDeletingUser
+        closeDelete();
+
+        showMessage(
+          currentText.errorDeletingUser,
+          "error"
+        );
+
+        return;
+      }
+
+      closeDelete();
+
+      await getUsers();
+
+      showMessage(
+        currentText.accountDeleted,
+        "success"
       );
 
       return;
     }
 
-    setMessage(
-      currentText.accountDeleted
-    );
+    // حذف المهمة
+    if (deleteType === "task") {
+      const { error } =
+        await supabase
+          .from("tasks")
+          .delete()
+          .eq("id", deleteId);
 
-    getUsers();
+      if (error) {
+        console.error(
+          "Error deleting task:",
+          error
+        );
+
+        closeDelete();
+
+        showMessage(
+          currentText.errorDeletingTask,
+          "error"
+        );
+
+        return;
+      }
+
+      closeDelete();
+
+      await getTasks();
+
+      showMessage(
+        currentText.taskDeleted,
+        "success"
+      );
+    }
   }
 
-  // ==========================================
-  // تحديث المهمة
-  // ==========================================
+  // ======================================================
+  // تعديل المهمة
+  // ======================================================
 
   async function updateTask(
     id,
@@ -427,22 +614,24 @@ function AdminPage() {
     newPriority
   ) {
     if (!newTask.trim()) {
-      setMessage(
-        currentText.taskRequired
+      showMessage(
+        currentText.taskRequired,
+        "error"
       );
 
       return;
     }
 
-    const { error } = await supabase
-      .from("tasks")
-      .update({
-        task: newTask.trim(),
-        priority: newPriority,
-        updated_at:
-          new Date().toISOString(),
-      })
-      .eq("id", id);
+    const { error } =
+      await supabase
+        .from("tasks")
+        .update({
+          task: newTask.trim(),
+          priority: newPriority,
+          updated_at:
+            new Date().toISOString(),
+        })
+        .eq("id", id);
 
     if (error) {
       console.error(
@@ -450,65 +639,28 @@ function AdminPage() {
         error
       );
 
-      setMessage(
-        currentText.errorUpdatingTask
+      showMessage(
+        currentText.errorUpdatingTask,
+        "error"
       );
 
       return;
     }
 
-    setMessage(
-      currentText.taskUpdated
-    );
+    await getTasks();
 
-    getTasks();
+    showMessage(
+      currentText.taskUpdated,
+      "success"
+    );
   }
 
-  // ==========================================
-  // حذف المهمة
-  // ==========================================
-
-  async function deleteTask(id) {
-    const confirmDelete =
-      window.confirm(
-        currentText.confirmDeleteTask
-      );
-
-    if (!confirmDelete) {
-      return;
-    }
-
-    const { error } = await supabase
-      .from("tasks")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error(
-        "Error deleting task:",
-        error
-      );
-
-      setMessage(
-        currentText.errorDeletingTask
-      );
-
-      return;
-    }
-
-    setMessage(
-      currentText.taskDeleted
-    );
-
-    getTasks();
-  }
-
-  // ==========================================
+  // ======================================================
   // البحث عن المستخدمين
-  // ==========================================
+  // ======================================================
 
-  const filteredUsers = users.filter(
-    (user) => {
+  const filteredUsers =
+    users.filter((user) => {
       const search =
         searchUser
           .toLowerCase()
@@ -518,30 +670,32 @@ function AdminPage() {
         return true;
       }
 
-      const name = String(
-        user.name || ""
-      ).toLowerCase();
+      const name =
+        String(
+          user.name || ""
+        ).toLowerCase();
 
-      const email = String(
-        user.email || ""
-      ).toLowerCase();
+      const email =
+        String(
+          user.email || ""
+        ).toLowerCase();
 
       return (
         name.includes(search) ||
         email.includes(search)
       );
-    }
-  );
+    });
 
-  // ==========================================
-  // UI
-  // ==========================================
+  // ======================================================
+  // واجهة الصفحة
+  // ======================================================
 
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "background.default",
+        backgroundColor:
+          "background.default",
         color: "text.primary",
         padding: {
           xs: 2,
@@ -552,24 +706,17 @@ function AdminPage() {
     >
       <Box
         sx={{
-          maxWidth: 1200,
+          maxWidth: "1200px",
           margin: "0 auto",
         }}
       >
-        {/* =====================================
-            عنوان الصفحة
-        ====================================== */}
+        {/* عنوان الصفحة */}
 
-        <Box
-          sx={{
-            marginBottom: 4,
-          }}
-        >
+        <Box sx={{ mb: 4 }}>
           <Typography
             variant="h4"
             sx={{
               fontWeight: 800,
-              marginBottom: 1,
             }}
           >
             {currentText.adminDashboard}
@@ -577,72 +724,159 @@ function AdminPage() {
 
           <Box
             sx={{
-              width: 55,
-              height: 4,
-              borderRadius: 10,
-              backgroundColor: "primary.main",
+              width: "55px",
+              height: "4px",
+              backgroundColor:
+                "primary.main",
+              borderRadius: "10px",
+              mt: 1,
             }}
           />
         </Box>
 
-        {/* =====================================
-            الرسائل
-        ====================================== */}
+        {/* التنبيه */}
 
         {message && (
-          <Paper
+          <Box
             sx={{
-              padding: 2,
-              marginBottom: 3,
-              borderRadius: "14px",
-              borderColor:
-                theme.palette.mode === "dark"
-                  ? "#334155"
-                  : "#B2DFDB",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+
               backgroundColor:
-                theme.palette.mode === "dark"
-                  ? "#1E293B"
-                  : "#F0FAF9",
+                messageType === "error"
+                  ? theme.palette.mode ===
+                    "dark"
+                    ? "#3B1F1F"
+                    : "#FFEBEE"
+                  : theme.palette.mode ===
+                    "dark"
+                  ? "#163B38"
+                  : "#E8F5F3",
+
+              border:
+                messageType === "error"
+                  ? theme.palette.mode ===
+                    "dark"
+                    ? "1px solid #7F1D1D"
+                    : "1px solid #FFCDD2"
+                  : theme.palette.mode ===
+                    "dark"
+                  ? "1px solid #2F6F68"
+                  : "1px solid #B2DFDB",
+
+              color:
+                messageType === "error"
+                  ? theme.palette.mode ===
+                    "dark"
+                    ? "#FF8A80"
+                    : "#D32F2F"
+                  : theme.palette.mode ===
+                    "dark"
+                  ? "#80CBC4"
+                  : "#00897B",
+
+              borderRadius: "10px",
+              padding: "12px 14px",
+              marginBottom: 3,
+              fontSize: "13px",
+              fontWeight: "600",
+              lineHeight: "1.6",
+
+              boxShadow:
+                messageType === "error"
+                  ? theme.palette.mode ===
+                    "dark"
+                    ? "0 4px 12px rgba(239,83,80,0.18)"
+                    : "0 4px 12px rgba(211,47,47,0.08)"
+                  : theme.palette.mode ===
+                    "dark"
+                  ? "0 4px 12px rgba(128,203,196,0.12)"
+                  : "0 4px 12px rgba(0,137,123,0.08)",
             }}
           >
+            <Box
+              sx={{
+                minWidth: "28px",
+                width: "28px",
+                height: "28px",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+
+                backgroundColor:
+                  messageType === "error"
+                    ? theme.palette.mode ===
+                      "dark"
+                      ? "#7F1D1D"
+                      : "#FFCDD2"
+                    : theme.palette.mode ===
+                      "dark"
+                    ? "#245A54"
+                    : "#B2DFDB",
+
+                color:
+                  messageType === "error"
+                    ? theme.palette.mode ===
+                      "dark"
+                      ? "#FF8A80"
+                      : "#D32F2F"
+                    : theme.palette.mode ===
+                      "dark"
+                    ? "#80CBC4"
+                    : "#00897B",
+
+                fontSize: "16px",
+                fontWeight: "700",
+                flexShrink: 0,
+              }}
+            >
+              {messageType === "error"
+                ? "!"
+                : "✓"}
+            </Box>
+
             <Typography
               sx={{
-                fontWeight: 600,
-                color: "primary.main",
+                fontSize: "13px",
+                fontWeight: "600",
+                color: "inherit",
+                lineHeight: "1.6",
               }}
             >
               {message}
             </Typography>
-          </Paper>
+          </Box>
         )}
 
-        {/* =====================================
+        {/* ======================================================
             إدارة المستخدمين
-        ====================================== */}
+        ====================================================== */}
 
         <Typography
           variant="h5"
           sx={{
             fontWeight: 800,
-            marginBottom: 2,
+            mb: 2,
           }}
         >
           {currentText.userManagement}
         </Typography>
 
-        {/* البحث */}
-
         <TextField
           fullWidth
-          label={currentText.searchUser}
+          placeholder={
+            currentText.searchUser
+          }
           value={searchUser}
-          onChange={(event) =>
+          onChange={(e) =>
             setSearchUser(
-              event.target.value
+              e.target.value
             )
           }
           sx={{
-            marginBottom: 3,
+            mb: 3,
 
             "& .MuiOutlinedInput-root": {
               borderRadius: "14px",
@@ -650,24 +884,14 @@ function AdminPage() {
           }}
         />
 
-        {/* المستخدمين */}
-
         {loadingUsers ? (
           <Typography>
             {currentText.loadingUsers}
           </Typography>
         ) : filteredUsers.length === 0 ? (
-          <Paper
-            sx={{
-              padding: 4,
-              borderRadius: "18px",
-              textAlign: "center",
-            }}
-          >
-            <Typography>
-              {currentText.noUsersFound}
-            </Typography>
-          </Paper>
+          <Typography>
+            {currentText.noUsersFound}
+          </Typography>
         ) : (
           <Box
             sx={{
@@ -679,430 +903,472 @@ function AdminPage() {
               gap: 2.5,
             }}
           >
-            {filteredUsers.map((user) => (
-              <Paper
-                key={user.id}
-                sx={{
-                  padding: 3,
-                  borderRadius: "20px",
-                  position: "relative",
-                  overflow: "hidden",
+            {filteredUsers.map(
+              (user) => {
+                const isActive =
+                  Number(
+                    user.is_active
+                  ) === 1;
 
-                  transition:
-                    "transform 0.2s, box-shadow 0.2s",
-
-                  "&:hover": {
-                    transform:
-                      "translateY(-3px)",
-                  },
-                }}
-              >
-                {/* الخط العلوي */}
-
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    backgroundColor:
-                      "primary.main",
-                  }}
-                />
-
-                {/* معلومات المستخدم */}
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
-                    marginBottom: 2,
-                  }}
-                >
-                  <Box
+                return (
+                  <Paper
+                    key={user.id}
                     sx={{
-                      width: 46,
-                      height: 46,
-                      borderRadius: "14px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? "rgba(128,203,196,0.12)"
-                          : "#E6F4F2",
-                      color:
-                        "primary.main",
-                    }}
-                  >
-                    <PersonIcon />
-                  </Box>
+                      p: 3,
+                      borderRadius: "20px",
+                      position: "relative",
+                      overflow: "hidden",
 
-                  <Box>
-                    <Typography
-                      sx={{
-                        fontWeight: 800,
-                        fontSize: "1.05rem",
-                      }}
-                    >
-                      {user.name ||
-                        currentText.roleUser}
-                    </Typography>
+                      transition:
+                        "transform 0.2s ease",
 
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color:
-                          "text.secondary",
-                      }}
-                    >
-                      {user.email}
-                    </Typography>
-                  </Box>
-                </Box>
+                      "&:hover": {
+                        transform:
+                          "translateY(-3px)",
+                      },
 
-                <Divider
-                  sx={{
-                    marginBottom: 2,
-                  }}
-                />
-
-                {/* البيانات */}
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 1.5,
-                    marginBottom: 2.5,
-                  }}
-                >
-                  {/* البريد */}
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      padding: 1.5,
-                      borderRadius: "12px",
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? "#273449"
-                          : "#F7FAFC",
-                    }}
-                  >
-                    <EmailIcon
-                      sx={{
-                        fontSize: 20,
-                        color:
+                      "&::before": {
+                        content: '""',
+                        position:
+                          "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: "4px",
+                        backgroundColor:
                           "primary.main",
-                      }}
-                    />
+                      },
+                    }}
+                  >
+                    {/* معلومات المستخدم */}
 
-                    <Box>
-                      <Typography
-                        variant="caption"
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        mb: 2,
+                      }}
+                    >
+                      <Avatar
                         sx={{
+                          width: 46,
+                          height: 46,
+                          borderRadius:
+                            "14px",
+
+                          backgroundColor:
+                            theme.palette
+                              .mode ===
+                            "dark"
+                              ? "rgba(128,203,196,0.12)"
+                              : "#E6F4F2",
+
                           color:
-                            "text.secondary",
-                          display: "block",
+                            "primary.main",
                         }}
                       >
-                        {currentText.email}
-                      </Typography>
+                        <PersonIcon />
+                      </Avatar>
 
+                      <Box
+                        sx={{
+                          minWidth: 0,
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            fontWeight: 800,
+                            fontSize:
+                              "1.05rem",
+                          }}
+                        >
+                          {user.name ||
+                            currentText.roleUser}
+                        </Typography>
+
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color:
+                              "text.secondary",
+                            wordBreak:
+                              "break-word",
+                          }}
+                        >
+                          {user.email}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* الحالة */}
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems:
+                          "center",
+                        justifyContent:
+                          "space-between",
+                        gap: 1,
+                        mb: 2,
+                        padding: "10px 12px",
+                        borderRadius: "12px",
+
+                        backgroundColor:
+                          theme.palette
+                            .mode ===
+                          "dark"
+                            ? "#273449"
+                            : "#F7FAFC",
+                      }}
+                    >
                       <Typography
                         variant="body2"
                         sx={{
                           fontWeight: 600,
-                          wordBreak:
-                            "break-word",
                         }}
                       >
-                        {user.email}
+                        {currentText.status}
                       </Typography>
+
+                      <Chip
+                        label={
+                          isActive
+                            ? currentText.active
+                            : currentText.inactive
+                        }
+                        size="small"
+                        sx={{
+                          fontWeight: 700,
+
+                          backgroundColor:
+                            isActive
+                              ? theme.palette
+                                  .mode ===
+                                "dark"
+                                ? "rgba(128,203,196,0.16)"
+                                : "#E6F4F2"
+                              : theme.palette
+                                  .mode ===
+                                "dark"
+                                ? "rgba(239,83,80,0.16)"
+                                : "#FFEBEE",
+
+                          color:
+                            isActive
+                              ? "primary.main"
+                              : "#EF5350",
+                        }}
+                      />
                     </Box>
-                  </Box>
 
-                  {/* الحالة */}
+                    {/* الصلاحية */}
 
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent:
-                        "space-between",
-                      padding: 1.5,
-                      borderRadius: "12px",
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? "#273449"
-                          : "#F7FAFC",
-                    }}
-                  >
                     <Typography
-                      variant="body2"
-                      sx={{
-                        color:
-                          "text.secondary",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {currentText.status}
-                    </Typography>
-
-                    <Chip
-                      label={
-                        user.is_active === 1
-                          ? currentText.active
-                          : currentText.inactive
-                      }
-                      size="small"
                       sx={{
                         fontWeight: 700,
+                        mb: 1,
+                      }}
+                    >
+                      {currentText.role}
+                    </Typography>
 
-                        backgroundColor:
-                          user.is_active === 1
-                            ? theme.palette.mode ===
-                              "dark"
-                              ? "rgba(128,203,196,0.15)"
-                              : "#E6F4F2"
-                            : theme.palette.mode ===
-                              "dark"
-                              ? "rgba(239,83,80,0.12)"
-                              : "#FFEBEE",
+                    <Select
+                      fullWidth
+                      value={
+                        user.role ||
+                        "USER"
+                      }
+                      onChange={(e) =>
+                        changeRole(
+                          user.id,
+                          e.target.value
+                        )
+                      }
+                      sx={{
+                        mb: 2,
 
-                        color:
-                          user.is_active === 1
-                            ? "primary.main"
-                            : theme.palette.mode ===
-                              "dark"
+                        "& .MuiOutlinedInput-notchedOutline":
+                          {
+                            borderRadius:
+                              "12px",
+                          },
+                      }}
+                    >
+                      <MenuItem value="USER">
+                        {currentText.roleUser}
+                      </MenuItem>
+
+                      <MenuItem value="SUPERADMIN">
+                        {
+                          currentText.roleSuperAdmin
+                        }
+                      </MenuItem>
+                    </Select>
+
+                    {/* الأزرار */}
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 1.5,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Button
+                        variant="outlined"
+                        startIcon={
+                          isActive ? (
+                            <BlockIcon />
+                          ) : (
+                            <CheckCircleIcon />
+                          )
+                        }
+                        onClick={() =>
+                          toggleUser(
+                            user.id,
+                            user.is_active
+                          )
+                        }
+                        sx={{
+                          flex: 1,
+                          minWidth:
+                            "170px",
+
+                          color:
+                            "primary.main",
+
+                          borderColor:
+                            theme.palette
+                              .mode ===
+                            "dark"
+                              ? "#475569"
+                              : "#B2DFDB",
+
+                          borderRadius:
+                            "10px",
+
+                          textTransform:
+                            "none",
+
+                          fontWeight: 600,
+                        }}
+                      >
+                        {isActive
+                          ? currentText.deactivateAccount
+                          : currentText.activateAccount}
+                      </Button>
+
+                      <Button
+                        variant="outlined"
+                        startIcon={
+                          <DeleteIcon />
+                        }
+                        onClick={() =>
+                          openDeleteUser(
+                            user.id
+                          )
+                        }
+                        sx={{
+                          flex: 1,
+                          minWidth:
+                            "140px",
+
+                          color:
+                            theme.palette
+                              .mode ===
+                            "dark"
                               ? "#EF5350"
                               : "#D32F2F",
-                      }}
-                    />
-                  </Box>
-                </Box>
 
-                {/* الصلاحية */}
+                          borderColor:
+                            theme.palette
+                              .mode ===
+                            "dark"
+                              ? "#7F1D1D"
+                              : "#FFCDD2",
 
-                <FormControl
-                  fullWidth
-                  sx={{
-                    marginBottom: 2,
-                  }}
-                >
-                  <InputLabel>
-                    {currentText.role}
-                  </InputLabel>
+                          borderRadius:
+                            "10px",
 
-                  <Select
-                    value={
-                      user.role || "USER"
-                    }
-                    label={currentText.role}
-                    onChange={(event) =>
-                      changeRole(
-                        user.id,
-                        event.target.value
-                      )
-                    }
-                    sx={{
-                      borderRadius: "12px",
-                    }}
-                  >
-                    <MenuItem value="USER">
-                      {currentText.roleUser}
-                    </MenuItem>
+                          textTransform:
+                            "none",
 
-                    <MenuItem value="SUPERADMIN">
-                      {currentText.roleSuperAdmin}
-                    </MenuItem>
-                  </Select>
-                </FormControl>
-
-                {/* الأزرار */}
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 1,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  {/* تفعيل / تعطيل */}
-
-                  <Button
-                    variant="outlined"
-                    startIcon={
-                      <CheckCircleIcon />
-                    }
-                    onClick={() =>
-                      toggleUser(
-                        user.id,
-                        user.is_active
-                      )
-                    }
-                    sx={{
-                      flex: 1,
-                      minWidth: 170,
-
-                      color:
-                        "primary.main",
-
-                      borderColor:
-                        theme.palette.mode ===
-                        "dark"
-                          ? "#475569"
-                          : "#B2DFDB",
-
-                      borderRadius:
-                        "10px",
-
-                      textTransform:
-                        "none",
-
-                      fontWeight: 600,
-
-                      "&:hover": {
-                        borderColor:
-                          "primary.main",
-
-                        backgroundColor:
-                          theme.palette
-                            .mode ===
-                          "dark"
-                            ? "rgba(128,203,196,0.08)"
-                            : "rgba(0,137,123,0.06)",
-                      },
-                    }}
-                  >
-                    {user.is_active === 1
-                      ? currentText.deactivateAccount
-                      : currentText.activateAccount}
-                  </Button>
-
-                  {/* حذف الحساب */}
-
-                  <Button
-                    variant="outlined"
-                    startIcon={
-                      <DeleteIcon />
-                    }
-                    onClick={() =>
-                      deleteUser(
-                        user.id
-                      )
-                    }
-                    sx={{
-                      flex: 1,
-                      minWidth: 140,
-
-                      color:
-                        theme.palette.mode ===
-                        "dark"
-                          ? "#EF5350"
-                          : "#D32F2F",
-
-                      borderColor:
-                        theme.palette.mode ===
-                        "dark"
-                          ? "#7F1D1D"
-                          : "#FFCDD2",
-
-                      borderRadius:
-                        "10px",
-
-                      textTransform:
-                        "none",
-
-                      fontWeight: 600,
-
-                      "&:hover": {
-                        borderColor:
-                          "#EF5350",
-
-                        backgroundColor:
-                          theme.palette
-                            .mode ===
-                          "dark"
-                            ? "rgba(239,83,80,0.08)"
-                            : "rgba(239,83,80,0.06)",
-                      },
-                    }}
-                  >
-                    {currentText.deleteAccount}
-                  </Button>
-                </Box>
-              </Paper>
-            ))}
+                          fontWeight: 600,
+                        }}
+                      >
+                        {
+                          currentText.deleteAccount
+                        }
+                      </Button>
+                    </Box>
+                  </Paper>
+                );
+              }
+            )}
           </Box>
         )}
 
-        {/* =====================================
+        {/* ======================================================
             إدارة المهام
-        ====================================== */}
+        ====================================================== */}
 
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 800,
-            marginTop: 6,
-            marginBottom: 2,
-          }}
-        >
-          {currentText.taskManagement}
-        </Typography>
-
-        {loadingTasks ? (
-          <Typography>
-            {currentText.loadingTasks}
-          </Typography>
-        ) : tasks.length === 0 ? (
-          <Paper
+        <Box sx={{ mt: 6 }}>
+          <Typography
+            variant="h5"
             sx={{
-              padding: 4,
-              borderRadius: "18px",
-              textAlign: "center",
+              fontWeight: 800,
+              mb: 2,
             }}
           >
+            {currentText.taskManagement}
+          </Typography>
+
+          {loadingTasks ? (
+            <Typography>
+              {currentText.loadingTasks}
+            </Typography>
+          ) : tasks.length === 0 ? (
             <Typography>
               {currentText.noTasksFound}
             </Typography>
-          </Paper>
-        ) : (
-          <Box
+          ) : (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  md: "repeat(2, 1fr)",
+                },
+                gap: 2.5,
+              }}
+            >
+              {tasks.map((task) => (
+                <TaskAdminItem
+                  key={task.id}
+                  task={task}
+                  onUpdate={updateTask}
+                  onDelete={openDeleteTask}
+                  currentText={currentText}
+                />
+              ))}
+            </Box>
+          )}
+        </Box>
+      </Box>
+
+      {/* ======================================================
+          نافذة تأكيد الحذف
+      ====================================================== */}
+
+      <Dialog
+        open={deleteOpen}
+        onClose={closeDelete}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            backgroundColor:
+              theme.palette.background.paper,
+
+            color:
+              theme.palette.text.primary,
+
+            border:
+              `1px solid ${
+                theme.palette.mode === "dark"
+                  ? "#334155"
+                  : "#DCE3E8"
+              }`,
+
+            borderRadius: "20px",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            color:
+              theme.palette.text.primary,
+            fontWeight: 800,
+          }}
+        >
+          {deleteType === "user"
+            ? currentText.deleteUserTitle
+            : currentText.deleteTaskTitle}
+        </DialogTitle>
+
+        <DialogContent>
+          <Typography
             sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                md: "repeat(2, 1fr)",
-              },
-              gap: 2.5,
+              color:
+                theme.palette.text.secondary,
+              lineHeight: 1.7,
             }}
           >
-            {tasks.map((task) => (
-              <TaskAdminItem
-                key={task.id}
-                task={task}
-                onUpdate={updateTask}
-                onDelete={deleteTask}
-                currentText={currentText}
-              />
-            ))}
-          </Box>
-        )}
-      </Box>
+            {deleteType === "user"
+              ? currentText.confirmDeleteUser
+              : currentText.confirmDeleteTask}
+          </Typography>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 2.5,
+            gap: 1,
+          }}
+        >
+          <Button
+            onClick={closeDelete}
+            sx={{
+              textTransform: "none",
+
+              color:
+                theme.palette.text.secondary,
+
+              borderRadius: "10px",
+
+              "&:hover": {
+                backgroundColor:
+                  theme.palette.mode ===
+                  "dark"
+                    ? "#243344"
+                    : "#F1F5F9",
+              },
+            }}
+          >
+            {currentText.cancel}
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={confirmDelete}
+            sx={{
+              textTransform: "none",
+
+              borderRadius: "10px",
+
+              backgroundColor:
+                "#EF5350",
+
+              "&:hover": {
+                backgroundColor:
+                  "#D32F2F",
+              },
+            }}
+          >
+            {currentText.delete}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
 
-// =====================================================
-// بطاقة المهمة
-// =====================================================
+// ======================================================
+// مكون المهمة
+// ======================================================
 
 function TaskAdminItem({
   task,
@@ -1110,8 +1376,6 @@ function TaskAdminItem({
   onDelete,
   currentText,
 }) {
-  const theme = useTheme();
-
   const [taskText, setTaskText] =
     useState(task.task || "");
 
@@ -1123,7 +1387,11 @@ function TaskAdminItem({
   const [taskError, setTaskError] =
     useState("");
 
-  const handleUpdate = () => {
+  // ======================================================
+  // تعديل المهمة
+  // ======================================================
+
+  function handleUpdate() {
     if (!taskText.trim()) {
       setTaskError(
         currentText.taskRequired
@@ -1139,113 +1407,65 @@ function TaskAdminItem({
       taskText,
       priority
     );
-  };
+  }
 
   return (
     <Paper
       sx={{
-        padding: 3,
+        p: 3,
         borderRadius: "20px",
         position: "relative",
         overflow: "hidden",
 
         transition:
-          "transform 0.2s, box-shadow 0.2s",
+          "transform 0.2s ease",
 
         "&:hover": {
-          transform: "translateY(-3px)",
+          transform:
+            "translateY(-3px)",
         },
-      }}
-    >
-      {/* الخط العلوي */}
 
-      <Box
-        sx={{
+        "&::before": {
+          content: '""',
           position: "absolute",
           top: 0,
           left: 0,
           right: 0,
-          height: 4,
+          height: "4px",
           backgroundColor:
-            priority === "URGENT"
-              ? "#F48FB1"
-              : "primary.main",
-        }}
-      />
+            "primary.main",
+        },
+      }}
+    >
+      {/* المهمة */}
 
-      {/* عنوان المهمة */}
-
-      <Box
+      <Typography
         sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 1.5,
-          marginBottom: 2.5,
+          fontWeight: 700,
+          mb: 1,
         }}
       >
-        <Box
-          sx={{
-            width: 46,
-            height: 46,
-            borderRadius: "14px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-
-            backgroundColor:
-              priority === "URGENT"
-                ? theme.palette.mode ===
-                  "dark"
-                  ? "rgba(244,143,177,0.12)"
-                  : "#FCE7EF"
-                : theme.palette.mode ===
-                  "dark"
-                  ? "rgba(128,203,196,0.12)"
-                  : "#E6F4F2",
-
-            color:
-              priority === "URGENT"
-                ? theme.palette.mode ===
-                  "dark"
-                  ? "#F48FB1"
-                  : "#D81B60"
-                : "primary.main",
-          }}
-        >
-          <TaskIcon />
-        </Box>
-
-        <Typography
-          sx={{
-            fontWeight: 800,
-            fontSize: "1.05rem",
-          }}
-        >
-          {currentText.task}
-        </Typography>
-      </Box>
-
-      {/* المهمة */}
+        {currentText.task}
+      </Typography>
 
       <TextField
         fullWidth
-        label={currentText.task}
         value={taskText}
-        error={Boolean(taskError)}
-        helperText={taskError}
-        onChange={(event) => {
+        onChange={(e) => {
           setTaskText(
-            event.target.value
+            e.target.value
           );
 
           if (
-            event.target.value.trim()
+            e.target.value.trim()
           ) {
             setTaskError("");
           }
         }}
+        error={Boolean(taskError)}
+        helperText={taskError}
         sx={{
-          marginBottom: 2,
+          mb: 2,
 
           "& .MuiOutlinedInput-root": {
             borderRadius: "12px",
@@ -1255,98 +1475,66 @@ function TaskAdminItem({
 
       {/* الأولوية */}
 
-      <FormControl
+      <Typography
+        sx={{
+          fontWeight: 700,
+          mb: 1,
+        }}
+      >
+        {currentText.priority}
+      </Typography>
+
+      <Select
         fullWidth
+        value={priority}
+        onChange={(e) =>
+          setPriority(
+            e.target.value
+          )
+        }
         sx={{
-          marginBottom: 2,
+          mb: 2,
+
+          "& .MuiOutlinedInput-notchedOutline":
+            {
+              borderRadius:
+                "12px",
+            },
         }}
       >
-        <InputLabel>
-          {currentText.priority}
-        </InputLabel>
+        <MenuItem value="NORMAL">
+          {currentText.normal}
+        </MenuItem>
 
-        <Select
-          value={priority}
-          label={currentText.priority}
-          onChange={(event) =>
-            setPriority(
-              event.target.value
-            )
-          }
-          sx={{
-            borderRadius: "12px",
-          }}
-        >
-          <MenuItem value="NORMAL">
-            {currentText.normal}
-          </MenuItem>
+        <MenuItem value="URGENT">
+          {currentText.urgent}
+        </MenuItem>
+      </Select>
 
-          <MenuItem value="URGENT">
-            {currentText.urgent}
-          </MenuItem>
-        </Select>
-      </FormControl>
+      {/* عرض الأولوية */}
 
-      {/* الأولوية الحالية */}
-
-      <Box
+      <Chip
+        label={
+          priority === "URGENT"
+            ? currentText.urgent
+            : currentText.normal
+        }
+        size="small"
         sx={{
-          marginBottom: 2.5,
+          mb: 2,
+          fontWeight: 700,
         }}
-      >
-        <Chip
-          label={
-            priority === "URGENT"
-              ? currentText.urgent
-              : currentText.normal
-          }
-          sx={{
-            fontWeight: "bold",
-
-            backgroundColor:
-              priority === "URGENT"
-                ? theme.palette.mode ===
-                  "dark"
-                  ? "rgba(244,143,177,0.15)"
-                  : "#FCE7EF"
-                : theme.palette.mode ===
-                  "dark"
-                  ? "rgba(128,203,196,0.12)"
-                  : "#E6F4F2",
-
-            color:
-              priority === "URGENT"
-                ? theme.palette.mode ===
-                  "dark"
-                  ? "#F48FB1"
-                  : "#D81B60"
-                : "primary.main",
-
-            border:
-              priority === "URGENT"
-                ? theme.palette.mode ===
-                  "dark"
-                  ? "1px solid rgba(244,143,177,0.3)"
-                  : "1px solid #F8BBD0"
-                : theme.palette.mode ===
-                  "dark"
-                  ? "1px solid rgba(128,203,196,0.25)"
-                  : "1px solid #B2DFDB",
-          }}
-        />
-      </Box>
+      />
 
       {/* الأزرار */}
 
       <Box
         sx={{
           display: "flex",
-          gap: 1,
+          gap: 1.5,
           flexWrap: "wrap",
         }}
       >
-        {/* تحديث */}
-
         <Button
           variant="outlined"
           startIcon={
@@ -1355,37 +1543,25 @@ function TaskAdminItem({
           onClick={handleUpdate}
           sx={{
             flex: 1,
-            minWidth: 130,
+            minWidth: "170px",
 
-            color: "primary.main",
+            color:
+              "primary.main",
 
             borderColor:
-              theme.palette.mode ===
-              "dark"
-                ? "#475569"
-                : "#B2DFDB",
+              "primary.main",
 
-            borderRadius: "10px",
+            borderRadius:
+              "10px",
 
-            textTransform: "none",
+            textTransform:
+              "none",
+
             fontWeight: 600,
-
-            "&:hover": {
-              borderColor:
-                "primary.main",
-
-              backgroundColor:
-                theme.palette.mode ===
-                "dark"
-                  ? "rgba(128,203,196,0.08)"
-                  : "rgba(0,137,123,0.06)",
-            },
           }}
         >
           {currentText.updateTask}
         </Button>
-
-        {/* حذف */}
 
         <Button
           variant="outlined"
@@ -1397,35 +1573,21 @@ function TaskAdminItem({
           }
           sx={{
             flex: 1,
-            minWidth: 120,
+            minWidth: "140px",
 
             color:
-              theme.palette.mode ===
-              "dark"
-                ? "#EF5350"
-                : "#D32F2F",
+              "#EF5350",
 
             borderColor:
-              theme.palette.mode ===
-              "dark"
-                ? "#7F1D1D"
-                : "#FFCDD2",
+              "#EF5350",
 
-            borderRadius: "10px",
+            borderRadius:
+              "10px",
 
-            textTransform: "none",
+            textTransform:
+              "none",
+
             fontWeight: 600,
-
-            "&:hover": {
-              borderColor:
-                "#EF5350",
-
-              backgroundColor:
-                theme.palette.mode ===
-                "dark"
-                  ? "rgba(239,83,80,0.08)"
-                  : "rgba(239,83,80,0.06)",
-            },
           }}
         >
           {currentText.deleteTask}
@@ -1436,4 +1598,3 @@ function TaskAdminItem({
 }
 
 export default AdminPage;
-

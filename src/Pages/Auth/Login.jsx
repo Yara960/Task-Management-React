@@ -1,4 +1,3 @@
-
 // استيراد useState و useEffect من React
 import { useEffect, useState } from "react";
 
@@ -28,50 +27,87 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAppTheme } from "../../ThemeContext";
 
 function Login() {
+
+  // ==========================================
   // التحكم في الوضع الليلي
+  // ==========================================
+
   const { darkMode, toggleDarkMode } = useAppTheme();
 
+  // ==========================================
   // الانتقال بين الصفحات
+  // ==========================================
+
   const navigate = useNavigate();
 
+  // ==========================================
   // بيانات تسجيل الدخول
+  // ==========================================
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // ==========================================
   // إظهار وإخفاء كلمة المرور
+  // ==========================================
+
   const [showPassword, setShowPassword] = useState(false);
 
+  // ==========================================
   // رسالة الخطأ
+  // ==========================================
+
   const [error, setError] = useState("");
 
+  // ==========================================
   // اللغة الحالية
+  // ==========================================
+
   const [language, setLanguage] = useState(
     () => localStorage.getItem("language") || "en"
   );
 
+  // ==========================================
   // النصوص باللغتين
+  // ==========================================
+
   const text = {
+
     en: {
+
       welcome: "Welcome Back",
-      description: "Login to manage your tasks",
+
+      description:
+        "Login to manage your tasks",
 
       email: "Email",
-      emailPlaceholder: "Enter your email",
+
+      emailPlaceholder:
+        "Enter your email",
 
       password: "Password",
-      passwordPlaceholder: "Enter your password",
 
-      forgotPassword: "Forgot Password?",
+      passwordPlaceholder:
+        "Enter your password",
+
+      forgotPassword:
+        "Forgot Password?",
+
       login: "Login",
 
-      noAccount: "Don't have an account?",
+      noAccount:
+        "Don't have an account?",
+
       register: "Register",
 
       language: "العربية",
+
       darkMode: "Dark Mode",
+
       lightMode: "Light Mode",
 
-      requiredFields: "Please fill in all fields.",
+      requiredFields:
+        "Please fill in all fields.",
 
       invalidCredentials:
         "Invalid email or password.",
@@ -87,29 +123,57 @@ function Login() {
 
       unexpectedError:
         "Something went wrong. Please try again.",
+
+      showPassword:
+        "Show password",
+
+      hidePassword:
+        "Hide password",
     },
 
     ar: {
-      welcome: "مرحباً بعودتك",
-      description: "سجل الدخول لإدارة مهامك",
 
-      email: "البريد الإلكتروني",
-      emailPlaceholder: "أدخل بريدك الإلكتروني",
+      welcome:
+        "مرحباً بعودتك",
 
-      password: "كلمة المرور",
-      passwordPlaceholder: "أدخل كلمة المرور",
+      description:
+        "سجل الدخول لإدارة مهامك",
 
-      forgotPassword: "نسيت كلمة المرور؟",
-      login: "تسجيل الدخول",
+      email:
+        "البريد الإلكتروني",
 
-      noAccount: "ليس لديك حساب؟",
-      register: "إنشاء حساب",
+      emailPlaceholder:
+        "أدخل بريدك الإلكتروني",
 
-      language: "English",
-      darkMode: "الوضع الليلي",
-      lightMode: "الوضع النهاري",
+      password:
+        "كلمة المرور",
 
-      requiredFields: "يرجى تعبئة جميع الحقول.",
+      passwordPlaceholder:
+        "أدخل كلمة المرور",
+
+      forgotPassword:
+        "نسيت كلمة المرور؟",
+
+      login:
+        "تسجيل الدخول",
+
+      noAccount:
+        "ليس لديك حساب؟",
+
+      register:
+        "إنشاء حساب",
+
+      language:
+        "English",
+
+      darkMode:
+        "الوضع الليلي",
+
+      lightMode:
+        "الوضع النهاري",
+
+      requiredFields:
+        "يرجى تعبئة جميع الحقول.",
 
       invalidCredentials:
         "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
@@ -125,78 +189,168 @@ function Login() {
 
       unexpectedError:
         "حدث خطأ غير متوقع. حاول مرة أخرى.",
+
+      showPassword:
+        "إظهار كلمة المرور",
+
+      hidePassword:
+        "إخفاء كلمة المرور",
     },
+
   };
 
+  // ==========================================
   // اختيار النصوص حسب اللغة
-  const currentText =
-    language === "ar" ? text.ar : text.en;
+  // ==========================================
 
+  const currentText =
+    language === "ar"
+      ? text.ar
+      : text.en;
+
+  // ==========================================
   // تغيير اتجاه الصفحة حسب اللغة
+  // وحفظ اللغة
+  // ==========================================
+
   useEffect(() => {
+
     if (language === "ar") {
+
       document.documentElement.dir = "rtl";
+
       document.documentElement.lang = "ar";
+
     } else {
+
       document.documentElement.dir = "ltr";
+
       document.documentElement.lang = "en";
+
     }
 
-    // حفظ اللغة
-    localStorage.setItem("language", language);
+    // حفظ اللغة في Local Storage
+    localStorage.setItem(
+      "language",
+      language
+    );
+
   }, [language]);
 
+  // ==========================================
   // تغيير اللغة
+  // ==========================================
+
   const toggleLanguage = () => {
-    setLanguage((previousLanguage) =>
-      previousLanguage === "en" ? "ar" : "en"
-    );
+
+    setLanguage((previousLanguage) => {
+
+      // تحديد اللغة الجديدة
+      const newLanguage =
+        previousLanguage === "en"
+          ? "ar"
+          : "en";
+
+      // إرسال حدث تغيير اللغة
+      window.dispatchEvent(
+        new CustomEvent(
+          "languageChanged",
+          {
+            detail: newLanguage,
+          }
+        )
+      );
+
+      // إرجاع اللغة الجديدة
+      return newLanguage;
+
+    });
+
   };
 
+  // ==========================================
   // تحويل أخطاء Supabase إلى رسائل مترجمة
+  // ==========================================
+
   function getTranslatedError(error) {
+
     if (!error) {
+
       return currentText.unexpectedError;
+
     }
 
     const message =
       error.message?.toLowerCase() || "";
 
     if (
-      message.includes("invalid login credentials") ||
-      message.includes("invalid email or password") ||
-      message.includes("invalid credentials")
+      message.includes(
+        "invalid login credentials"
+      ) ||
+      message.includes(
+        "invalid email or password"
+      ) ||
+      message.includes(
+        "invalid credentials"
+      )
     ) {
+
       return currentText.invalidCredentials;
+
     }
 
     if (
-      message.includes("email not confirmed") ||
-      message.includes("email_not_confirmed")
+      message.includes(
+        "email not confirmed"
+      ) ||
+      message.includes(
+        "email_not_confirmed"
+      )
     ) {
+
       return currentText.emailNotConfirmed;
+
     }
 
     if (
-      message.includes("too many requests") ||
-      message.includes("rate limit")
+      message.includes(
+        "too many requests"
+      ) ||
+      message.includes(
+        "rate limit"
+      )
     ) {
+
       return currentText.tooManyRequests;
+
     }
 
     if (
-      message.includes("network") ||
-      message.includes("fetch") ||
-      message.includes("failed to fetch")
+      message.includes(
+        "network"
+      ) ||
+      message.includes(
+        "fetch"
+      ) ||
+      message.includes(
+        "failed to fetch"
+      )
     ) {
+
       return currentText.networkError;
+
     }
 
     return currentText.unexpectedError;
+
   }
 
+  // ==========================================
   // تنفيذ تسجيل الدخول
+  // ==========================================
+
   const handleLogin = async (event) => {
+
     // منع تحديث الصفحة
     event.preventDefault();
 
@@ -204,9 +358,17 @@ function Login() {
     setError("");
 
     // التحقق من أن الحقول ليست فارغة
-    if (!email.trim() || !password.trim()) {
-      setError(currentText.requiredFields);
+    if (
+      !email.trim() ||
+      !password.trim()
+    ) {
+
+      setError(
+        currentText.requiredFields
+      );
+
       return;
+
     }
 
     // تسجيل الدخول باستخدام Supabase
@@ -218,23 +380,40 @@ function Login() {
 
     // إذا حدث خطأ
     if (error) {
-      setError(getTranslatedError(error));
+
+      setError(
+        getTranslatedError(error)
+      );
+
       return;
+
     }
 
     // الانتقال إلى صفحة المهام
     navigate("/");
+
   };
 
+  // ==========================================
+  // الواجهة
+  // ==========================================
+
   return (
+
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "background.default",
-        color: "text.primary",
+
+        backgroundColor:
+          "background.default",
+
+        color:
+          "text.primary",
 
         display: "flex",
+
         alignItems: "center",
+
         justifyContent: "center",
 
         padding: "24px",
@@ -243,10 +422,12 @@ function Login() {
           "background-color 0.3s, color 0.3s",
       }}
     >
+
       <Paper
         elevation={0}
         sx={{
           width: "100%",
+
           maxWidth: "430px",
 
           padding: {
@@ -257,69 +438,113 @@ function Login() {
           borderRadius: "20px",
 
           position: "relative",
+
           overflow: "hidden",
         }}
       >
-        {/* الأزرار العلوية */}
+
+        {/* ==========================================
+            الأزرار العلوية
+        ========================================== */}
+
         <Box
           sx={{
             display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
+
+            justifyContent:
+              "flex-end",
+
+            alignItems:
+              "center",
+
             gap: "6px",
+
             marginBottom: "18px",
           }}
         >
+
           {/* زر تغيير اللغة */}
+
           <IconButton
             onClick={toggleLanguage}
-            title={currentText.language}
+
+            title={
+              currentText.language
+            }
+
             sx={{
-              color: "text.secondary",
-              borderRadius: "10px",
+              color:
+                "text.secondary",
+
+              borderRadius:
+                "10px",
 
               "&:hover": {
-                backgroundColor: darkMode
-                  ? "rgba(128,203,196,0.10)"
-                  : "rgba(0,137,123,0.06)",
 
-                color: "primary.main",
+                backgroundColor:
+                  darkMode
+                    ? "rgba(128,203,196,0.10)"
+                    : "rgba(0,137,123,0.06)",
+
+                color:
+                  "primary.main",
               },
             }}
           >
+
             <LanguageIcon />
+
           </IconButton>
 
           {/* زر الوضع الليلي والنهاري */}
+
           <IconButton
             onClick={toggleDarkMode}
+
             title={
               darkMode
                 ? currentText.lightMode
                 : currentText.darkMode
             }
+
             sx={{
-              color: "text.secondary",
-              borderRadius: "10px",
+              color:
+                "text.secondary",
+
+              borderRadius:
+                "10px",
 
               "&:hover": {
-                backgroundColor: darkMode
-                  ? "rgba(128,203,196,0.10)"
-                  : "rgba(0,137,123,0.06)",
 
-                color: "primary.main",
+                backgroundColor:
+                  darkMode
+                    ? "rgba(128,203,196,0.10)"
+                    : "rgba(0,137,123,0.06)",
+
+                color:
+                  "primary.main",
               },
             }}
           >
+
             {darkMode ? (
+
               <LightModeIcon />
+
             ) : (
+
               <DarkModeIcon />
+
             )}
+
           </IconButton>
+
         </Box>
 
-        {/* العنوان */}
+        {/* ==========================================
+            العنوان
+        ========================================== */}
+
         <Typography
           sx={{
             fontSize: {
@@ -327,280 +552,515 @@ function Login() {
               sm: "30px",
             },
 
-            fontWeight: "700",
-            color: "text.primary",
+            fontWeight:
+              "700",
 
-            textAlign: "center",
+            color:
+              "text.primary",
 
-            marginBottom: "8px",
+            textAlign:
+              "center",
+
+            marginBottom:
+              "8px",
           }}
         >
+
           {currentText.welcome}
+
         </Typography>
 
-        {/* الوصف */}
+        {/* ==========================================
+            الوصف
+        ========================================== */}
+
         <Typography
           sx={{
-            fontSize: "14px",
-            color: "text.secondary",
+            fontSize:
+              "14px",
 
-            textAlign: "center",
+            color:
+              "text.secondary",
 
-            marginBottom: "28px",
+            textAlign:
+              "center",
+
+            marginBottom:
+              "28px",
           }}
         >
+
           {currentText.description}
+
         </Typography>
 
-        {/* نموذج تسجيل الدخول */}
+        {/* ==========================================
+            نموذج تسجيل الدخول
+        ========================================== */}
+
         <Box
           component="form"
-          onSubmit={handleLogin}
+
+          onSubmit={
+            handleLogin
+          }
+
           noValidate
         >
+
           {/* البريد الإلكتروني */}
+
           <TextField
             fullWidth
-            label={currentText.email}
-            placeholder={currentText.emailPlaceholder}
-            value={email}
-            onChange={(event) =>
-              setEmail(event.target.value)
+
+            label={
+              currentText.email
             }
+
+            placeholder={
+              currentText.emailPlaceholder
+            }
+
+            value={email}
+
+            onChange={(event) =>
+              setEmail(
+                event.target.value
+              )
+            }
+
             type="email"
+
             sx={{
-              marginBottom: "18px",
+              marginBottom:
+                "18px",
             }}
           />
 
-          {/* كلمة المرور */}
+          {/* ==========================================
+              كلمة المرور + زر العين
+          ========================================== */}
+
           <TextField
             fullWidth
-            label={currentText.password}
+
+            label={
+              currentText.password
+            }
+
             placeholder={
               currentText.passwordPlaceholder
             }
+
             value={password}
+
             onChange={(event) =>
-              setPassword(event.target.value)
+              setPassword(
+                event.target.value
+              )
             }
+
+            // إظهار أو إخفاء كلمة المرور
             type={
-              showPassword ? "text" : "password"
+              showPassword
+                ? "text"
+                : "password"
             }
+
             sx={{
-              marginBottom: "10px",
+              marginBottom:
+                "10px",
             }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() =>
-                      setShowPassword(
-                        (previous) => !previous
-                      )
-                    }
-                    edge="end"
+
+            // نفس طريقة صفحة التسجيل
+            slotProps={{
+              input: {
+
+                endAdornment: (
+
+                  <InputAdornment
+                    position="end"
                   >
-                    {showPassword ? (
-                      <VisibilityOff />
-                    ) : (
-                      <Visibility />
-                    )}
-                  </IconButton>
-                </InputAdornment>
-              ),
+
+                    <IconButton
+
+                      type="button"
+
+                      onClick={() =>
+                        setShowPassword(
+                          (previous) =>
+                            !previous
+                        )
+                      }
+
+                      edge="end"
+
+                      title={
+                        showPassword
+                          ? currentText.hidePassword
+                          : currentText.showPassword
+                      }
+
+                      aria-label={
+                        showPassword
+                          ? currentText.hidePassword
+                          : currentText.showPassword
+                      }
+
+                      sx={{
+                        color:
+                          "text.secondary",
+
+                        padding:
+                          "8px",
+
+                        "&:hover": {
+
+                          color:
+                            "primary.main",
+
+                          backgroundColor:
+                            darkMode
+                              ? "rgba(128,203,196,0.10)"
+                              : "rgba(0,137,123,0.06)",
+                        },
+                      }}
+                    >
+
+                      {showPassword ? (
+
+                        <VisibilityOff />
+
+                      ) : (
+
+                        <Visibility />
+
+                      )}
+
+                    </IconButton>
+
+                  </InputAdornment>
+
+                ),
+
+              },
             }}
+
           />
 
           {/* نسيت كلمة المرور */}
+
           <Box
             sx={{
               display: "flex",
-              justifyContent: "flex-end",
-              marginBottom: "20px",
+
+              justifyContent:
+                "flex-end",
+
+              marginBottom:
+                "20px",
             }}
           >
+
             <Typography
               component={Link}
+
               to="/forgot-password"
+
               sx={{
-                color: "primary.main",
+                color:
+                  "primary.main",
 
-                textDecoration: "none",
+                textDecoration:
+                  "none",
 
-                fontSize: "13px",
-                fontWeight: "600",
+                fontSize:
+                  "13px",
+
+                fontWeight:
+                  "600",
 
                 "&:hover": {
-                  textDecoration: "underline",
+
+                  textDecoration:
+                    "underline",
+
                 },
               }}
             >
-              {currentText.forgotPassword}
+
+              {
+                currentText.forgotPassword
+              }
+
             </Typography>
+
           </Box>
 
-          {/* تنبيه الخطأ الأحمر */}
+          {/* ==========================================
+              تنبيه الخطأ
+          ========================================== */}
+
           {error && (
+
             <Box
               sx={{
                 display: "flex",
-                alignItems: "center",
+
+                alignItems:
+                  "center",
 
                 gap: "10px",
 
-                backgroundColor: darkMode
-                  ? "#3B1F1F"
-                  : "#FFEBEE",
+                backgroundColor:
+                  darkMode
+                    ? "#3B1F1F"
+                    : "#FFEBEE",
 
-                border: darkMode
-                  ? "1px solid #7F1D1D"
-                  : "1px solid #FFCDD2",
+                border:
+                  darkMode
+                    ? "1px solid #7F1D1D"
+                    : "1px solid #FFCDD2",
 
-                color: darkMode
-                  ? "#FF8A80"
-                  : "#D32F2F",
-
-                borderRadius: "10px",
-
-                padding: "12px 14px",
-
-                marginBottom: "20px",
-
-                fontSize: "13px",
-                fontWeight: "500",
-
-                lineHeight: "1.6",
-
-                boxShadow: darkMode
-                  ? "0 4px 12px rgba(239,83,80,0.18)"
-                  : "0 4px 12px rgba(211,47,47,0.08)",
-              }}
-            >
-              {/* دائرة علامة التنبيه */}
-              <Box
-                sx={{
-                  minWidth: "28px",
-                  width: "28px",
-                  height: "28px",
-
-                  borderRadius: "50%",
-
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-
-                  backgroundColor: darkMode
-                    ? "#7F1D1D"
-                    : "#FFCDD2",
-
-                  color: darkMode
+                color:
+                  darkMode
                     ? "#FF8A80"
                     : "#D32F2F",
 
-                  fontSize: "16px",
-                  fontWeight: "700",
+                borderRadius:
+                  "10px",
+
+                padding:
+                  "12px 14px",
+
+                marginBottom:
+                  "20px",
+
+                fontSize:
+                  "13px",
+
+                fontWeight:
+                  "500",
+
+                lineHeight:
+                  "1.6",
+
+                boxShadow:
+                  darkMode
+                    ? "0 4px 12px rgba(239,83,80,0.18)"
+                    : "0 4px 12px rgba(211,47,47,0.08)",
+              }}
+            >
+
+              {/* دائرة علامة التنبيه */}
+
+              <Box
+                sx={{
+                  minWidth:
+                    "28px",
+
+                  width:
+                    "28px",
+
+                  height:
+                    "28px",
+
+                  borderRadius:
+                    "50%",
+
+                  display:
+                    "flex",
+
+                  alignItems:
+                    "center",
+
+                  justifyContent:
+                    "center",
+
+                  backgroundColor:
+                    darkMode
+                      ? "#7F1D1D"
+                      : "#FFCDD2",
+
+                  color:
+                    darkMode
+                      ? "#FF8A80"
+                      : "#D32F2F",
+
+                  fontSize:
+                    "16px",
+
+                  fontWeight:
+                    "700",
                 }}
               >
+
                 !
+
               </Box>
 
               {/* نص التنبيه */}
+
               <Typography
                 sx={{
-                  fontSize: "13px",
-                  fontWeight: "600",
+                  fontSize:
+                    "13px",
 
-                  color: "inherit",
+                  fontWeight:
+                    "600",
 
-                  lineHeight: "1.6",
+                  color:
+                    "inherit",
+
+                  lineHeight:
+                    "1.6",
                 }}
               >
+
                 {error}
+
               </Typography>
+
             </Box>
+
           )}
 
-          {/* زر تسجيل الدخول */}
+          {/* ==========================================
+              زر تسجيل الدخول
+          ========================================== */}
+
           <Button
             type="submit"
+
             fullWidth
+
             variant="contained"
+
             sx={{
-              minHeight: "48px",
+              minHeight:
+                "48px",
 
-              borderRadius: "10px",
+              borderRadius:
+                "10px",
 
-              backgroundColor: "primary.main",
+              backgroundColor:
+                "primary.main",
 
-              color: darkMode
-                ? "#0F172A"
-                : "#FFFFFF",
+              color:
+                darkMode
+                  ? "#0F172A"
+                  : "#FFFFFF",
 
-              fontSize: "15px",
-              fontWeight: "700",
+              fontSize:
+                "15px",
 
-              boxShadow: "none",
+              fontWeight:
+                "700",
+
+              boxShadow:
+                "none",
 
               "&:hover": {
-                backgroundColor: "primary.main",
-                opacity: 0.9,
-                boxShadow: "none",
+
+                backgroundColor:
+                  "primary.main",
+
+                opacity:
+                  0.9,
+
+                boxShadow:
+                  "none",
+
               },
             }}
           >
+
             {currentText.login}
+
           </Button>
+
         </Box>
 
-        {/* إنشاء حساب */}
+        {/* ==========================================
+            إنشاء حساب
+        ========================================== */}
+
         <Box
           sx={{
-            display: "flex",
+            display:
+              "flex",
 
-            justifyContent: "center",
-            alignItems: "center",
+            justifyContent:
+              "center",
 
-            gap: "5px",
+            alignItems:
+              "center",
 
-            marginTop: "24px",
+            gap:
+              "5px",
 
-            flexWrap: "wrap",
+            marginTop:
+              "24px",
+
+            flexWrap:
+              "wrap",
           }}
         >
+
           <Typography
             sx={{
-              fontSize: "13px",
-              color: "text.secondary",
+              fontSize:
+                "13px",
+
+              color:
+                "text.secondary",
             }}
           >
+
             {currentText.noAccount}
+
           </Typography>
 
           <Typography
             component={Link}
+
             to="/register"
+
             sx={{
-              fontSize: "13px",
-              fontWeight: "700",
+              fontSize:
+                "13px",
 
-              color: "secondary.main",
+              fontWeight:
+                "700",
 
-              textDecoration: "none",
+              color:
+                "secondary.main",
+
+              textDecoration:
+                "none",
 
               "&:hover": {
-                textDecoration: "underline",
+
+                textDecoration:
+                  "underline",
+
               },
             }}
           >
+
             {currentText.register}
+
           </Typography>
+
         </Box>
+
       </Paper>
+
     </Box>
+
   );
+
 }
 
+// تصدير Login
 export default Login;
-
- 
