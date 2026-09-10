@@ -377,70 +377,114 @@ function Login() {
  
     } 
  
-    // تسجيل الدخول باستخدام Supabase 
-    const { data, error } = 
-      await supabase.auth.signInWithPassword({ 
-        email, 
-        password, 
-      }); 
+    try { 
  
-    // إذا حدث خطأ 
-    if (error) { 
+      // ========================================== 
+      // تسجيل الدخول باستخدام Supabase 
+      // ========================================== 
  
-      setError( 
-        getTranslatedError(error) 
-      ); 
+      const { data, error } = 
+        await supabase.auth.signInWithPassword({ 
+          email: email.trim(), 
+          password, 
+        }); 
  
-      return; 
+      // إذا حدث خطأ في تسجيل الدخول 
+      if (error) { 
  
-    } 
+        setError( 
+          getTranslatedError(error) 
+        ); 
  
-    // ========================================== 
-    // فحص حالة الحساب 
-    // ========================================== 
+        return; 
  
-    const { data: profile, error: profileError } = 
-      await supabase 
-        .from("profiles") 
-        .select("is_active") 
-        .eq("id", data.user.id) 
-        .single(); 
+      } 
  
-    // إذا حدث خطأ أثناء جلب حالة الحساب 
-    if (profileError) { 
+      // التأكد من وجود المستخدم 
+      if (!data?.user) { 
  
-      // تسجيل خروج المستخدم 
+        setError( 
+          currentText.unexpectedError 
+        ); 
+ 
+        return; 
+ 
+      } 
+ 
+      // ========================================== 
+      // التحقق من حالة الحساب
+      // ========================================== 
+      //
+      // نبحث عن المستخدم بشرطين:
+      //
+      // 1- id يساوي المستخدم الحالي
+      // 2- is_active يساوي 1
+      //
+      // إذا كان is_active = 0
+      // لن يتم العثور على سجل
+      //
+      // ========================================== 
+ 
+      const { data: profile, error: profileError } = 
+        await supabase 
+          .from("profiles") 
+          .select("id, is_active") 
+          .eq("id", data.user.id) 
+          .eq("is_active", 1) 
+          .maybeSingle(); 
+ 
+      // ========================================== 
+      // إذا حدث خطأ في جلب profile
+      // ========================================== 
+ 
+      if (profileError) { 
+ 
+        // تسجيل خروج المستخدم 
+        await supabase.auth.signOut(); 
+ 
+        setError( 
+          currentText.unexpectedError 
+        ); 
+ 
+        return; 
+ 
+      } 
+ 
+      // ========================================== 
+      // إذا لم يوجد حساب فعال
+      // فهذا يعني أن الحساب معطل
+      // ========================================== 
+ 
+      if (!profile) { 
+ 
+        // تسجيل خروج المستخدم مباشرة 
+        await supabase.auth.signOut(); 
+ 
+        setError( 
+          currentText.accountDisabled 
+        ); 
+ 
+        return; 
+ 
+      } 
+ 
+      // ========================================== 
+      // الحساب فعال
+      // السماح بالدخول
+      // ========================================== 
+ 
+      navigate("/"); 
+ 
+    } catch (error) { 
+ 
+      // أي خطأ غير متوقع 
       await supabase.auth.signOut(); 
  
       setError( 
         currentText.unexpectedError 
       ); 
  
-      return; 
- 
     } 
- 
-    // ========================================== 
-    // التحقق من أن الحساب فعال 
-    // 1 = فعال 
-    // 0 = معطل 
-    // ========================================== 
- 
-    if (Number(profile?.is_active) !== 1) { 
- 
-      // تسجيل خروج المستخدم إذا كان الحساب معطلاً 
-      await supabase.auth.signOut(); 
- 
-      setError( 
-        currentText.accountDisabled 
-      ); 
- 
-      return; 
- 
-    } 
- 
-    // الانتقال إلى صفحة المهام 
-    navigate("/"); 
  
   }; 
  
