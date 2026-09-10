@@ -28,7 +28,10 @@ function ForgotPassword() {
   // ==========================================
   // التحكم في الوضع الليلي
   // ==========================================
-  const { darkMode, toggleDarkMode } = useAppTheme();
+  const {
+    darkMode,
+    toggleDarkMode,
+  } = useAppTheme();
 
   // ==========================================
   // تخزين البريد الإلكتروني
@@ -58,54 +61,87 @@ function ForgotPassword() {
   const text = {
     en: {
       title: "Forgot Password?",
-      description: "Enter your email to reset your password",
+      description:
+        "Enter your email to reset your password",
       email: "Email",
-      emailPlaceholder: "Enter your email",
-      sendReset: "Send Reset Link",
-      backToLogin: "Back to Login",
-      language: "العربية",
-      darkMode: "Dark Mode",
-      lightMode: "Light Mode",
-      required: "Please enter your email.",
-      invalidEmail: "Please enter a valid email address.",
-      success: "Password reset link has been sent to your email.",
-      unexpected: "Something went wrong. Please try again.",
+      emailPlaceholder:
+        "Enter your email",
+      sendReset:
+        "Send Reset Link",
+      backToLogin:
+        "Back to Login",
+      language:
+        "العربية",
+      darkMode:
+        "Dark Mode",
+      lightMode:
+        "Light Mode",
+      required:
+        "Please enter your email.",
+      invalidEmail:
+        "Please enter a valid email address.",
+      success:
+        "Password reset link has been sent to your email.",
+      unexpected:
+        "Something went wrong. Please try again.",
     },
 
     ar: {
-      title: "نسيت كلمة المرور؟",
-      description: "أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور",
-      email: "البريد الإلكتروني",
-      emailPlaceholder: "أدخل بريدك الإلكتروني",
-      sendReset: "إرسال رابط إعادة التعيين",
-      backToLogin: "العودة لتسجيل الدخول",
-      language: "English",
-      darkMode: "الوضع الليلي",
-      lightMode: "الوضع النهاري",
-      required: "يرجى إدخال بريدك الإلكتروني.",
-      invalidEmail: "يرجى إدخال بريد إلكتروني صحيح.",
-      success: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
-      unexpected: "حدث خطأ غير متوقع. حاول مرة أخرى.",
+      title:
+        "نسيت كلمة المرور؟",
+      description:
+        "أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور",
+      email:
+        "البريد الإلكتروني",
+      emailPlaceholder:
+        "أدخل بريدك الإلكتروني",
+      sendReset:
+        "إرسال رابط إعادة التعيين",
+      backToLogin:
+        "العودة لتسجيل الدخول",
+      language:
+        "English",
+      darkMode:
+        "الوضع الليلي",
+      lightMode:
+        "الوضع النهاري",
+      required:
+        "يرجى إدخال بريدك الإلكتروني.",
+      invalidEmail:
+        "يرجى إدخال بريد إلكتروني صحيح.",
+      success:
+        "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
+      unexpected:
+        "حدث خطأ غير متوقع. حاول مرة أخرى.",
     },
   };
 
   // ==========================================
-  // النصوص حسب اللغة
+  // النصوص حسب اللغة الحالية
   // ==========================================
-  const currentText = language === "ar" ? text.ar : text.en;
+  const currentText =
+    language === "ar"
+      ? text.ar
+      : text.en;
 
   // ==========================================
-  // استقبال تغيير اللغة من Navbar
+  // استقبال تغيير اللغة
   // ==========================================
   useEffect(() => {
     const handleLanguageChange = (event) => {
       setLanguage(event.detail);
     };
 
-    window.addEventListener("languageChanged", handleLanguageChange);
+    window.addEventListener(
+      "languageChanged",
+      handleLanguageChange
+    );
 
     return () => {
-      window.removeEventListener("languageChanged", handleLanguageChange);
+      window.removeEventListener(
+        "languageChanged",
+        handleLanguageChange
+      );
     };
   }, []);
 
@@ -122,24 +158,36 @@ function ForgotPassword() {
     }
 
     // حفظ اللغة
-    localStorage.setItem("language", language);
+    localStorage.setItem(
+      "language",
+      language
+    );
   }, [language]);
 
   // ==========================================
   // تغيير اللغة
   // ==========================================
   const toggleLanguage = () => {
-    const newLanguage = language === "en" ? "ar" : "en";
+    const newLanguage =
+      language === "en"
+        ? "ar"
+        : "en";
 
     setLanguage(newLanguage);
 
-    localStorage.setItem("language", newLanguage);
+    localStorage.setItem(
+      "language",
+      newLanguage
+    );
 
     // إرسال اللغة لباقي الصفحات
     window.dispatchEvent(
-      new CustomEvent("languageChanged", {
-        detail: newLanguage,
-      })
+      new CustomEvent(
+        "languageChanged",
+        {
+          detail: newLanguage,
+        }
+      )
     );
   };
 
@@ -147,7 +195,9 @@ function ForgotPassword() {
   // التحقق من البريد الإلكتروني
   // ==========================================
   function isValidEmail(value) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+      value.trim()
+    );
   }
 
   // ==========================================
@@ -165,7 +215,9 @@ function ForgotPassword() {
     // التأكد من إدخال البريد
     // ==========================================
     if (!email.trim()) {
-      setError(currentText.required);
+      setError(
+        currentText.required
+      );
       return;
     }
 
@@ -173,37 +225,62 @@ function ForgotPassword() {
     // التأكد من صحة البريد
     // ==========================================
     if (!isValidEmail(email)) {
-      setError(currentText.invalidEmail);
+      setError(
+        currentText.invalidEmail
+      );
       return;
     }
 
-    // ==========================================
-    // إرسال رابط إعادة تعيين كلمة المرور
-    // ==========================================
-    const { error } = await supabase.auth.resetPasswordForEmail(
-      email.trim(),
-      {
-        // رابط صفحة إعادة تعيين كلمة المرور على Vercel
-        redirectTo:
-          "https://task-management-react-orcin.vercel.app/reset-password",
+    try {
+      // ==========================================
+      // إرسال رابط إعادة تعيين كلمة المرور
+      // ==========================================
+      const {
+        error,
+      } = await supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        {
+          // رابط صفحة إعادة تعيين كلمة المرور
+          // على Vercel
+          redirectTo:
+            "https://task-management-react-orcin.vercel.app/reset-password",
+        }
+      );
+
+      // ==========================================
+      // إذا حدث خطأ
+      // ==========================================
+      if (error) {
+        console.log(
+          "Reset password error:",
+          error
+        );
+
+        // إظهار الخطأ الحقيقي من Supabase
+        setError(error.message);
+        return;
       }
-    );
 
-    // ==========================================
-    // إذا حدث خطأ
-    // ==========================================
-    if (error) {
-      console.log("Reset password error:", error);
+      // ==========================================
+      // رسالة النجاح
+      // ==========================================
+      setMessage(
+        currentText.success
+      );
+    } catch (err) {
+      // ==========================================
+      // في حالة حدوث خطأ غير متوقع
+      // ==========================================
+      console.log(
+        "Unexpected error:",
+        err
+      );
 
-      setError(currentText.unexpected);
-
-      return;
+      setError(
+        err?.message ||
+          currentText.unexpected
+      );
     }
-
-    // ==========================================
-    // رسالة النجاح
-    // ==========================================
-    setMessage(currentText.success);
   }
 
   // ==========================================
@@ -213,8 +290,10 @@ function ForgotPassword() {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "background.default",
-        color: "text.primary",
+        backgroundColor:
+          "background.default",
+        color:
+          "text.primary",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
@@ -222,13 +301,13 @@ function ForgotPassword() {
           xs: "24px 16px",
           sm: "40px 20px",
         },
-        transition: "background-color 0.3s, color 0.3s",
+        transition:
+          "background-color 0.3s, color 0.3s",
       }}
     >
       {/* ==========================================
           المربع الرئيسي
           ========================================== */}
-
       <Paper
         elevation={0}
         sx={{
@@ -246,7 +325,6 @@ function ForgotPassword() {
         {/* ==========================================
             الأزرار العلوية
             ========================================== */}
-
         <Box
           sx={{
             display: "flex",
@@ -257,20 +335,23 @@ function ForgotPassword() {
           }}
         >
           {/* زر اللغة */}
-
           <IconButton
             onClick={toggleLanguage}
-            title={currentText.language}
+            title={
+              currentText.language
+            }
             sx={{
-              color: "text.secondary",
-              borderRadius: "10px",
-
+              color:
+                "text.secondary",
+              borderRadius:
+                "10px",
               "&:hover": {
-                backgroundColor: darkMode
-                  ? "rgba(128,203,196,0.10)"
-                  : "rgba(0,137,123,0.06)",
-
-                color: "primary.main",
+                backgroundColor:
+                  darkMode
+                    ? "rgba(128,203,196,0.10)"
+                    : "rgba(0,137,123,0.06)",
+                color:
+                  "primary.main",
               },
             }}
           >
@@ -278,7 +359,6 @@ function ForgotPassword() {
           </IconButton>
 
           {/* زر Dark / Light */}
-
           <IconButton
             onClick={toggleDarkMode}
             title={
@@ -287,47 +367,52 @@ function ForgotPassword() {
                 : currentText.darkMode
             }
             sx={{
-              color: "text.secondary",
-              borderRadius: "10px",
-
+              color:
+                "text.secondary",
+              borderRadius:
+                "10px",
               "&:hover": {
-                backgroundColor: darkMode
-                  ? "rgba(128,203,196,0.10)"
-                  : "rgba(0,137,123,0.06)",
-
-                color: "primary.main",
+                backgroundColor:
+                  darkMode
+                    ? "rgba(128,203,196,0.10)"
+                    : "rgba(0,137,123,0.06)",
+                color:
+                  "primary.main",
               },
             }}
           >
-            {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+            {darkMode ? (
+              <LightModeIcon />
+            ) : (
+              <DarkModeIcon />
+            )}
           </IconButton>
         </Box>
 
         {/* ==========================================
             الأيقونة
             ========================================== */}
-
         <Box
           sx={{
             width: "65px",
             height: "65px",
             borderRadius: "18px",
-
-            backgroundColor: darkMode
-              ? "rgba(128,203,196,0.12)"
-              : "#E0F2F1",
-
+            backgroundColor:
+              darkMode
+                ? "rgba(128,203,196,0.12)"
+                : "#E0F2F1",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-
             margin: "0 auto 18px",
           }}
         >
           <LockResetIcon
             sx={{
-              color: "primary.main",
-              fontSize: "34px",
+              color:
+                "primary.main",
+              fontSize:
+                "34px",
             }}
           />
         </Box>
@@ -335,105 +420,128 @@ function ForgotPassword() {
         {/* ==========================================
             العنوان
             ========================================== */}
-
         <Typography
           sx={{
-            textAlign: "center",
-            fontSize: "26px",
-            fontWeight: "800",
-            color: "text.primary",
+            textAlign:
+              "center",
+            fontSize:
+              "26px",
+            fontWeight:
+              "800",
+            color:
+              "text.primary",
           }}
         >
           {currentText.title}
         </Typography>
 
         {/* الوصف */}
-
         <Typography
           sx={{
-            textAlign: "center",
-            color: "text.secondary",
-            fontSize: "14px",
-            lineHeight: "1.6",
-            marginTop: "8px",
-            marginBottom: "28px",
+            textAlign:
+              "center",
+            color:
+              "text.secondary",
+            fontSize:
+              "14px",
+            lineHeight:
+              "1.6",
+            marginTop:
+              "8px",
+            marginBottom:
+              "28px",
           }}
         >
           {currentText.description}
         </Typography>
 
         {/* ==========================================
-            التنبيه الأحمر
+            رسالة الخطأ
             ========================================== */}
-
         {error && (
           <Box
             sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-
-              backgroundColor: darkMode
-                ? "#3B1F1F"
-                : "#FFEBEE",
-
-              border: darkMode
-                ? "1px solid #7F1D1D"
-                : "1px solid #FFCDD2",
-
-              color: darkMode
-                ? "#FF8A80"
-                : "#D32F2F",
-
-              borderRadius: "10px",
-              padding: "12px 14px",
-              marginBottom: "20px",
-
-              fontSize: "13px",
-              fontWeight: "500",
-              lineHeight: "1.6",
-
-              boxShadow: darkMode
-                ? "0 4px 12px rgba(239,83,80,0.18)"
-                : "0 4px 12px rgba(211,47,47,0.08)",
+              display:
+                "flex",
+              alignItems:
+                "center",
+              gap:
+                "10px",
+              backgroundColor:
+                darkMode
+                  ? "#3B1F1F"
+                  : "#FFEBEE",
+              border:
+                darkMode
+                  ? "1px solid #7F1D1D"
+                  : "1px solid #FFCDD2",
+              color:
+                darkMode
+                  ? "#FF8A80"
+                  : "#D32F2F",
+              borderRadius:
+                "10px",
+              padding:
+                "12px 14px",
+              marginBottom:
+                "20px",
+              fontSize:
+                "13px",
+              fontWeight:
+                "500",
+              lineHeight:
+                "1.6",
+              boxShadow:
+                darkMode
+                  ? "0 4px 12px rgba(239,83,80,0.18)"
+                  : "0 4px 12px rgba(211,47,47,0.08)",
             }}
           >
             {/* علامة التنبيه */}
-
             <Box
               sx={{
-                minWidth: "28px",
-                width: "28px",
-                height: "28px",
-                borderRadius: "50%",
-
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-
-                backgroundColor: darkMode
-                  ? "#7F1D1D"
-                  : "#FFCDD2",
-
-                color: darkMode
-                  ? "#FF8A80"
-                  : "#D32F2F",
-
-                fontSize: "16px",
-                fontWeight: "700",
+                minWidth:
+                  "28px",
+                width:
+                  "28px",
+                height:
+                  "28px",
+                borderRadius:
+                  "50%",
+                display:
+                  "flex",
+                alignItems:
+                  "center",
+                justifyContent:
+                  "center",
+                backgroundColor:
+                  darkMode
+                    ? "#7F1D1D"
+                    : "#FFCDD2",
+                color:
+                  darkMode
+                    ? "#FF8A80"
+                    : "#D32F2F",
+                fontSize:
+                  "16px",
+                fontWeight:
+                  "700",
               }}
             >
               !
             </Box>
 
             {/* نص الخطأ */}
-
             <Typography
               sx={{
-                fontSize: "13px",
-                fontWeight: "600",
-                color: "inherit",
-                lineHeight: "1.6",
+                fontSize:
+                  "13px",
+                fontWeight:
+                  "600",
+                color:
+                  "inherit",
+                lineHeight:
+                  "1.6",
               }}
             >
               {error}
@@ -444,56 +552,70 @@ function ForgotPassword() {
         {/* ==========================================
             رسالة النجاح
             ========================================== */}
-
         {message && (
           <Box
             sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-
-              backgroundColor: darkMode
-                ? "#1B3A2A"
-                : "#E8F5E9",
-
-              border: darkMode
-                ? "1px solid #2E7D32"
-                : "1px solid #C8E6C9",
-
-              color: darkMode
-                ? "#81C784"
-                : "#2E7D32",
-
-              borderRadius: "10px",
-              padding: "12px 14px",
-              marginBottom: "20px",
-
-              fontSize: "13px",
-              fontWeight: "600",
-              lineHeight: "1.6",
+              display:
+                "flex",
+              alignItems:
+                "center",
+              gap:
+                "10px",
+              backgroundColor:
+                darkMode
+                  ? "#1B3A2A"
+                  : "#E8F5E9",
+              border:
+                darkMode
+                  ? "1px solid #2E7D32"
+                  : "1px solid #C8E6C9",
+              color:
+                darkMode
+                  ? "#81C784"
+                  : "#2E7D32",
+              borderRadius:
+                "10px",
+              padding:
+                "12px 14px",
+              marginBottom:
+                "20px",
+              fontSize:
+                "13px",
+              fontWeight:
+                "600",
+              lineHeight:
+                "1.6",
             }}
           >
+            {/* علامة النجاح */}
             <Box
               sx={{
-                minWidth: "28px",
-                width: "28px",
-                height: "28px",
-                borderRadius: "50%",
-
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-
-                backgroundColor: darkMode
-                  ? "#2E7D32"
-                  : "#C8E6C9",
-
-                color: darkMode
-                  ? "#E8F5E9"
-                  : "#2E7D32",
-
-                fontSize: "15px",
-                fontWeight: "700",
+                minWidth:
+                  "28px",
+                width:
+                  "28px",
+                height:
+                  "28px",
+                borderRadius:
+                  "50%",
+                display:
+                  "flex",
+                alignItems:
+                  "center",
+                justifyContent:
+                  "center",
+                backgroundColor:
+                  darkMode
+                    ? "#2E7D32"
+                    : "#C8E6C9",
+                color:
+                  darkMode
+                    ? "#E8F5E9"
+                    : "#2E7D32",
+                fontSize:
+                  "15px",
+                fontWeight:
+                  "700",
               }}
             >
               ✓
@@ -501,10 +623,14 @@ function ForgotPassword() {
 
             <Typography
               sx={{
-                fontSize: "13px",
-                fontWeight: "600",
-                color: "inherit",
-                lineHeight: "1.6",
+                fontSize:
+                  "13px",
+                fontWeight:
+                  "600",
+                color:
+                  "inherit",
+                lineHeight:
+                  "1.6",
               }}
             >
               {message}
@@ -515,53 +641,71 @@ function ForgotPassword() {
         {/* ==========================================
             Form
             ========================================== */}
-
         <Box
           component="form"
           onSubmit={handleReset}
           noValidate
         >
-          {/* البريد الإلكتروني */}
-
+          {/* ==========================================
+              البريد الإلكتروني
+              ========================================== */}
           <TextField
             fullWidth
-            label={currentText.email}
-            placeholder={currentText.emailPlaceholder}
+            label={
+              currentText.email
+            }
+            placeholder={
+              currentText.emailPlaceholder
+            }
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) =>
+              setEmail(
+                e.target.value
+              )
+            }
             sx={{
-              marginBottom: "20px",
+              marginBottom:
+                "20px",
             }}
           />
 
-          {/* زر إرسال الرابط */}
-
+          {/* ==========================================
+              زر إرسال الرابط
+              ========================================== */}
           <Button
             type="submit"
             fullWidth
             variant="contained"
-            startIcon={<LockResetIcon />}
+            startIcon={
+              <LockResetIcon />
+            }
             sx={{
-              height: "48px",
-              borderRadius: "10px",
-
-              backgroundColor: "primary.main",
-
-              color: darkMode
-                ? "#0F172A"
-                : "#FFFFFF",
-
-              textTransform: "none",
-              fontSize: "15px",
-              fontWeight: "700",
-
-              boxShadow: "none",
-
+              height:
+                "48px",
+              borderRadius:
+                "10px",
+              backgroundColor:
+                "primary.main",
+              color:
+                darkMode
+                  ? "#0F172A"
+                  : "#FFFFFF",
+              textTransform:
+                "none",
+              fontSize:
+                "15px",
+              fontWeight:
+                "700",
+              boxShadow:
+                "none",
               "&:hover": {
-                backgroundColor: "primary.main",
-                opacity: 0.9,
-                boxShadow: "none",
+                backgroundColor:
+                  "primary.main",
+                opacity:
+                  0.9,
+                boxShadow:
+                  "none",
               },
             }}
           >
@@ -572,25 +716,31 @@ function ForgotPassword() {
         {/* ==========================================
             العودة لتسجيل الدخول
             ========================================== */}
-
         <Typography
           sx={{
-            textAlign: "center",
-            color: "text.secondary",
-            fontSize: "13px",
-            marginTop: "24px",
+            textAlign:
+              "center",
+            color:
+              "text.secondary",
+            fontSize:
+              "13px",
+            marginTop:
+              "24px",
           }}
         >
           <Box
             component={Link}
             to="/login"
             sx={{
-              color: "primary.main",
-              fontWeight: "700",
-              textDecoration: "none",
-
+              color:
+                "primary.main",
+              fontWeight:
+                "700",
+              textDecoration:
+                "none",
               "&:hover": {
-                textDecoration: "underline",
+                textDecoration:
+                  "underline",
               },
             }}
           >
