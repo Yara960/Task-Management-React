@@ -1,3 +1,4 @@
+
 // استيراد React
 import { useEffect, useState } from "react";
 
@@ -11,6 +12,9 @@ import {
 
 // استيراد Material UI
 import Box from "@mui/material/Box";
+
+// استيراد أيقونة المهام
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
 
 // استيراد Theme Provider
 import { AppThemeProvider } from "./ThemeContext";
@@ -34,6 +38,83 @@ import { supabase } from "./supabaseClient";
 
 
 // =====================================================
+// Loading Component
+// شاشة التحميل
+// =====================================================
+
+function LoadingScreen() {
+
+  return (
+
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "background.default",
+      }}
+    >
+
+      {/* دائرة التحميل */}
+
+      <Box
+        sx={{
+          width: 80,
+          height: 80,
+          borderRadius: "50%",
+
+          border: "4px solid",
+          borderColor: "primary.light",
+          borderTopColor: "primary.main",
+
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+
+          animation: "spin 1s linear infinite",
+
+          "@keyframes spin": {
+            from: {
+              transform: "rotate(0deg)",
+            },
+
+            to: {
+              transform: "rotate(360deg)",
+            },
+          },
+        }}
+      >
+
+        {/* أيقونة المهام */}
+
+        <TaskAltIcon
+          sx={{
+            fontSize: 32,
+            color: "primary.main",
+
+            animation: "reverseSpin 1s linear infinite",
+
+            "@keyframes reverseSpin": {
+              from: {
+                transform: "rotate(0deg)",
+              },
+
+              to: {
+                transform: "rotate(-360deg)",
+              },
+            },
+          }}
+        />
+
+      </Box>
+
+    </Box>
+  );
+}
+
+
+// =====================================================
 // Layout
 // =====================================================
 
@@ -44,6 +125,7 @@ function Layout({ children }) {
     <>
 
       {/* Navbar */}
+
       <Navbar />
 
 
@@ -63,6 +145,7 @@ function Layout({ children }) {
       </Box>
 
     </>
+
   );
 }
 
@@ -114,27 +197,11 @@ function ProtectedRoute({ children }) {
   };
 
 
-  // أثناء التحقق
+  // أثناء التحقق من المستخدم
 
   if (loading) {
 
-    return (
-
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "background.default",
-          color: "text.primary",
-        }}
-      >
-
-        Loading...
-
-      </Box>
-    );
+    return <LoadingScreen />;
   }
 
 
@@ -248,27 +315,11 @@ function AdminRoute({ children }) {
   };
 
 
-  // أثناء التحقق
+  // أثناء التحقق من صلاحية Admin
 
   if (loading) {
 
-    return (
-
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "background.default",
-          color: "text.primary",
-        }}
-      >
-
-        Loading...
-
-      </Box>
-    );
+    return <LoadingScreen />;
   }
 
 
@@ -430,10 +481,13 @@ export default function AppRoutes() {
             }
           />
 
+
         </Routes>
 
       </BrowserRouter>
 
     </AppThemeProvider>
+
   );
 }
+

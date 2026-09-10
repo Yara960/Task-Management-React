@@ -68,13 +68,13 @@ function Register() {
       description:
         "Create your account to start managing tasks",
 
-      name: "Name",
+      
       namePlaceholder: "Enter your name",
 
-      email: "Email",
+      
       emailPlaceholder: "Enter your email",
 
-      password: "Password",
+      
       passwordPlaceholder: "Enter your password",
 
       register: "Register",
@@ -113,14 +113,14 @@ function Register() {
       description:
         "أنشئ حسابك لبدء إدارة مهامك",
 
-      name: "الاسم",
+      
       namePlaceholder: "أدخل اسمك",
 
-      email: "البريد الإلكتروني",
+      
       emailPlaceholder:
         "أدخل بريدك الإلكتروني",
 
-      password: "كلمة المرور",
+      
       passwordPlaceholder:
         "أدخل كلمة المرور",
 

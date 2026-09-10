@@ -14,6 +14,13 @@ import {
   ThemeProvider,
 } from "@mui/material/styles";
 
+// استيراد Emotion
+import { CacheProvider } from "@emotion/react";
+import createCache from "@emotion/cache";
+
+// استيراد RTL
+import rtlPlugin from "stylis-plugin-rtl";
+
 // إنشاء Context للـ Theme
 const ThemeContext = createContext();
 
@@ -24,7 +31,10 @@ const ThemeContext = createContext();
 
 export function AppThemeProvider({ children }) {
 
-  // قراءة الوضع المحفوظ
+  // =====================================================
+  // Dark Mode
+  // =====================================================
+
   const [darkMode, setDarkMode] = useState(() => {
 
     const savedMode = localStorage.getItem("darkMode");
@@ -34,7 +44,18 @@ export function AppThemeProvider({ children }) {
 
 
   // =====================================================
-  // تغيير الوضع
+  // Language
+  // =====================================================
+
+  const [language, setLanguage] = useState(() => {
+
+    return localStorage.getItem("language") || "en";
+
+  });
+
+
+  // =====================================================
+  // تغيير Dark Mode
   // =====================================================
 
   const toggleDarkMode = () => {
@@ -45,13 +66,70 @@ export function AppThemeProvider({ children }) {
 
 
   // =====================================================
-  // حفظ الوضع وتطبيق Dark Mode على Tailwind
+  // الاستماع لتغيير اللغة
+  // =====================================================
+
+  useEffect(() => {
+
+    const handleLanguageChange = (event) => {
+
+      setLanguage(event.detail);
+
+    };
+
+
+    window.addEventListener(
+      "languageChanged",
+      handleLanguageChange
+    );
+
+
+    return () => {
+
+      window.removeEventListener(
+        "languageChanged",
+        handleLanguageChange
+      );
+
+    };
+
+  }, []);
+
+
+  // =====================================================
+  // Direction
+  // =====================================================
+
+  const direction =
+    language === "ar"
+      ? "rtl"
+      : "ltr";
+
+
+  // =====================================================
+  // تطبيق RTL / LTR على HTML
+  // =====================================================
+
+  useEffect(() => {
+
+    document.documentElement.dir = direction;
+
+    document.documentElement.lang = language;
+
+  }, [direction, language]);
+
+
+  // =====================================================
+  // حفظ Dark Mode وتطبيقه
   // =====================================================
 
   useEffect(() => {
 
     // حفظ الاختيار
-    localStorage.setItem("darkMode", darkMode);
+    localStorage.setItem(
+      "darkMode",
+      darkMode
+    );
 
 
     // إضافة أو إزالة dark من HTML
@@ -69,6 +147,29 @@ export function AppThemeProvider({ children }) {
 
 
   // =====================================================
+  // إنشاء Emotion Cache للـ RTL
+  // =====================================================
+
+  const cache = useMemo(() => {
+
+    return createCache({
+
+      key:
+        direction === "rtl"
+          ? "mui-rtl"
+          : "mui-ltr",
+
+      stylisPlugins:
+        direction === "rtl"
+          ? [rtlPlugin]
+          : [],
+
+    });
+
+  }, [direction]);
+
+
+  // =====================================================
   // Material UI Theme
   // =====================================================
 
@@ -76,10 +177,15 @@ export function AppThemeProvider({ children }) {
 
     return createTheme({
 
+      direction: direction,
+
+
       palette: {
 
         // Light / Dark
-        mode: darkMode ? "dark" : "light",
+        mode: darkMode
+          ? "dark"
+          : "light",
 
 
         // =================================================
@@ -310,8 +416,6 @@ export function AppThemeProvider({ children }) {
 
             root: {
 
-              // الوضع الليلي
-              // الوضع النهاري
               backgroundColor: darkMode
                 ? "#1E293B"
                 : "#FFFFFF",
@@ -350,7 +454,114 @@ export function AppThemeProvider({ children }) {
 
             root: {
 
-              transition: "background-color 0.3s",
+              transition:
+                "background-color 0.3s",
+
+            },
+
+          },
+
+        },
+
+
+        // =================================================
+        // Menu
+        // =================================================
+
+        MuiMenu: {
+
+          styleOverrides: {
+
+            paper: {
+
+              direction: direction,
+
+            },
+
+          },
+
+        },
+
+
+        // =================================================
+        // MenuItem
+        // =================================================
+
+        MuiMenuItem: {
+
+          styleOverrides: {
+
+            root: {
+
+              direction: direction,
+
+              textAlign:
+                direction === "rtl"
+                  ? "right"
+                  : "left",
+
+            },
+
+          },
+
+        },
+
+
+        // =================================================
+        // Dialog
+        // =================================================
+
+        MuiDialog: {
+
+          styleOverrides: {
+
+            paper: {
+
+              direction: direction,
+
+            },
+
+          },
+
+        },
+
+
+        // =================================================
+        // DialogTitle
+        // =================================================
+
+        MuiDialogTitle: {
+
+          styleOverrides: {
+
+            root: {
+
+              textAlign:
+                direction === "rtl"
+                  ? "right"
+                  : "left",
+
+            },
+
+          },
+
+        },
+
+
+        // =================================================
+        // DialogContent
+        // =================================================
+
+        MuiDialogContent: {
+
+          styleOverrides: {
+
+            root: {
+
+              textAlign:
+                direction === "rtl"
+                  ? "right"
+                  : "left",
 
             },
 
@@ -362,7 +573,7 @@ export function AppThemeProvider({ children }) {
 
     });
 
-  }, [darkMode]);
+  }, [darkMode, direction]);
 
 
   // =====================================================
@@ -373,16 +584,27 @@ export function AppThemeProvider({ children }) {
 
     <ThemeContext.Provider
       value={{
+
         darkMode,
+
         toggleDarkMode,
+
+        language,
+
+        direction,
+
       }}
     >
 
-      <ThemeProvider theme={theme}>
+      <CacheProvider key={direction} value={cache}>
 
-        {children}
+        <ThemeProvider theme={theme}>
 
-      </ThemeProvider>
+          {children}
+
+        </ThemeProvider>
+
+      </CacheProvider>
 
     </ThemeContext.Provider>
 
