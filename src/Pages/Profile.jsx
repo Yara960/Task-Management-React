@@ -19,6 +19,7 @@ import Alert from "@mui/material/Alert";
 import PersonIcon from "@mui/icons-material/Person";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import SaveIcon from "@mui/icons-material/Save";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 
 // استيراد Supabase
 import { supabase } from "../supabaseClient";
@@ -48,6 +49,9 @@ function Profile() {
 
   // حالة الحفظ
   const [saving, setSaving] = useState(false);
+
+  // حالة رفع الصورة
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // رسالة النجاح أو الخطأ
   const [message, setMessage] = useState("");
@@ -105,6 +109,17 @@ function Profile() {
       save: "Save Changes",
       saving: "Saving...",
 
+      changePhoto: "Change Photo",
+      uploading: "Uploading...",
+      imageSuccess:
+        "Your profile picture has been updated successfully.",
+      imageError:
+        "Failed to upload your profile picture.",
+      imageTypeError:
+        "Please select a JPG, JPEG, PNG, or WEBP image.",
+      imageSizeError:
+        "Image size must be less than 5 MB.",
+
       nameRequired: "Please enter your name.",
       updateSuccess:
         "Your name has been updated successfully.",
@@ -128,6 +143,17 @@ function Profile() {
       namePlaceholder: "اكتب اسمك",
       save: "حفظ التغييرات",
       saving: "جاري الحفظ...",
+
+      changePhoto: "تغيير الصورة",
+      uploading: "جاري رفع الصورة...",
+      imageSuccess:
+        "تم تحديث صورة الملف الشخصي بنجاح.",
+      imageError:
+        "حدث خطأ أثناء رفع صورة الملف الشخصي.",
+      imageTypeError:
+        "يرجى اختيار صورة بصيغة JPG أو JPEG أو PNG أو WEBP.",
+      imageSizeError:
+        "يجب أن يكون حجم الصورة أقل من 5 ميجابايت.",
 
       nameRequired: "يرجى إدخال الاسم.",
       updateSuccess: "تم تحديث اسمك بنجاح.",
@@ -255,6 +281,214 @@ function Profile() {
     // تشغيل جلب البيانات
     getProfileData();
   }, []);
+
+  // ==========================================
+  // رفع صورة المستخدم
+  // ==========================================
+
+  const handleImageUpload = async (event) => {
+    // الحصول على أول صورة اختارها المستخدم
+    const file = event.target.files?.[0];
+
+    // إذا لم يختر المستخدم صورة
+    if (!file) {
+      return;
+    }
+
+    // ==========================================
+    // التحقق من نوع الصورة
+    // ==========================================
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      setMessage(currentText.imageTypeError);
+      setMessageType("error");
+
+      // تنظيف input
+      event.target.value = "";
+
+      return;
+    }
+
+    // ==========================================
+    // التحقق من حجم الصورة
+    // الحد الأقصى 5 MB
+    // ==========================================
+
+    const maxSize = 5 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      setMessage(currentText.imageSizeError);
+      setMessageType("error");
+
+      // تنظيف input
+      event.target.value = "";
+
+      return;
+    }
+
+    // بدء الرفع
+    setUploadingImage(true);
+
+    // إزالة الرسالة القديمة
+    setMessage("");
+
+    try {
+      // ==========================================
+      // جلب المستخدم الحالي
+      // ==========================================
+
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+
+      // إذا لم يوجد مستخدم
+      if (!currentUser) {
+        setMessage(currentText.imageError);
+        setMessageType("error");
+        return;
+      }
+
+      // ==========================================
+      // إنشاء اسم فريد للصورة
+      // ==========================================
+
+      const fileExtension =
+        file.name.split(".").pop()?.toLowerCase() || "jpg";
+
+      const filePath = `${currentUser.id}/avatar-${Date.now()}.${fileExtension}`;
+
+      // ==========================================
+      // رفع الصورة إلى Storage
+      // ==========================================
+
+      const { error: uploadError } =
+        await supabase.storage
+          .from("avatars")
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: file.type,
+          });
+
+      // التحقق من خطأ الرفع
+      if (uploadError) {
+        console.log(
+          "Upload image error:",
+          uploadError
+        );
+
+        setMessage(currentText.imageError);
+        setMessageType("error");
+        return;
+      }
+
+      // ==========================================
+      // الحصول على الرابط العام للصورة
+      // ==========================================
+
+      const {
+        data: publicUrlData,
+      } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      const publicUrl =
+        publicUrlData?.publicUrl;
+
+      // التأكد من وجود الرابط
+      if (!publicUrl) {
+        console.log(
+          "Could not get public image URL"
+        );
+
+        setMessage(currentText.imageError);
+        setMessageType("error");
+        return;
+      }
+
+      // ==========================================
+      // إضافة timestamp لمنع مشكلة Cache
+      // ==========================================
+
+      const newAvatarUrl =
+        `${publicUrl}?v=${Date.now()}`;
+
+      // ==========================================
+      // تحديث avatar_url في profiles
+      // ==========================================
+
+      const {
+        error: profileError,
+      } = await supabase
+        .from("profiles")
+        .update({
+          avatar_url: newAvatarUrl,
+        })
+        .eq("id", currentUser.id);
+
+      // التحقق من خطأ profiles
+      if (profileError) {
+        console.log(
+          "Update avatar profile error:",
+          profileError
+        );
+
+        setMessage(currentText.imageError);
+        setMessageType("error");
+        return;
+      }
+
+      // ==========================================
+      // تحديث الصورة مباشرة في الصفحة
+      // ==========================================
+
+      setAvatarUrl(newAvatarUrl);
+
+      // تحديث بيانات المستخدم
+      setUser(currentUser);
+
+      // ==========================================
+      // إرسال حدث للـNavbar
+      // ==========================================
+
+      window.dispatchEvent(
+        new CustomEvent("profileUpdated", {
+          detail: {
+            avatarUrl: newAvatarUrl,
+          },
+        })
+      );
+
+      // ==========================================
+      // رسالة النجاح
+      // ==========================================
+
+      setMessage(currentText.imageSuccess);
+      setMessageType("success");
+    } catch (error) {
+      console.log(
+        "Image upload error:",
+        error
+      );
+
+      setMessage(currentText.imageError);
+      setMessageType("error");
+    } finally {
+      // إنهاء حالة الرفع
+      setUploadingImage(false);
+
+      // تنظيف input حتى يستطيع المستخدم
+      // اختيار نفس الصورة مرة أخرى إذا أراد
+      event.target.value = "";
+    }
+  };
 
   // ==========================================
   // تحديث الاسم
@@ -451,8 +685,15 @@ function Profile() {
           <Box
             sx={{
               display: "flex",
-              alignItems: "center",
+              alignItems: {
+                xs: "flex-start",
+                sm: "center",
+              },
               gap: "20px",
+              flexWrap: {
+                xs: "wrap",
+                sm: "nowrap",
+              },
             }}
           >
             {/* ==========================================
@@ -495,7 +736,12 @@ function Profile() {
                 معلومات المستخدم
             ========================================== */}
 
-            <Box sx={{ minWidth: 0 }}>
+            <Box
+              sx={{
+                minWidth: 0,
+                flex: 1,
+              }}
+            >
               <Typography
                 sx={{
                   fontSize: {
@@ -526,6 +772,35 @@ function Profile() {
               >
                 {user?.email}
               </Typography>
+
+              {/* ==========================================
+                  زر تغيير الصورة
+              ========================================== */}
+
+              <Button
+                component="label"
+                variant="outlined"
+                size="small"
+                startIcon={<PhotoCameraIcon />}
+                disabled={uploadingImage}
+                sx={{
+                  marginTop: "12px",
+                  borderRadius: "10px",
+                  textTransform: "none",
+                }}
+              >
+                {uploadingImage
+                  ? currentText.uploading
+                  : currentText.changePhoto}
+
+                {/* input مخفي يعمل على الكمبيوتر والجوال */}
+                <input
+                  type="file"
+                  hidden
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleImageUpload}
+                />
+              </Button>
             </Box>
           </Box>
 
