@@ -32,6 +32,7 @@ import { useAppTheme } from "../../ThemeContext";
 // ==========================================
 
 function Register() {
+
   // التحكم في الوضع الليلي
   const { darkMode, toggleDarkMode } = useAppTheme();
 
@@ -63,125 +64,74 @@ function Register() {
   // ==========================================
 
   const text = {
+
     en: {
       title: "Create Account",
-      description:
-        "Create your account to start managing tasks",
-
-      
+      description: "Create your account to start managing tasks",
+      name: "Name",
       namePlaceholder: "Enter your name",
-
-      
+      email: "Email",
       emailPlaceholder: "Enter your email",
-
-      
+      password: "Password",
       passwordPlaceholder: "Enter your password",
-
       register: "Register",
-
-      alreadyAccount:
-        "Already have an account?",
-
+      alreadyAccount: "Already have an account?",
       login: "Login",
-
       language: "العربية",
-
       darkMode: "Dark Mode",
       lightMode: "Light Mode",
-
-      requiredFields:
-        "Please fill in all fields.",
-
-      invalidEmail:
-        "Please enter a valid email address.",
-
-      passwordShort:
-        "Password must be at least 6 characters.",
-
-      emailExists:
-        "This email is already registered.",
-
-      unableCreate:
-        "Unable to create account.",
-
-      unexpectedError:
-        "Something went wrong. Please try again.",
+      requiredFields: "Please fill in all fields.",
+      invalidEmail: "Please enter a valid email address.",
+      passwordShort: "Password must be at least 6 characters.",
+      emailExists: "This email is already registered.",
+      unableCreate: "Unable to create account.",
+      unexpectedError: "Something went wrong. Please try again.",
     },
 
     ar: {
       title: "إنشاء حساب",
-      description:
-        "أنشئ حسابك لبدء إدارة مهامك",
-
-      
+      description: "أنشئ حسابك لبدء إدارة مهامك",
+      name: "الاسم",
       namePlaceholder: "أدخل اسمك",
-
-      
-      emailPlaceholder:
-        "أدخل بريدك الإلكتروني",
-
-      
-      passwordPlaceholder:
-        "أدخل كلمة المرور",
-
+      email: "البريد الإلكتروني",
+      emailPlaceholder: "أدخل بريدك الإلكتروني",
+      password: "كلمة المرور",
+      passwordPlaceholder: "أدخل كلمة المرور",
       register: "إنشاء حساب",
-
-      alreadyAccount:
-        "لديك حساب بالفعل؟",
-
+      alreadyAccount: "لديك حساب بالفعل؟",
       login: "تسجيل الدخول",
-
       language: "English",
-
       darkMode: "الوضع الليلي",
       lightMode: "الوضع النهاري",
-
-      requiredFields:
-        "يرجى تعبئة جميع الحقول.",
-
-      invalidEmail:
-        "يرجى إدخال بريد إلكتروني صحيح.",
-
-      passwordShort:
-        "يجب أن تكون كلمة المرور 6 أحرف على الأقل.",
-
-      emailExists:
-        "هذا البريد الإلكتروني مسجل مسبقاً.",
-
-      unableCreate:
-        "تعذر إنشاء الحساب.",
-
-      unexpectedError:
-        "حدث خطأ غير متوقع. حاول مرة أخرى.",
+      requiredFields: "يرجى تعبئة جميع الحقول.",
+      invalidEmail: "يرجى إدخال بريد إلكتروني صحيح.",
+      passwordShort: "يجب أن تكون كلمة المرور 6 أحرف على الأقل.",
+      emailExists: "هذا البريد الإلكتروني مسجل مسبقاً.",
+      unableCreate: "تعذر إنشاء الحساب.",
+      unexpectedError: "حدث خطأ غير متوقع. حاول مرة أخرى.",
     },
+
   };
 
   // اختيار النصوص حسب اللغة
-  const currentText =
-    language === "ar"
-      ? text.ar
-      : text.en;
+  const currentText = language === "ar" ? text.ar : text.en;
 
   // ==========================================
   // استقبال تغيير اللغة من Navbar
   // ==========================================
 
   useEffect(() => {
+
     const handleLanguageChange = (event) => {
       setLanguage(event.detail);
     };
 
-    window.addEventListener(
-      "languageChanged",
-      handleLanguageChange
-    );
+    window.addEventListener("languageChanged", handleLanguageChange);
 
     return () => {
-      window.removeEventListener(
-        "languageChanged",
-        handleLanguageChange
-      );
+      window.removeEventListener("languageChanged", handleLanguageChange);
     };
+
   }, []);
 
   // ==========================================
@@ -189,19 +139,22 @@ function Register() {
   // ==========================================
 
   useEffect(() => {
+
     if (language === "ar") {
+
       document.documentElement.dir = "rtl";
       document.documentElement.lang = "ar";
+
     } else {
+
       document.documentElement.dir = "ltr";
       document.documentElement.lang = "en";
+
     }
 
     // حفظ اللغة
-    localStorage.setItem(
-      "language",
-      language
-    );
+    localStorage.setItem("language", language);
+
   }, [language]);
 
   // ==========================================
@@ -209,28 +162,21 @@ function Register() {
   // ==========================================
 
   const toggleLanguage = () => {
-    const newLanguage =
-      language === "en"
-        ? "ar"
-        : "en";
+
+    const newLanguage = language === "en" ? "ar" : "en";
 
     setLanguage(newLanguage);
 
     // حفظ اللغة
-    localStorage.setItem(
-      "language",
-      newLanguage
-    );
+    localStorage.setItem("language", newLanguage);
 
     // إرسال اللغة لباقي الصفحات
     window.dispatchEvent(
-      new CustomEvent(
-        "languageChanged",
-        {
-          detail: newLanguage,
-        }
-      )
+      new CustomEvent("languageChanged", {
+        detail: newLanguage,
+      })
     );
+
   };
 
   // ==========================================
@@ -238,12 +184,12 @@ function Register() {
   // ==========================================
 
   function getTranslatedError(error) {
+
     if (!error) {
       return currentText.unexpectedError;
     }
 
-    const message =
-      error.message?.toLowerCase() || "";
+    const message = error.message?.toLowerCase() || "";
 
     // البريد مستخدم مسبقاً
     if (
@@ -258,20 +204,14 @@ function Register() {
 
     // كلمة المرور قصيرة
     if (
-      message.includes(
-        "password should be at least"
-      ) ||
-      message.includes(
-        "password must be at least"
-      )
+      message.includes("password should be at least") ||
+      message.includes("password must be at least")
     ) {
       return currentText.passwordShort;
     }
 
     // البريد غير صحيح
-    if (
-      message.includes("invalid email")
-    ) {
+    if (message.includes("invalid email")) {
       return currentText.invalidEmail;
     }
 
@@ -283,6 +223,7 @@ function Register() {
   // ==========================================
 
   async function handleRegister(e) {
+
     // منع تحديث الصفحة
     e.preventDefault();
 
@@ -293,14 +234,10 @@ function Register() {
     // التحقق من الحقول الفارغة
     // ==========================================
 
-    if (
-      !name.trim() ||
-      !email.trim() ||
-      !password.trim()
-    ) {
-      setError(
-        currentText.requiredFields
-      );
+    if (!name.trim() || !email.trim() || !password.trim()) {
+
+      setError(currentText.requiredFields);
+
       return;
     }
 
@@ -308,22 +245,18 @@ function Register() {
     // تنظيف البريد الإلكتروني
     // ==========================================
 
-    const cleanEmail =
-      email.trim().toLowerCase();
+    const cleanEmail = email.trim().toLowerCase();
 
     // ==========================================
     // التحقق من البريد الإلكتروني
     // ==========================================
 
-    const emailPattern =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (
-      !emailPattern.test(cleanEmail)
-    ) {
-      setError(
-        currentText.invalidEmail
-      );
+    if (!emailPattern.test(cleanEmail)) {
+
+      setError(currentText.invalidEmail);
+
       return;
     }
 
@@ -332,13 +265,14 @@ function Register() {
     // ==========================================
 
     if (password.length < 6) {
-      setError(
-        currentText.passwordShort
-      );
+
+      setError(currentText.passwordShort);
+
       return;
     }
 
     try {
+
       // ==========================================
       // إنشاء الحساب في Supabase Auth
       // ==========================================
@@ -347,7 +281,9 @@ function Register() {
         data,
         error: signUpError,
       } = await supabase.auth.signUp({
+
         email: cleanEmail,
+
         password: password,
 
         options: {
@@ -355,6 +291,7 @@ function Register() {
             name: name.trim(),
           },
         },
+
       });
 
       // ==========================================
@@ -362,16 +299,10 @@ function Register() {
       // ==========================================
 
       if (signUpError) {
-        console.log(
-          "Sign up error:",
-          signUpError
-        );
 
-        setError(
-          getTranslatedError(
-            signUpError
-          )
-        );
+        console.log("Sign up error:", signUpError);
+
+        setError(getTranslatedError(signUpError));
 
         return;
       }
@@ -381,44 +312,17 @@ function Register() {
       // ==========================================
 
       if (!data.user) {
-        setError(
-          currentText.unableCreate
-        );
-        return;
-      }
 
-      // ==========================================
-      // إضافة المستخدم إلى profiles
-      // ==========================================
-
-      const {
-        error: profileError,
-      } = await supabase
-        .from("profiles")
-        .insert([
-          {
-            id: data.user.id,
-            name: name.trim(),
-            email: cleanEmail,
-          },
-        ]);
-
-      // ==========================================
-      // إذا حدث خطأ في profiles
-      // ==========================================
-
-      if (profileError) {
-        console.log(
-          "Profile error:",
-          profileError
-        );
-
-        setError(
-          currentText.unexpectedError
-        );
+        setError(currentText.unableCreate);
 
         return;
       }
+
+      // ==========================================
+      // ملاحظة:
+      // profiles يتم إنشاؤه تلقائياً
+      // بواسطة Trigger الموجود في Supabase
+      // ==========================================
 
       // ==========================================
       // الانتقال إلى Login
@@ -427,19 +331,16 @@ function Register() {
       navigate("/login");
 
     } catch (error) {
+
       // ==========================================
       // خطأ غير متوقع
       // ==========================================
 
-      console.log(
-        "Register error:",
-        error
-      );
+      console.log("Register error:", error);
 
-      setError(
-        currentText.unexpectedError
-      );
+      setError(currentText.unexpectedError);
     }
+
   }
 
   // ==========================================
@@ -447,13 +348,12 @@ function Register() {
   // ==========================================
 
   return (
+
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor:
-          "background.default",
-        color:
-          "text.primary",
+        backgroundColor: "background.default",
+        color: "text.primary",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
@@ -461,10 +361,10 @@ function Register() {
           xs: "24px 16px",
           sm: "40px 20px",
         },
-        transition:
-          "background-color 0.3s, color 0.3s",
+        transition: "background-color 0.3s, color 0.3s",
       }}
     >
+
       <Paper
         elevation={0}
         sx={{
@@ -479,6 +379,7 @@ function Register() {
           overflow: "hidden",
         }}
       >
+
         {/* ==========================================
             الأزرار العلوية
         ========================================== */}
@@ -492,6 +393,7 @@ function Register() {
             marginBottom: "18px",
           }}
         >
+
           {/* زر اللغة */}
 
           <IconButton
@@ -502,17 +404,17 @@ function Register() {
               borderRadius: "10px",
 
               "&:hover": {
-                backgroundColor:
-                  darkMode
-                    ? "rgba(128,203,196,0.10)"
-                    : "rgba(0,137,123,0.06)",
-
-                color:
-                  "primary.main",
+                backgroundColor: darkMode
+                  ? "rgba(128,203,196,0.10)"
+                  : "rgba(0,137,123,0.06)",
+                color: "primary.main",
               },
+
             }}
           >
+
             <LanguageIcon />
+
           </IconButton>
 
           {/* زر Dark / Light */}
@@ -529,22 +431,19 @@ function Register() {
               borderRadius: "10px",
 
               "&:hover": {
-                backgroundColor:
-                  darkMode
-                    ? "rgba(128,203,196,0.10)"
-                    : "rgba(0,137,123,0.06)",
-
-                color:
-                  "primary.main",
+                backgroundColor: darkMode
+                  ? "rgba(128,203,196,0.10)"
+                  : "rgba(0,137,123,0.06)",
+                color: "primary.main",
               },
+
             }}
           >
-            {darkMode ? (
-              <LightModeIcon />
-            ) : (
-              <DarkModeIcon />
-            )}
+
+            {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+
           </IconButton>
+
         </Box>
 
         {/* ==========================================
@@ -563,7 +462,9 @@ function Register() {
             marginBottom: "8px",
           }}
         >
+
           {currentText.title}
+
         </Typography>
 
         {/* الوصف */}
@@ -577,7 +478,9 @@ function Register() {
             marginBottom: "28px",
           }}
         >
+
           {currentText.description}
+
         </Typography>
 
         {/* ==========================================
@@ -585,40 +488,33 @@ function Register() {
         ========================================== */}
 
         {error && (
+
           <Box
             sx={{
               display: "flex",
               alignItems: "center",
               gap: "10px",
-
-              backgroundColor:
-                darkMode
-                  ? "#3B1F1F"
-                  : "#FFEBEE",
-
-              border:
-                darkMode
-                  ? "1px solid #7F1D1D"
-                  : "1px solid #FFCDD2",
-
-              color:
-                darkMode
-                  ? "#FF8A80"
-                  : "#D32F2F",
-
+              backgroundColor: darkMode
+                ? "#3B1F1F"
+                : "#FFEBEE",
+              border: darkMode
+                ? "1px solid #7F1D1D"
+                : "1px solid #FFCDD2",
+              color: darkMode
+                ? "#FF8A80"
+                : "#D32F2F",
               borderRadius: "10px",
               padding: "12px 14px",
               marginBottom: "20px",
               fontSize: "13px",
               fontWeight: "500",
               lineHeight: "1.6",
-
-              boxShadow:
-                darkMode
-                  ? "0 4px 12px rgba(239,83,80,0.18)"
-                  : "0 4px 12px rgba(211,47,47,0.08)",
+              boxShadow: darkMode
+                ? "0 4px 12px rgba(239,83,80,0.18)"
+                : "0 4px 12px rgba(211,47,47,0.08)",
             }}
           >
+
             {/* علامة التنبيه */}
 
             <Box
@@ -627,26 +523,22 @@ function Register() {
                 width: "28px",
                 height: "28px",
                 borderRadius: "50%",
-
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-
-                backgroundColor:
-                  darkMode
-                    ? "#7F1D1D"
-                    : "#FFCDD2",
-
-                color:
-                  darkMode
-                    ? "#FF8A80"
-                    : "#D32F2F",
-
+                backgroundColor: darkMode
+                  ? "#7F1D1D"
+                  : "#FFCDD2",
+                color: darkMode
+                  ? "#FF8A80"
+                  : "#D32F2F",
                 fontSize: "16px",
                 fontWeight: "700",
               }}
             >
+
               !
+
             </Box>
 
             {/* رسالة الخطأ */}
@@ -659,9 +551,13 @@ function Register() {
                 lineHeight: "1.6",
               }}
             >
+
               {error}
+
             </Typography>
+
           </Box>
+
         )}
 
         {/* ==========================================
@@ -673,6 +569,7 @@ function Register() {
           onSubmit={handleRegister}
           noValidate
         >
+
           {/* الاسم */}
 
           <Typography
@@ -681,26 +578,23 @@ function Register() {
               fontWeight: "600",
               color: "text.primary",
               marginBottom: "8px",
-
               textAlign:
                 language === "ar"
                   ? "right"
                   : "left",
             }}
           >
+
             {currentText.name}
+
           </Typography>
 
           <TextField
             fullWidth
             type="text"
-            placeholder={
-              currentText.namePlaceholder
-            }
+            placeholder={currentText.namePlaceholder}
             value={name}
-            onChange={(e) =>
-              setName(e.target.value)
-            }
+            onChange={(e) => setName(e.target.value)}
             sx={{
               marginBottom: "20px",
             }}
@@ -714,26 +608,23 @@ function Register() {
               fontWeight: "600",
               color: "text.primary",
               marginBottom: "8px",
-
               textAlign:
                 language === "ar"
                   ? "right"
                   : "left",
             }}
           >
+
             {currentText.email}
+
           </Typography>
 
           <TextField
             fullWidth
             type="email"
-            placeholder={
-              currentText.emailPlaceholder
-            }
+            placeholder={currentText.emailPlaceholder}
             value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
+            onChange={(e) => setEmail(e.target.value)}
             sx={{
               marginBottom: "20px",
             }}
@@ -747,53 +638,52 @@ function Register() {
               fontWeight: "600",
               color: "text.primary",
               marginBottom: "8px",
-
               textAlign:
                 language === "ar"
                   ? "right"
                   : "left",
             }}
           >
+
             {currentText.password}
+
           </Typography>
 
           <TextField
             fullWidth
-            type={
-              showPassword
-                ? "text"
-                : "password"
-            }
-            placeholder={
-              currentText.passwordPlaceholder
-            }
+            type={showPassword ? "text" : "password"}
+            placeholder={currentText.passwordPlaceholder}
             value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
+            onChange={(e) => setPassword(e.target.value)}
             sx={{
               marginBottom: "22px",
             }}
             slotProps={{
               input: {
+
                 endAdornment: (
+
                   <InputAdornment position="end">
+
                     <IconButton
                       onClick={() =>
-                        setShowPassword(
-                          !showPassword
-                        )
+                        setShowPassword(!showPassword)
                       }
                       edge="end"
                     >
+
                       {showPassword ? (
                         <VisibilityOff />
                       ) : (
                         <Visibility />
                       )}
+
                     </IconButton>
+
                   </InputAdornment>
+
                 ),
+
               },
             }}
           />
@@ -807,30 +697,28 @@ function Register() {
             sx={{
               height: "48px",
               borderRadius: "10px",
-              backgroundColor:
-                "primary.main",
-
-              color:
-                darkMode
-                  ? "#0F172A"
-                  : "#FFFFFF",
-
+              backgroundColor: "primary.main",
+              color: darkMode
+                ? "#0F172A"
+                : "#FFFFFF",
               textTransform: "none",
               fontSize: "15px",
               fontWeight: "700",
               boxShadow: "none",
 
               "&:hover": {
-                backgroundColor:
-                  "primary.main",
-
+                backgroundColor: "primary.main",
                 opacity: 0.9,
                 boxShadow: "none",
               },
+
             }}
           >
+
             {currentText.register}
+
           </Button>
+
         </Box>
 
         {/* ==========================================
@@ -847,13 +735,16 @@ function Register() {
             marginTop: "24px",
           }}
         >
+
           <Typography
             sx={{
               color: "text.secondary",
               fontSize: "13px",
             }}
           >
+
             {currentText.alreadyAccount}
+
           </Typography>
 
           <Typography
@@ -868,13 +759,20 @@ function Register() {
               "&:hover": {
                 textDecoration: "underline",
               },
+
             }}
           >
+
             {currentText.login}
+
           </Typography>
+
         </Box>
+
       </Paper>
+
     </Box>
+
   );
 }
 

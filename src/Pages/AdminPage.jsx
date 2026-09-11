@@ -533,18 +533,38 @@ function AdminPage() {
       return;
     }
 
+    // ======================================================
     // حذف المستخدم
+    // ======================================================
+
     if (deleteType === "user") {
-      const { error } =
+      const { data, error } =
         await supabase
           .from("profiles")
           .delete()
-          .eq("id", deleteId);
+          .eq("id", deleteId)
+          .select();
 
       if (error) {
         console.error(
           "Error deleting user:",
           error
+        );
+
+        closeDelete();
+
+        showMessage(
+          currentText.errorDeletingUser,
+          "error"
+        );
+
+        return;
+      }
+
+      // التأكد أن المستخدم انحذف فعليًا
+      if (!data || data.length === 0) {
+        console.error(
+          "User was not deleted. No row was affected."
         );
 
         closeDelete();
@@ -569,18 +589,38 @@ function AdminPage() {
       return;
     }
 
+    // ======================================================
     // حذف المهمة
+    // ======================================================
+
     if (deleteType === "task") {
-      const { error } =
+      const { data, error } =
         await supabase
           .from("tasks")
           .delete()
-          .eq("id", deleteId);
+          .eq("id", deleteId)
+          .select();
 
       if (error) {
         console.error(
           "Error deleting task:",
           error
+        );
+
+        closeDelete();
+
+        showMessage(
+          currentText.errorDeletingTask,
+          "error"
+        );
+
+        return;
+      }
+
+      // التأكد أن المهمة انحذفت فعليًا
+      if (!data || data.length === 0) {
+        console.error(
+          "Task was not deleted. No row was affected."
         );
 
         closeDelete();
