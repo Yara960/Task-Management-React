@@ -1,10 +1,7 @@
-// استيراد React Hooks
 import { useEffect, useState } from "react";
 
-// استيراد Supabase
 import { supabase } from "../supabaseClient";
 
-// استيراد مكونات Material UI
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
@@ -21,7 +18,6 @@ import Alert from "@mui/material/Alert";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 
-// استيراد الأيقونات
 import SendIcon from "@mui/icons-material/Send";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -29,13 +25,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import AddTaskIcon from "@mui/icons-material/AddTask";
 
-// استيراد ThemeContext
 import { useAppTheme } from "../ThemeContext";
 
-
 export default function Chat() {
-  // جلب اللغة والوضع الليلي
   const { darkMode, language } = useAppTheme();
 
   // المستخدم الحالي
@@ -44,55 +38,67 @@ export default function Chat() {
   // قائمة المستخدمين
   const [users, setUsers] = useState([]);
 
-  // المستخدم الذي تم اختياره للمحادثة
+  // المستخدم المختار
   const [selectedUser, setSelectedUser] = useState(null);
 
-  // الرسالة الحالية
+  // الرسالة
   const [message, setMessage] = useState("");
 
-  // رسائل المحادثة
+  // الرسائل
   const [messages, setMessages] = useState([]);
 
-  // البحث عن مستخدم
+  // البحث
   const [search, setSearch] = useState("");
 
-  // حالة التحميل
+  // التحميل
   const [loading, setLoading] = useState(true);
 
-  // هل نحن في شاشة المحادثة في الجوال؟
+  // فتح المحادثة بالجوال
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
 
-  // الرسالة التي سيتم تعديلها
+  // تعديل الرسالة
   const [editingMessage, setEditingMessage] = useState(null);
-
-  // قيمة تعديل الرسالة
   const [editText, setEditText] = useState("");
-
-  // فتح Dialog التعديل
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  // الرسالة التي سيتم حذفها
+  // حذف الرسالة
   const [deletingMessage, setDeletingMessage] = useState(null);
-
-  // فتح Dialog الحذف
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // عدد الرسائل غير المقروءة لكل مستخدم
+  // الإشعارات
   const [unreadCounts, setUnreadCounts] = useState({});
-
-  // إشعار داخل التطبيق
   const [notificationOpen, setNotificationOpen] = useState(false);
-
-  // نص الإشعار
   const [notificationMessage, setNotificationMessage] = useState("");
-
-  // قائمة الإشعارات
   const [notifications, setNotifications] = useState([]);
+  const [notificationAnchorEl, setNotificationAnchorEl] =
+    useState(null);
 
-  // فتح قائمة الإشعارات
-  const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
+  // ==========================================
+  // المهام
+  // ==========================================
 
-  // النصوص العربية والإنجليزية
+  const [tasks, setTasks] = useState([]);
+
+  // نافذة إضافة مهمة
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+
+  // اسم المهمة
+  const [taskTitle, setTaskTitle] = useState("");
+
+  // تحميل إضافة المهمة
+  const [taskLoading, setTaskLoading] = useState(false);
+
+  // المهمة التي سيتم حذفها
+  const [deletingTask, setDeletingTask] = useState(null);
+
+  // نافذة حذف المهمة
+  const [deleteTaskDialogOpen, setDeleteTaskDialogOpen] =
+    useState(false);
+
+  // ==========================================
+  // النصوص
+  // ==========================================
+
   const text = {
     ar: {
       chats: "المحادثات",
@@ -100,49 +106,94 @@ export default function Chat() {
       selectUser: "اختر مستخدمًا لبدء المحادثة",
       typeMessage: "اكتب رسالة...",
       send: "إرسال",
+
       edit: "تعديل",
       delete: "حذف",
       cancel: "إلغاء",
       save: "حفظ",
+
       deleteConfirm: "هل أنت متأكد من حذف هذه الرسالة؟",
+      deleteTaskConfirm: "هل أنت متأكد من حذف هذه المهمة؟",
+
       noNotifications: "لا توجد إشعارات جديدة",
       notifications: "الإشعارات",
       newMessage: "رسالة جديدة",
+
       messageDeleted: "تم حذف الرسالة",
       messageUpdated: "تم تعديل الرسالة",
+      taskDeleted: "تم حذف المهمة",
+
       error: "حدث خطأ",
+
+      addTask: "إضافة مهمة",
+      taskTitle: "اسم المهمة",
+      taskTitlePlaceholder: "اكتب اسم المهمة...",
+      taskAdded: "تمت إضافة المهمة",
+
+      tasks: "المهام",
+      status: "الحالة",
+
+      pending: "قيد الانتظار",
+      inProgress: "قيد التنفيذ",
+      completed: "مكتملة",
+
+      taskError: "حدث خطأ أثناء إضافة المهمة",
+      taskUpdated: "تم تحديث حالة المهمة",
+      noTasks: "لا توجد مهام",
     },
+
     en: {
       chats: "Chats",
       search: "Search for a user...",
       selectUser: "Select a user to start chatting",
       typeMessage: "Type a message...",
       send: "Send",
+
       edit: "Edit",
       delete: "Delete",
       cancel: "Cancel",
       save: "Save",
+
       deleteConfirm: "Are you sure you want to delete this message?",
+      deleteTaskConfirm: "Are you sure you want to delete this task?",
+
       noNotifications: "No new notifications",
       notifications: "Notifications",
       newMessage: "New message",
+
       messageDeleted: "Message deleted",
       messageUpdated: "Message updated",
+      taskDeleted: "Task deleted",
+
       error: "An error occurred",
+
+      addTask: "Add Task",
+      taskTitle: "Task name",
+      taskTitlePlaceholder: "Enter task name...",
+      taskAdded: "Task added successfully",
+
+      tasks: "Tasks",
+      status: "Status",
+
+      pending: "Pending",
+      inProgress: "In Progress",
+      completed: "Completed",
+
+      taskError: "Error adding task",
+      taskUpdated: "Task status updated",
+      noTasks: "No tasks",
     },
   };
 
   const t = text[language] || text.en;
 
-
-  // --------------------------------------------------
-  // جلب المستخدم الحالي والمستخدمين
-  // --------------------------------------------------
+  // ==========================================
+  // جلب المستخدم الحالي
+  // ==========================================
 
   useEffect(() => {
     getCurrentUser();
   }, []);
-
 
   async function getCurrentUser() {
     try {
@@ -157,17 +208,39 @@ export default function Chat() {
 
       setCurrentUser(user);
 
-      // جلب جميع المستخدمين ما عدا المستخدم الحالي
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .neq("id", user.id)
-        .order("display_name", { ascending: true });
+        .order("display_name", {
+          ascending: true,
+        });
 
       if (error) {
         console.error("Error fetching users:", error);
       } else {
-        setUsers(data || []);
+        const usersList = data || [];
+
+        setUsers(usersList);
+
+        // استرجاع آخر محادثة بعد Refresh
+        const savedSelectedUserId =
+          localStorage.getItem("selectedChatUserId");
+
+        if (savedSelectedUserId) {
+          const savedUser = usersList.find(
+            (item) => item.id === savedSelectedUserId
+          );
+
+          if (savedUser) {
+            setSelectedUser(savedUser);
+            setMobileChatOpen(true);
+          } else {
+            localStorage.removeItem(
+              "selectedChatUserId"
+            );
+          }
+        }
       }
     } catch (error) {
       console.error(error);
@@ -176,28 +249,31 @@ export default function Chat() {
     }
   }
 
-
-  // --------------------------------------------------
-  // جلب الرسائل عند اختيار مستخدم
-  // --------------------------------------------------
+  // ==========================================
+  // عند اختيار المستخدم
+  // ==========================================
 
   useEffect(() => {
     if (!currentUser || !selectedUser) return;
 
     getMessages();
+    getTasks();
 
-    // عند فتح المحادثة نعتبر رسائل هذا المستخدم مقروءة
     setUnreadCounts((prev) => ({
       ...prev,
       [selectedUser.id]: 0,
     }));
 
-    // حذف إشعارات هذا المستخدم من القائمة
     setNotifications((prev) =>
-      prev.filter((item) => item.senderId !== selectedUser.id)
+      prev.filter(
+        (item) => item.senderId !== selectedUser.id
+      )
     );
   }, [currentUser, selectedUser]);
 
+  // ==========================================
+  // جلب الرسائل
+  // ==========================================
 
   async function getMessages() {
     if (!currentUser || !selectedUser) return;
@@ -208,20 +284,58 @@ export default function Chat() {
       .or(
         `and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id})`
       )
-      .order("created_at", { ascending: true });
+      .order("created_at", {
+        ascending: true,
+      });
 
     if (error) {
-      console.error("Error fetching messages:", error);
+      console.error(
+        "Error fetching messages:",
+        error
+      );
       return;
     }
 
     setMessages(data || []);
   }
 
+  // ==========================================
+  // جلب المهام
+  // ==========================================
 
-  // --------------------------------------------------
+  async function getTasks() {
+    if (!currentUser || !selectedUser) return;
+
+    const { data, error } = await supabase
+      .from("task_assignments")
+      .select("*")
+      .order("created_at", {
+        ascending: true,
+      });
+
+    if (error) {
+      console.error(
+        "Error fetching tasks:",
+        error
+      );
+      return;
+    }
+
+    // عرض مهام المحادثة الحالية فقط
+    const conversationTasks = (data || []).filter(
+      (task) =>
+        (task.created_by === currentUser.id &&
+          task.assigned_to === selectedUser.id) ||
+        (task.created_by === selectedUser.id &&
+          task.assigned_to === currentUser.id)
+    );
+
+    setTasks(conversationTasks);
+  }
+
+  // ==========================================
   // Realtime للرسائل
-  // --------------------------------------------------
+  // ==========================================
 
   useEffect(() => {
     if (!currentUser) return;
@@ -238,15 +352,16 @@ export default function Chat() {
         async (payload) => {
           const newMessage = payload.new;
 
-          // إذا كانت الرسالة مرسلة من المستخدم الحالي
+          // لا نحتاج إشعار للرسائل التي أرسلناها نحن
           if (newMessage.sender_id === currentUser.id) {
             return;
           }
 
-          // جلب بيانات المرسل
           const { data: sender } = await supabase
             .from("profiles")
-            .select("display_name, name, avatar_url, avatar")
+            .select(
+              "display_name, name, avatar_url, avatar"
+            )
             .eq("id", newMessage.sender_id)
             .single();
 
@@ -255,14 +370,23 @@ export default function Chat() {
             sender?.name ||
             "User";
 
-          // إذا كانت المحادثة المفتوحة هي نفس المرسل
+          // إذا كانت المحادثة مفتوحة مع نفس المستخدم
           if (
             selectedUser &&
             selectedUser.id === newMessage.sender_id
           ) {
-            setMessages((prev) => [...prev, newMessage]);
+            setMessages((prev) => {
+              const exists = prev.some(
+                (msg) => msg.id === newMessage.id
+              );
 
-            // تعتبر مقروءة
+              if (exists) {
+                return prev;
+              }
+
+              return [...prev, newMessage];
+            });
+
             setUnreadCounts((prev) => ({
               ...prev,
               [newMessage.sender_id]: 0,
@@ -271,14 +395,14 @@ export default function Chat() {
             return;
           }
 
-          // زيادة عدد الرسائل غير المقروءة
+          // زيادة الرسائل غير المقروءة
           setUnreadCounts((prev) => ({
             ...prev,
             [newMessage.sender_id]:
               (prev[newMessage.sender_id] || 0) + 1,
           }));
 
-          // إضافة الإشعار إلى القائمة
+          // إضافة الإشعار
           setNotifications((prev) => [
             {
               id: newMessage.id,
@@ -293,7 +417,6 @@ export default function Chat() {
             ...prev,
           ]);
 
-          // إظهار Snackbar
           setNotificationMessage(
             `${senderName}: ${newMessage.message}`
           );
@@ -308,13 +431,137 @@ export default function Chat() {
     };
   }, [currentUser, selectedUser]);
 
+  // ==========================================
+  // Realtime للمهام
+  // ==========================================
 
-  // --------------------------------------------------
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channel = supabase
+      .channel("task-assignments-realtime")
+
+      // إضافة مهمة
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "task_assignments",
+        },
+        (payload) => {
+          const newTask = payload.new;
+
+          // المهمة لا تخص المستخدم الحالي
+          if (
+            newTask.created_by !== currentUser.id &&
+            newTask.assigned_to !== currentUser.id
+          ) {
+            return;
+          }
+
+          // التأكد أن المهمة تخص المحادثة الحالية
+          if (
+            selectedUser &&
+            (
+              (
+                newTask.created_by === currentUser.id &&
+                newTask.assigned_to === selectedUser.id
+              ) ||
+              (
+                newTask.created_by === selectedUser.id &&
+                newTask.assigned_to === currentUser.id
+              )
+            )
+          ) {
+            setTasks((prev) => {
+              const exists = prev.some(
+                (task) => task.id === newTask.id
+              );
+
+              if (exists) {
+                return prev;
+              }
+
+              return [...prev, newTask];
+            });
+          }
+
+          // إذا الطرف الآخر أنشأ المهمة
+          if (newTask.created_by !== currentUser.id) {
+            setNotificationMessage(
+              `${t.newMessage}: ${newTask.title}`
+            );
+
+            setNotificationOpen(true);
+          }
+        }
+      )
+
+      // تحديث المهمة
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "task_assignments",
+        },
+        (payload) => {
+          const updatedTask = payload.new;
+
+          if (
+            updatedTask.created_by !== currentUser.id &&
+            updatedTask.assigned_to !== currentUser.id
+          ) {
+            return;
+          }
+
+          setTasks((prev) =>
+            prev.map((task) =>
+              task.id === updatedTask.id
+                ? updatedTask
+                : task
+            )
+          );
+        }
+      )
+
+      // حذف المهمة
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "task_assignments",
+        },
+        (payload) => {
+          const deletedTask = payload.old;
+
+          setTasks((prev) =>
+            prev.filter(
+              (task) => task.id !== deletedTask.id
+            )
+          );
+        }
+      )
+
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, selectedUser, language]);
+
+  // ==========================================
   // إرسال رسالة
-  // --------------------------------------------------
+  // ==========================================
 
   async function sendMessage() {
-    if (!message.trim() || !currentUser || !selectedUser) {
+    if (
+      !message.trim() ||
+      !currentUser ||
+      !selectedUser
+    ) {
       return;
     }
 
@@ -331,18 +578,202 @@ export default function Chat() {
       .single();
 
     if (error) {
-      console.error("Error sending message:", error);
+      console.error(
+        "Error sending message:",
+        error
+      );
       return;
     }
 
-    setMessages((prev) => [...prev, data]);
+    setMessages((prev) => {
+      const exists = prev.some(
+        (msg) => msg.id === data.id
+      );
+
+      if (exists) {
+        return prev;
+      }
+
+      return [...prev, data];
+    });
+
     setMessage("");
   }
 
+  // ==========================================
+  // فتح نافذة إضافة مهمة
+  // ==========================================
 
-  // --------------------------------------------------
+  function openTaskDialog() {
+    if (!selectedUser) return;
+
+    setTaskTitle("");
+    setTaskDialogOpen(true);
+  }
+
+  // ==========================================
+  // إضافة مهمة
+  // ==========================================
+
+  async function addTask() {
+    if (
+      !taskTitle.trim() ||
+      !currentUser ||
+      !selectedUser
+    ) {
+      return;
+    }
+
+    setTaskLoading(true);
+
+    const { data, error } = await supabase
+      .from("task_assignments")
+      .insert([
+        {
+          title: taskTitle.trim(),
+          created_by: currentUser.id,
+          assigned_to: selectedUser.id,
+          status: "PENDING",
+        },
+      ])
+      .select()
+      .single();
+
+    setTaskLoading(false);
+
+    if (error) {
+      console.error(
+        "Error adding task:",
+        error
+      );
+
+      setNotificationMessage(t.taskError);
+      setNotificationOpen(true);
+
+      return;
+    }
+
+    // إضافة المهمة للواجهة
+    setTasks((prev) => {
+      const exists = prev.some(
+        (task) => task.id === data.id
+      );
+
+      if (exists) {
+        return prev;
+      }
+
+      return [...prev, data];
+    });
+
+    setTaskDialogOpen(false);
+    setTaskTitle("");
+
+    setNotificationMessage(t.taskAdded);
+    setNotificationOpen(true);
+  }
+
+  // ==========================================
+  // تحديث حالة المهمة
+  // ==========================================
+
+  async function updateTaskStatus(
+    task,
+    newStatus
+  ) {
+    if (!task || !currentUser) return;
+
+    const updateData = {
+      status: newStatus,
+      completed_at:
+        newStatus === "COMPLETED"
+          ? new Date().toISOString()
+          : null,
+    };
+
+    const { data, error } = await supabase
+      .from("task_assignments")
+      .update(updateData)
+      .eq("id", task.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error(
+        "Error updating task:",
+        error
+      );
+
+      setNotificationMessage(t.error);
+      setNotificationOpen(true);
+
+      return;
+    }
+
+    setTasks((prev) =>
+      prev.map((item) =>
+        item.id === task.id
+          ? data
+          : item
+      )
+    );
+
+    setNotificationMessage(t.taskUpdated);
+    setNotificationOpen(true);
+  }
+
+  // ==========================================
+  // فتح حذف المهمة
+  // ==========================================
+
+  function openDeleteTaskDialog(task) {
+    setDeletingTask(task);
+    setDeleteTaskDialogOpen(true);
+  }
+
+  // ==========================================
+  // حذف المهمة
+  // ==========================================
+
+  async function deleteTask() {
+    if (!deletingTask || !currentUser) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("task_assignments")
+      .delete()
+      .eq("id", deletingTask.id);
+
+    if (error) {
+      console.error(
+        "Error deleting task:",
+        error
+      );
+
+      setNotificationMessage(t.error);
+      setNotificationOpen(true);
+
+      return;
+    }
+
+    // حذف المهمة من الواجهة
+    setTasks((prev) =>
+      prev.filter(
+        (task) => task.id !== deletingTask.id
+      )
+    );
+
+    setDeleteTaskDialogOpen(false);
+    setDeletingTask(null);
+
+    setNotificationMessage(t.taskDeleted);
+    setNotificationOpen(true);
+  }
+
+  // ==========================================
   // تعديل الرسالة
-  // --------------------------------------------------
+  // ==========================================
 
   function openEditDialog(msg) {
     setEditingMessage(msg);
@@ -350,9 +781,12 @@ export default function Chat() {
     setEditDialogOpen(true);
   }
 
-
   async function updateMessage() {
-    if (!editingMessage || !editText.trim()) {
+    if (
+      !editingMessage ||
+      !editText.trim() ||
+      !currentUser
+    ) {
       return;
     }
 
@@ -365,14 +799,20 @@ export default function Chat() {
       .eq("sender_id", currentUser.id);
 
     if (error) {
-      console.error("Error updating message:", error);
+      console.error(
+        "Error updating message:",
+        error
+      );
       return;
     }
 
     setMessages((prev) =>
       prev.map((msg) =>
         msg.id === editingMessage.id
-          ? { ...msg, message: editText.trim() }
+          ? {
+              ...msg,
+              message: editText.trim(),
+            }
           : msg
       )
     );
@@ -381,23 +821,33 @@ export default function Chat() {
     setEditingMessage(null);
     setEditText("");
 
-    setNotificationMessage(t.messageUpdated);
+    setNotificationMessage(
+      t.messageUpdated
+    );
+
     setNotificationOpen(true);
   }
 
-
-  // --------------------------------------------------
-  // حذف الرسالة
-  // --------------------------------------------------
+  // ==========================================
+  // فتح حذف الرسالة
+  // ==========================================
 
   function openDeleteDialog(msg) {
     setDeletingMessage(msg);
     setDeleteDialogOpen(true);
   }
 
+  // ==========================================
+  // حذف الرسالة
+  // ==========================================
 
   async function deleteMessage() {
-    if (!deletingMessage) return;
+    if (
+      !deletingMessage ||
+      !currentUser
+    ) {
+      return;
+    }
 
     const { error } = await supabase
       .from("messages")
@@ -406,77 +856,95 @@ export default function Chat() {
       .eq("sender_id", currentUser.id);
 
     if (error) {
-      console.error("Error deleting message:", error);
+      console.error(
+        "Error deleting message:",
+        error
+      );
       return;
     }
 
     setMessages((prev) =>
-      prev.filter((msg) => msg.id !== deletingMessage.id)
+      prev.filter(
+        (msg) =>
+          msg.id !== deletingMessage.id
+      )
     );
 
     setDeleteDialogOpen(false);
     setDeletingMessage(null);
 
-    setNotificationMessage(t.messageDeleted);
+    setNotificationMessage(
+      t.messageDeleted
+    );
+
     setNotificationOpen(true);
   }
 
+  // ==========================================
+  // البحث
+  // ==========================================
 
-  // --------------------------------------------------
-  // البحث عن المستخدمين
-  // --------------------------------------------------
+  const filteredUsers = users.filter(
+    (user) => {
+      const name =
+        user.display_name ||
+        user.name ||
+        user.email ||
+        "";
 
-  const filteredUsers = users.filter((user) => {
-    const name =
-      user.display_name ||
-      user.name ||
-      user.email ||
-      "";
-
-    return name
-      .toLowerCase()
-      .includes(search.toLowerCase());
-  });
-
-
-  // --------------------------------------------------
-  // حساب مجموع الرسائل غير المقروءة
-  // --------------------------------------------------
-
-  const totalUnread = Object.values(unreadCounts).reduce(
-    (total, count) => total + count,
-    0
+      return name
+        .toLowerCase()
+        .includes(
+          search.toLowerCase()
+        );
+    }
   );
 
+  // ==========================================
+  // عدد الإشعارات
+  // ==========================================
 
-  // --------------------------------------------------
+  const totalUnread =
+    Object.values(unreadCounts).reduce(
+      (total, count) =>
+        total + count,
+      0
+    );
+
+  // ==========================================
   // فتح الإشعارات
-  // --------------------------------------------------
+  // ==========================================
 
   function handleNotificationClick(event) {
-    setNotificationAnchorEl(event.currentTarget);
+    setNotificationAnchorEl(
+      event.currentTarget
+    );
   }
 
-
-  // --------------------------------------------------
+  // ==========================================
   // إغلاق الإشعارات
-  // --------------------------------------------------
+  // ==========================================
 
   function handleNotificationClose() {
     setNotificationAnchorEl(null);
   }
 
-
-  // --------------------------------------------------
-  // الضغط على إشعار
-  // --------------------------------------------------
+  // ==========================================
+  // فتح محادثة من الإشعار
+  // ==========================================
 
   function openNotification(notification) {
     const user = users.find(
-      (item) => item.id === notification.senderId
+      (item) =>
+        item.id === notification.senderId
     );
 
     if (user) {
+      localStorage.setItem(
+        "selectedChatUserId",
+        user.id
+      );
+
       setSelectedUser(user);
       setMobileChatOpen(true);
     }
@@ -488,26 +956,25 @@ export default function Chat() {
 
     setNotifications((prev) =>
       prev.filter(
-        (item) => item.id !== notification.id
+        (item) =>
+          item.id !== notification.id
       )
     );
 
     handleNotificationClose();
   }
 
-
-  // --------------------------------------------------
+  // ==========================================
   // إغلاق Snackbar
-  // --------------------------------------------------
+  // ==========================================
 
   function closeNotification() {
     setNotificationOpen(false);
   }
 
-
-  // --------------------------------------------------
-  // شاشة التحميل
-  // --------------------------------------------------
+  // ==========================================
+  // Loading
+  // ==========================================
 
   if (loading) {
     return (
@@ -526,10 +993,9 @@ export default function Chat() {
     );
   }
 
-
-  // --------------------------------------------------
+  // ==========================================
   // الواجهة
-  // --------------------------------------------------
+  // ==========================================
 
   return (
     <Box
@@ -542,11 +1008,16 @@ export default function Chat() {
         minHeight: "500px",
         display: "flex",
         gap: 2,
-        direction: language === "ar" ? "rtl" : "ltr",
-        p: { xs: 1, md: 2 },
+        direction:
+          language === "ar"
+            ? "rtl"
+            : "ltr",
+        p: {
+          xs: 1,
+          md: 2,
+        },
       }}
     >
-
       {/* ==========================================
           قائمة المستخدمين
       ========================================== */}
@@ -554,16 +1025,23 @@ export default function Chat() {
       <Paper
         elevation={darkMode ? 4 : 1}
         sx={{
-          width: { xs: "100%", md: 320 },
-          display:
-            mobileChatOpen ? { xs: "none", md: "flex" } : "flex",
+          width: {
+            xs: "100%",
+            md: 320,
+          },
+          display: mobileChatOpen
+            ? {
+                xs: "none",
+                md: "flex",
+              }
+            : "flex",
           flexDirection: "column",
           overflow: "hidden",
           borderRadius: 3,
         }}
       >
+        {/* عنوان المحادثات */}
 
-        {/* رأس قائمة المحادثات */}
         <Box
           sx={{
             p: 2,
@@ -582,10 +1060,15 @@ export default function Chat() {
             {t.chats}
           </Typography>
 
-          {/* زر الإشعارات */}
+          {/* الإشعارات */}
+
           <IconButton
-            onClick={handleNotificationClick}
-            aria-label={t.notifications}
+            onClick={
+              handleNotificationClick
+            }
+            aria-label={
+              t.notifications
+            }
           >
             <Badge
               badgeContent={totalUnread}
@@ -601,12 +1084,18 @@ export default function Chat() {
           </IconButton>
         </Box>
 
-
         {/* قائمة الإشعارات */}
+
         <Menu
-          anchorEl={notificationAnchorEl}
-          open={Boolean(notificationAnchorEl)}
-          onClose={handleNotificationClose}
+          anchorEl={
+            notificationAnchorEl
+          }
+          open={Boolean(
+            notificationAnchorEl
+          )}
+          onClose={
+            handleNotificationClose
+          }
           anchorOrigin={{
             vertical: "bottom",
             horizontal: "right",
@@ -617,106 +1106,135 @@ export default function Chat() {
           }}
           PaperProps={{
             sx: {
-              width: { xs: 300, sm: 360 },
+              width: {
+                xs: 300,
+                sm: 360,
+              },
               maxHeight: 400,
               mt: 1,
             },
           }}
         >
-
           {notifications.length === 0 ? (
             <MenuItem disabled>
               {t.noNotifications}
             </MenuItem>
           ) : (
-            notifications.map((notification) => (
-              <MenuItem
-                key={notification.id}
-                onClick={() =>
-                  openNotification(notification)
-                }
-                sx={{
-                  display: "flex",
-                  gap: 1.5,
-                  alignItems: "flex-start",
-                  whiteSpace: "normal",
-                  py: 1.5,
-                }}
-              >
-
-                <Avatar
-                  src={notification.avatar || undefined}
+            notifications.map(
+              (notification) => (
+                <MenuItem
+                  key={notification.id}
+                  onClick={() =>
+                    openNotification(
+                      notification
+                    )
+                  }
                   sx={{
-                    width: 38,
-                    height: 38,
-                    flexShrink: 0,
+                    display: "flex",
+                    gap: 1.5,
+                    alignItems:
+                      "flex-start",
+                    whiteSpace:
+                      "normal",
+                    py: 1.5,
                   }}
                 >
-                  {notification.senderName
-                    ?.charAt(0)
-                    ?.toUpperCase()}
-                </Avatar>
-
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography
-                    variant="body2"
+                  <Avatar
+                    src={
+                      notification.avatar ||
+                      undefined
+                    }
                     sx={{
-                      fontWeight: "bold",
+                      width: 38,
+                      height: 38,
+                      flexShrink: 0,
                     }}
                   >
-                    {notification.senderName}
-                  </Typography>
+                    {notification.senderName
+                      ?.charAt(0)
+                      ?.toUpperCase()}
+                  </Avatar>
 
-                  <Typography
-                    variant="body2"
+                  <Box
                     sx={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
+                      minWidth: 0,
                     }}
                   >
-                    {notification.message}
-                  </Typography>
-                </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight:
+                          "bold",
+                      }}
+                    >
+                      {
+                        notification.senderName
+                      }
+                    </Typography>
 
-              </MenuItem>
-            ))
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        overflow:
+                          "hidden",
+                        textOverflow:
+                          "ellipsis",
+                        display:
+                          "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient:
+                          "vertical",
+                      }}
+                    >
+                      {
+                        notification.message
+                      }
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              )
+            )
           )}
-
         </Menu>
-
 
         <Divider />
 
-
         {/* البحث */}
+
         <Box sx={{ p: 2 }}>
           <TextField
             fullWidth
             size="small"
             placeholder={t.search}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <SearchIcon
-                  sx={{
-                    mr: language === "ar" ? 0 : 1,
-                    ml: language === "ar" ? 1 : 0,
-                  }}
-                />
-              ),
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <SearchIcon
+                    sx={{
+                      mr:
+                        language === "ar"
+                          ? 0
+                          : 1,
+                      ml:
+                        language === "ar"
+                          ? 1
+                          : 0,
+                    }}
+                  />
+                ),
+              },
             }}
           />
         </Box>
 
-
         <Divider />
 
-
         {/* المستخدمين */}
+
         <List
           sx={{
             flex: 1,
@@ -724,123 +1242,142 @@ export default function Chat() {
             p: 0,
           }}
         >
-          {filteredUsers.map((user) => {
+          {filteredUsers.map(
+            (user) => {
+              const userName =
+                user.display_name ||
+                user.name ||
+                user.email ||
+                "User";
 
-            const userName =
-              user.display_name ||
-              user.name ||
-              user.email ||
-              "User";
+              const avatar =
+                user.avatar_url ||
+                user.avatar ||
+                "";
 
-            const avatar =
-              user.avatar_url ||
-              user.avatar ||
-              "";
+              const unread =
+                unreadCounts[user.id] ||
+                0;
 
-            const unread =
-              unreadCounts[user.id] || 0;
+              return (
+                <ListItemButton
+                  key={user.id}
+                  selected={
+                    selectedUser?.id ===
+                    user.id
+                  }
+                  onClick={() => {
+                    localStorage.setItem(
+                      "selectedChatUserId",
+                      user.id
+                    );
 
-            return (
-              <ListItemButton
-                key={user.id}
-                selected={
-                  selectedUser?.id === user.id
-                }
-                onClick={() => {
-                  setSelectedUser(user);
-                  setMobileChatOpen(true);
-                }}
-                sx={{
-                  py: 1.5,
-                  px: 2,
-                }}
-              >
-
-                <Avatar
-                  src={avatar || undefined}
+                    setSelectedUser(user);
+                    setMobileChatOpen(true);
+                  }}
                   sx={{
-                    width: 42,
-                    height: 42,
-                    mr: language === "ar" ? 0 : 1.5,
-                    ml: language === "ar" ? 1.5 : 0,
+                    py: 1.5,
+                    px: 2,
                   }}
                 >
-                  {userName
-                    .charAt(0)
-                    .toUpperCase()}
-                </Avatar>
-
-                <Box
-                  sx={{
-                    flex: 1,
-                    minWidth: 0,
-                  }}
-                >
-                  <Typography
+                  <Avatar
+                    src={
+                      avatar ||
+                      undefined
+                    }
                     sx={{
-                      fontWeight:
-                        unread > 0
-                          ? "bold"
-                          : "normal",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      width: 42,
+                      height: 42,
+                      mr:
+                        language === "ar"
+                          ? 0
+                          : 1.5,
+                      ml:
+                        language === "ar"
+                          ? 1.5
+                          : 0,
                     }}
                   >
-                    {userName}
-                  </Typography>
-                </Box>
+                    {userName
+                      .charAt(0)
+                      .toUpperCase()}
+                  </Avatar>
 
-                {unread > 0 && (
-                  <Badge
-                    badgeContent={unread}
-                    color="error"
-                    max={99}
-                  />
-                )}
+                  <Box
+                    sx={{
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontWeight:
+                          unread > 0
+                            ? "bold"
+                            : "normal",
+                        overflow:
+                          "hidden",
+                        textOverflow:
+                          "ellipsis",
+                        whiteSpace:
+                          "nowrap",
+                      }}
+                    >
+                      {userName}
+                    </Typography>
+                  </Box>
 
-              </ListItemButton>
-            );
-          })}
+                  {unread > 0 && (
+                    <Badge
+                      badgeContent={
+                        unread
+                      }
+                      color="error"
+                      max={99}
+                    />
+                  )}
+                </ListItemButton>
+              );
+            }
+          )}
         </List>
-
       </Paper>
 
-
       {/* ==========================================
-          شاشة المحادثة
+          المحادثة
       ========================================== */}
 
       <Paper
         elevation={darkMode ? 4 : 1}
         sx={{
           flex: 1,
-          display:
-            !mobileChatOpen
-              ? { xs: "none", md: "flex" }
-              : "flex",
+          display: !mobileChatOpen
+            ? {
+                xs: "none",
+                md: "flex",
+              }
+            : "flex",
           flexDirection: "column",
           overflow: "hidden",
           borderRadius: 3,
         }}
       >
-
         {selectedUser ? (
           <>
-
             {/* رأس المحادثة */}
+
             <Box
               sx={{
                 p: 1.5,
                 display: "flex",
                 alignItems: "center",
                 gap: 1,
-                borderBottom: "1px solid",
-                borderColor: "divider",
+                borderBottom:
+                  "1px solid",
+                borderColor:
+                  "divider",
               }}
             >
-
-              {/* زر الرجوع في الجوال */}
               <IconButton
                 onClick={() => {
                   setMobileChatOpen(false);
@@ -854,7 +1391,6 @@ export default function Chat() {
               >
                 <ArrowBackIcon />
               </IconButton>
-
 
               <Avatar
                 src={
@@ -873,48 +1409,54 @@ export default function Chat() {
                   .toUpperCase()}
               </Avatar>
 
-
               <Typography
                 sx={{
                   fontWeight: "bold",
+                  flex: 1,
                 }}
               >
                 {selectedUser.display_name ||
                   selectedUser.name ||
                   selectedUser.email}
               </Typography>
-
             </Box>
 
+            {/* ==========================================
+                الرسائل والمهام
+            ========================================== */}
 
-            {/* الرسائل */}
             <Box
               sx={{
                 flex: 1,
                 overflowY: "auto",
-                p: { xs: 1, md: 2 },
+                p: {
+                  xs: 1,
+                  md: 2,
+                },
                 display: "flex",
-                flexDirection: "column",
-                gap: 1,
+                flexDirection:
+                  "column",
+                gap: 1.5,
               }}
             >
+              {/* الرسائل */}
 
               {messages.map((msg) => {
-
                 const isMine =
-                  msg.sender_id === currentUser.id;
+                  msg.sender_id ===
+                  currentUser.id;
 
                 return (
                   <Box
                     key={msg.id}
                     sx={{
                       display: "flex",
-                      justifyContent: isMine
-                        ? "flex-end"
-                        : "flex-start",
+                      justifyContent:
+                        isMine
+                          ? "flex-end"
+                          : "flex-start",
                     }}
                   >
-
                     <Box
                       sx={{
                         maxWidth: {
@@ -934,90 +1476,296 @@ export default function Chat() {
                           : "text.primary",
                       }}
                     >
-
                       <Typography
                         sx={{
-                          whiteSpace: "pre-wrap",
-                          wordBreak: "break-word",
+                          whiteSpace:
+                            "pre-wrap",
+                          wordBreak:
+                            "break-word",
                         }}
                       >
                         {msg.message}
                       </Typography>
 
-
-                      {/* أزرار التعديل والحذف للرسائل الخاصة بالمستخدم */}
                       {isMine && (
                         <Box
                           sx={{
-                            display: "flex",
-                            justifyContent: "flex-end",
+                            display:
+                              "flex",
+                            justifyContent:
+                              "flex-end",
                             mt: 0.5,
                             gap: 0.5,
                           }}
                         >
-
                           <IconButton
                             size="small"
                             onClick={() =>
-                              openEditDialog(msg)
+                              openEditDialog(
+                                msg
+                              )
                             }
                             sx={{
                               color:
                                 "inherit",
                             }}
                           >
-                            <EditIcon
-                              fontSize="small"
-                            />
+                            <EditIcon fontSize="small" />
                           </IconButton>
-
 
                           <IconButton
                             size="small"
                             onClick={() =>
-                              openDeleteDialog(msg)
+                              openDeleteDialog(
+                                msg
+                              )
                             }
                             sx={{
                               color:
                                 "inherit",
                             }}
                           >
-                            <DeleteIcon
-                              fontSize="small"
-                            />
+                            <DeleteIcon fontSize="small" />
                           </IconButton>
-
                         </Box>
                       )}
-
                     </Box>
-
                   </Box>
                 );
               })}
 
+              {/* المهام */}
+
+              {tasks.length > 0 && (
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: "flex",
+                    flexDirection:
+                      "column",
+                    gap: 1,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight:
+                        "bold",
+                    }}
+                  >
+                    {t.tasks}
+                  </Typography>
+
+                  {tasks.map((task) => {
+                    const createdByMe =
+                      task.created_by ===
+                      currentUser.id;
+
+                    return (
+                      <Paper
+                        key={task.id}
+                        elevation={1}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2,
+                          border:
+                            "1px solid",
+                          borderColor:
+                            "divider",
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display:
+                              "flex",
+                            alignItems:
+                              "flex-start",
+                            justifyContent:
+                              "space-between",
+                            gap: 1,
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              fontWeight:
+                                "bold",
+                              mb: 1,
+                              wordBreak:
+                                "break-word",
+                              flex: 1,
+                            }}
+                          >
+                            {task.title}
+                          </Typography>
+
+                          {/* حذف المهمة */}
+
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() =>
+                              openDeleteTaskDialog(
+                                task
+                              )
+                            }
+                            title={t.delete}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display:
+                              "flex",
+                            alignItems:
+                              "center",
+                            justifyContent:
+                              "space-between",
+                            gap: 1,
+                            flexWrap:
+                              "wrap",
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                          >
+                            {t.status}
+                          </Typography>
+
+                          <select
+                            value={
+                              task.status ||
+                              "PENDING"
+                            }
+                            onChange={(e) =>
+                              updateTaskStatus(
+                                task,
+                                e.target.value
+                              )
+                            }
+                            style={{
+                              padding:
+                                "6px 10px",
+                              borderRadius:
+                                "8px",
+                              border:
+                                "1px solid #ccc",
+                              background:
+                                darkMode
+                                  ? "#333"
+                                  : "#fff",
+                              color:
+                                darkMode
+                                  ? "#fff"
+                                  : "#000",
+                              cursor:
+                                "pointer",
+                            }}
+                          >
+                            <option value="PENDING">
+                              {t.pending}
+                            </option>
+
+                            <option value="IN_PROGRESS">
+                              {t.inProgress}
+                            </option>
+
+                            <option value="COMPLETED">
+                              {t.completed}
+                            </option>
+                          </select>
+                        </Box>
+
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{
+                            display:
+                              "block",
+                            mt: 1,
+                          }}
+                        >
+                          {createdByMe
+                            ? language ===
+                              "ar"
+                              ? "أنت أنشأت هذه المهمة"
+                              : "You created this task"
+                            : language ===
+                              "ar"
+                            ? "تم إرسال هذه المهمة إليك"
+                            : "This task was assigned to you"}
+                        </Typography>
+                      </Paper>
+                    );
+                  })}
+                </Box>
+              )}
+
+              {/* لا توجد رسائل أو مهام */}
+
+              {messages.length === 0 &&
+                tasks.length === 0 && (
+                  <Box
+                    sx={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems:
+                        "center",
+                      justifyContent:
+                        "center",
+                    }}
+                  >
+                    <Typography
+                      color="text.secondary"
+                    >
+                      {t.selectUser}
+                    </Typography>
+                  </Box>
+                )}
             </Box>
 
+            {/* ==========================================
+                كتابة الرسالة
+            ========================================== */}
 
-            {/* إدخال الرسالة */}
             <Box
               sx={{
                 p: 1.5,
-                borderTop: "1px solid",
-                borderColor: "divider",
+                borderTop:
+                  "1px solid",
+                borderColor:
+                  "divider",
                 display: "flex",
+                alignItems:
+                  "center",
                 gap: 1,
-                alignItems: "center",
               }}
             >
+              {/* إضافة مهمة */}
+
+              <IconButton
+                color="primary"
+                onClick={
+                  openTaskDialog
+                }
+                title={t.addTask}
+              >
+                <AddTaskIcon />
+              </IconButton>
 
               <TextField
                 fullWidth
                 size="small"
-                placeholder={t.typeMessage}
+                placeholder={
+                  t.typeMessage
+                }
                 value={message}
                 onChange={(e) =>
-                  setMessage(e.target.value)
+                  setMessage(
+                    e.target.value
+                  )
                 }
                 onKeyDown={(e) => {
                   if (
@@ -1030,20 +1778,18 @@ export default function Chat() {
                 }}
               />
 
-
               <Button
                 variant="contained"
-                onClick={sendMessage}
-                disabled={!message.trim()}
+                onClick={
+                  sendMessage
+                }
                 sx={{
                   minWidth: {
-                    xs: 48,
-                    sm: 100,
+                    xs: 45,
+                    sm: 90,
                   },
-                  height: 40,
                 }}
               >
-
                 <SendIcon
                   sx={{
                     display: {
@@ -1053,7 +1799,8 @@ export default function Chat() {
                   }}
                 />
 
-                <Typography
+                <Box
+                  component="span"
                   sx={{
                     display: {
                       xs: "none",
@@ -1062,69 +1809,155 @@ export default function Chat() {
                   }}
                 >
                   {t.send}
-                </Typography>
-
+                </Box>
               </Button>
-
             </Box>
-
           </>
         ) : (
-
-          // لا يوجد مستخدم محدد
           <Box
             sx={{
               flex: 1,
               display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              alignItems:
+                "center",
+              justifyContent:
+                "center",
               p: 3,
             }}
           >
             <Typography
               color="text.secondary"
-              textAlign="center"
             >
               {t.selectUser}
             </Typography>
           </Box>
-
         )}
-
       </Paper>
 
-
       {/* ==========================================
-          Snackbar للإشعارات داخل التطبيق
+          نافذة إضافة مهمة
       ========================================== */}
 
-      <Snackbar
-        open={notificationOpen}
-        autoHideDuration={4000}
-        onClose={closeNotification}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal:
-            language === "ar"
-              ? "left"
-              : "right",
-        }}
-      >
-        <Alert
-          onClose={closeNotification}
-          severity="info"
-          variant="filled"
+      {taskDialogOpen && (
+        <Box
           sx={{
-            width: "100%",
+            position: "fixed",
+            inset: 0,
+            backgroundColor:
+              "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems:
+              "center",
+            justifyContent:
+              "center",
+            zIndex: 2000,
+            p: 2,
           }}
         >
-          {notificationMessage}
-        </Alert>
-      </Snackbar>
+          <Paper
+            sx={{
+              width: "100%",
+              maxWidth: 450,
+              p: 3,
+              borderRadius: 3,
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight:
+                  "bold",
+                mb: 2,
+              }}
+            >
+              {t.addTask}
+            </Typography>
 
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                mb: 2,
+              }}
+            >
+              {language === "ar"
+                ? `سيتم إرسال المهمة إلى ${
+                    selectedUser?.display_name ||
+                    selectedUser?.name ||
+                    selectedUser?.email ||
+                    ""
+                  }`
+                : `The task will be assigned to ${
+                    selectedUser?.display_name ||
+                    selectedUser?.name ||
+                    selectedUser?.email ||
+                    ""
+                  }`}
+            </Typography>
+
+            <TextField
+              fullWidth
+              autoFocus
+              label={t.taskTitle}
+              placeholder={
+                t.taskTitlePlaceholder
+              }
+              value={taskTitle}
+              onChange={(e) =>
+                setTaskTitle(
+                  e.target.value
+                )
+              }
+              onKeyDown={(e) => {
+                if (
+                  e.key === "Enter" &&
+                  !taskLoading
+                ) {
+                  addTask();
+                }
+              }}
+            />
+
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent:
+                  "flex-end",
+                gap: 1,
+                mt: 3,
+              }}
+            >
+              <Button
+                onClick={() => {
+                  setTaskDialogOpen(
+                    false
+                  );
+                  setTaskTitle("");
+                }}
+                disabled={taskLoading}
+              >
+                {t.cancel}
+              </Button>
+
+              <Button
+                variant="contained"
+                onClick={addTask}
+                disabled={
+                  taskLoading ||
+                  !taskTitle.trim()
+                }
+              >
+                {taskLoading
+                  ? "..."
+                  : t.addTask}
+              </Button>
+            </Box>
+          </Paper>
+        </Box>
+      )}
 
       {/* ==========================================
-          Dialog تعديل الرسالة
+          نافذة تعديل الرسالة
       ========================================== */}
 
       {editDialogOpen && (
@@ -1132,15 +1965,17 @@ export default function Chat() {
           sx={{
             position: "fixed",
             inset: 0,
-            zIndex: 1300,
+            backgroundColor:
+              "rgba(0,0,0,0.5)",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            bgcolor: "rgba(0,0,0,0.5)",
+            alignItems:
+              "center",
+            justifyContent:
+              "center",
+            zIndex: 2000,
             p: 2,
           }}
         >
-
           <Paper
             sx={{
               width: "100%",
@@ -1149,17 +1984,16 @@ export default function Chat() {
               borderRadius: 3,
             }}
           >
-
             <Typography
               variant="h6"
               sx={{
+                fontWeight:
+                  "bold",
                 mb: 2,
-                fontWeight: "bold",
               }}
             >
               {t.edit}
             </Typography>
-
 
             <TextField
               fullWidth
@@ -1167,23 +2001,26 @@ export default function Chat() {
               minRows={3}
               value={editText}
               onChange={(e) =>
-                setEditText(e.target.value)
+                setEditText(
+                  e.target.value
+                )
               }
             />
-
 
             <Box
               sx={{
                 display: "flex",
-                justifyContent: "flex-end",
+                justifyContent:
+                  "flex-end",
                 gap: 1,
-                mt: 2,
+                mt: 3,
               }}
             >
-
               <Button
                 onClick={() => {
-                  setEditDialogOpen(false);
+                  setEditDialogOpen(
+                    false
+                  );
                   setEditingMessage(null);
                   setEditText("");
                 }}
@@ -1191,41 +2028,42 @@ export default function Chat() {
                 {t.cancel}
               </Button>
 
-
               <Button
                 variant="contained"
-                onClick={updateMessage}
-                disabled={!editText.trim()}
+                onClick={
+                  updateMessage
+                }
+                disabled={
+                  !editText.trim()
+                }
               >
                 {t.save}
               </Button>
-
             </Box>
-
           </Paper>
-
         </Box>
       )}
 
-
       {/* ==========================================
-          Dialog حذف الرسالة
+          نافذة حذف المهمة
       ========================================== */}
 
-      {deleteDialogOpen && (
+      {deleteTaskDialogOpen && (
         <Box
           sx={{
             position: "fixed",
             inset: 0,
-            zIndex: 1300,
+            backgroundColor:
+              "rgba(0,0,0,0.5)",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            bgcolor: "rgba(0,0,0,0.5)",
+            alignItems:
+              "center",
+            justifyContent:
+              "center",
+            zIndex: 2000,
             p: 2,
           }}
         >
-
           <Paper
             sx={{
               width: "100%",
@@ -1234,17 +2072,96 @@ export default function Chat() {
               borderRadius: 3,
             }}
           >
-
             <Typography
               variant="h6"
               sx={{
+                fontWeight:
+                  "bold",
                 mb: 2,
-                fontWeight: "bold",
               }}
             >
               {t.delete}
             </Typography>
 
+            <Typography
+              sx={{
+                mb: 3,
+              }}
+            >
+              {t.deleteTaskConfirm}
+            </Typography>
+
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent:
+                  "flex-end",
+                gap: 1,
+              }}
+            >
+              <Button
+                onClick={() => {
+                  setDeleteTaskDialogOpen(
+                    false
+                  );
+                  setDeletingTask(null);
+                }}
+              >
+                {t.cancel}
+              </Button>
+
+              <Button
+                variant="contained"
+                color="error"
+                onClick={
+                  deleteTask
+                }
+              >
+                {t.delete}
+              </Button>
+            </Box>
+          </Paper>
+        </Box>
+      )}
+
+      {/* ==========================================
+          نافذة حذف الرسالة
+      ========================================== */}
+
+      {deleteDialogOpen && (
+        <Box
+          sx={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor:
+              "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems:
+              "center",
+            justifyContent:
+              "center",
+            zIndex: 2000,
+            p: 2,
+          }}
+        >
+          <Paper
+            sx={{
+              width: "100%",
+              maxWidth: 450,
+              p: 3,
+              borderRadius: 3,
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight:
+                  "bold",
+                mb: 2,
+              }}
+            >
+              {t.delete}
+            </Typography>
 
             <Typography
               sx={{
@@ -1254,40 +2171,70 @@ export default function Chat() {
               {t.deleteConfirm}
             </Typography>
 
-
             <Box
               sx={{
                 display: "flex",
-                justifyContent: "flex-end",
+                justifyContent:
+                  "flex-end",
                 gap: 1,
               }}
             >
-
               <Button
                 onClick={() => {
-                  setDeleteDialogOpen(false);
+                  setDeleteDialogOpen(
+                    false
+                  );
                   setDeletingMessage(null);
                 }}
               >
                 {t.cancel}
               </Button>
 
-
               <Button
                 variant="contained"
                 color="error"
-                onClick={deleteMessage}
+                onClick={
+                  deleteMessage
+                }
               >
                 {t.delete}
               </Button>
-
             </Box>
-
           </Paper>
-
         </Box>
       )}
 
+      {/* ==========================================
+          Snackbar
+      ========================================== */}
+
+      <Snackbar
+        open={notificationOpen}
+        autoHideDuration={3000}
+        onClose={
+          closeNotification
+        }
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal:
+            language === "ar"
+              ? "left"
+              : "right",
+        }}
+      >
+        <Alert
+          onClose={
+            closeNotification
+          }
+          severity="info"
+          variant="filled"
+          sx={{
+            width: "100%",
+          }}
+        >
+          {notificationMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
