@@ -15,6 +15,7 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import Avatar from "@mui/material/Avatar";
+import Badge from "@mui/material/Badge";
 
 // استيراد الأيقونات
 import MenuIcon from "@mui/icons-material/Menu";
@@ -57,6 +58,13 @@ function Navbar() {
   const [userName, setUserName] = useState("");
   const [userRole, setUserRole] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+
+
+  // =====================================================
+  // إشعارات الرسائل
+  // =====================================================
+
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
 
   // =====================================================
@@ -237,6 +245,102 @@ function Navbar() {
   useEffect(() => {
 
     getUserProfile();
+
+  }, []);
+
+
+  // =====================================================
+  // إشعارات الرسائل الجديدة - Realtime
+  // يعمل في جميع الصفحات لأن Navbar موجود في Layout
+  // =====================================================
+
+  useEffect(() => {
+
+    let channel;
+    let isMounted = true;
+
+
+    const setupMessageNotifications = async () => {
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+
+      // إذا لم يوجد مستخدم
+      if (!user || !isMounted) {
+        return;
+      }
+
+
+      // إنشاء قناة خاصة بالمستخدم الحالي
+      channel = supabase
+        .channel(
+          `navbar-messages-${user.id}`
+        )
+
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "messages",
+
+            // نستقبل فقط الرسائل التي المستخدم الحالي هو مستقبلها
+            filter: `receiver_id=eq.${user.id}`,
+          },
+
+          (payload) => {
+
+            const newMessage =
+              payload.new;
+
+
+            // نتأكد أن الرسالة من مستخدم آخر
+            if (
+              newMessage.sender_id &&
+              newMessage.sender_id !== user.id
+            ) {
+
+              setUnreadMessages(
+                (prev) => prev + 1
+              );
+
+            }
+
+          }
+        )
+
+        .subscribe((status) => {
+
+          console.log(
+            "Navbar messages realtime:",
+            status
+          );
+
+        });
+
+    };
+
+
+    setupMessageNotifications();
+
+
+    // تنظيف الاتصال عند إزالة Navbar
+    return () => {
+
+      isMounted = false;
+
+
+      if (channel) {
+
+        supabase.removeChannel(
+          channel
+        );
+
+      }
+
+    };
 
   }, []);
 
@@ -700,12 +804,30 @@ function Navbar() {
 
           <Button
             startIcon={
-              <ChatIcon />
+              <Badge
+                badgeContent={
+                  unreadMessages
+                }
+                color="error"
+                max={99}
+                invisible={
+                  unreadMessages === 0
+                }
+              >
+
+                <ChatIcon />
+
+              </Badge>
             }
 
-            onClick={() =>
-              navigate("/chat")
-            }
+            onClick={() => {
+
+              // تصفير الإشعارات عند فتح الشات
+              setUnreadMessages(0);
+
+              navigate("/chat");
+
+            }}
 
             sx={{
               color:
@@ -1133,6 +1255,9 @@ function Navbar() {
 
             closeMobileMenu();
 
+            // تصفير الإشعارات عند فتح الشات
+            setUnreadMessages(0);
+
             navigate(
               "/chat"
             );
@@ -1140,11 +1265,23 @@ function Navbar() {
           }}
         >
 
-          <ChatIcon
+          <Badge
+            badgeContent={
+              unreadMessages
+            }
+            color="error"
+            max={99}
+            invisible={
+              unreadMessages === 0
+            }
             sx={{
               mr: 1,
             }}
-          />
+          >
+
+            <ChatIcon />
+
+          </Badge>
 
           {currentText.chat}
 
@@ -1267,7 +1404,9 @@ function Navbar() {
       </Menu>
 
     </AppBar>
+
   );
+
 }
 
 

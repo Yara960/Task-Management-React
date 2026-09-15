@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 
 // Supabase
@@ -29,6 +30,7 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import SendIcon from "@mui/icons-material/Send";
 
 // Theme
 import { useTheme } from "@mui/material/styles";
@@ -81,6 +83,21 @@ function TasksPage() {
       urgent: "Urgent",
       addTask: "Add Task",
       yourTasks: "Your Tasks",
+
+      // البحث
+      searchTasks: "Search tasks...",
+
+      // إرسال المهمة
+      sendTask: "Send Task",
+      sendTaskTo: "Send Task To",
+      selectUser: "Select User",
+      send: "Send",
+      noUsers: "No users found",
+
+      // المهام المستلمة
+      receivedTask: "Task sent to you",
+      sender: "Sender",
+
       completed: "Completed",
       edit: "Edit",
       delete: "Delete",
@@ -113,6 +130,21 @@ function TasksPage() {
       urgent: "عاجلة",
       addTask: "إضافة مهمة",
       yourTasks: "مهامك",
+
+      // البحث
+      searchTasks: "ابحث في المهام...",
+
+      // إرسال المهمة
+      sendTask: "إرسال المهمة",
+      sendTaskTo: "إرسال المهمة إلى",
+      selectUser: "اختر المستخدم",
+      send: "إرسال",
+      noUsers: "لا يوجد مستخدمون",
+
+      // المهام المستلمة
+      receivedTask: "مهمة مرسلة إليك",
+      sender: "المرسل",
+
       completed: "مكتملة",
       edit: "تعديل",
       delete: "حذف",
@@ -146,7 +178,31 @@ function TasksPage() {
   const [taskError, setTaskError] =
     useState("");
 
+  // المهام الأصلية
   const [tasks, setTasks] = useState([]);
+
+  // المهام المستلمة
+  const [receivedTasks, setReceivedTasks] =
+    useState([]);
+
+  // البحث
+  const [searchTask, setSearchTask] =
+    useState("");
+
+  // إرسال المهمة
+  const [openSendDialog, setOpenSendDialog] =
+    useState(false);
+
+  const [selectedTask, setSelectedTask] =
+    useState(null);
+
+  const [users, setUsers] = useState([]);
+
+  const [selectedUser, setSelectedUser] =
+    useState("");
+
+  const [sendingTask, setSendingTask] =
+    useState(false);
 
   // Edit
   const [editingId, setEditingId] =
@@ -173,7 +229,7 @@ function TasksPage() {
     useState(false);
 
   // ==========================================
-  // جلب المهام
+  // جلب المهام الأصلية
   // ==========================================
 
   async function getTasks() {
@@ -205,12 +261,278 @@ function TasksPage() {
   }
 
   // ==========================================
+  // جلب المهام المستلمة
+  // ==========================================
+
+  async function getReceivedTasks() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("task_assignments")
+      .select(
+        "id, title, created_by, assigned_to, status, created_at"
+      )
+      .eq("assigned_to", user.id)
+      .order("id", {
+        ascending: false,
+      });
+
+    if (error) {
+      console.log(
+        "Get received tasks error:",
+        error
+      );
+      return;
+    }
+
+    const assignments = data || [];
+
+    if (assignments.length === 0) {
+      setReceivedTasks([]);
+      return;
+    }
+
+    // الحصول على IDs المرسلين
+    const senderIds = [
+      ...new Set(
+        assignments.map(
+          (item) => item.created_by
+        )
+      ),
+    ];
+
+    // جلب أسماء المرسلين
+    const {
+      data: senderProfiles,
+      error: senderError,
+    } = await supabase
+      .from("profiles")
+      .select(
+        "id, display_name, name, email"
+      )
+      .in("id", senderIds);
+
+    if (senderError) {
+      console.log(
+        "Get sender profiles error:",
+        senderError
+      );
+    }
+
+    const profiles = senderProfiles || [];
+
+    // تجهيز المهام المستلمة
+    const formattedTasks =
+      assignments.map((assignment) => {
+        const sender = profiles.find(
+          (profile) =>
+            profile.id ===
+            assignment.created_by
+        );
+
+        return {
+          ...assignment,
+
+          isReceivedTask: true,
+
+          task: assignment.title,
+
+          completed:
+            assignment.status ===
+            "COMPLETED",
+
+          priority: "NORMAL",
+
+          senderName:
+            sender?.display_name ||
+            sender?.name ||
+            sender?.email ||
+            "Unknown",
+        };
+      });
+
+    setReceivedTasks(
+      formattedTasks
+    );
+  }
+
+  // ==========================================
+  // جلب المستخدمين لإرسال المهمة
+  // ==========================================
+
+  async function getUsers() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select(
+        "id, display_name, name, email"
+      )
+      .neq("id", user.id)
+      .eq("is_active", 1)
+      .order("display_name", {
+        ascending: true,
+      });
+
+    if (error) {
+      console.log(
+        "Get users error:",
+        error
+      );
+      return;
+    }
+
+    setUsers(data || []);
+  }
+
+  // ==========================================
   // جلب المهام عند فتح الصفحة
   // ==========================================
 
   useEffect(() => {
     getTasks();
+    getReceivedTasks();
   }, []);
+
+  // ==========================================
+  // البحث في المهام
+  // ==========================================
+
+  const filteredTasks =
+    tasks.filter((task) =>
+      task.task
+        ?.toLowerCase()
+        .includes(
+          searchTask
+            .toLowerCase()
+            .trim()
+        )
+    );
+
+  const filteredReceivedTasks =
+    receivedTasks.filter((task) =>
+      task.task
+        ?.toLowerCase()
+        .includes(
+          searchTask
+            .toLowerCase()
+            .trim()
+        )
+    );
+
+  // ==========================================
+  // فتح نافذة إرسال المهمة
+  // ==========================================
+
+  async function openSendTaskDialog(task) {
+    setSelectedTask(task);
+    setSelectedUser("");
+
+    await getUsers();
+
+    setOpenSendDialog(true);
+  }
+
+  // ==========================================
+  // إرسال المهمة إلى مستخدم
+  // ==========================================
+
+  async function sendTaskToUser() {
+    if (!selectedTask || !selectedUser) {
+      return;
+    }
+
+    setSendingTask(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setSendingTask(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("task_assignments")
+      .insert([
+        {
+          title: selectedTask.task,
+          created_by: user.id,
+          assigned_to: selectedUser,
+          status: "PENDING",
+        },
+      ]);
+
+    if (error) {
+      console.log(
+        "Send task error:",
+        error
+      );
+
+      setSendingTask(false);
+      return;
+    }
+
+    setOpenSendDialog(false);
+    setSelectedTask(null);
+    setSelectedUser("");
+    setSendingTask(false);
+  }
+
+  // ==========================================
+  // تحديث حالة المهمة المستلمة
+  // ==========================================
+
+  async function toggleReceivedTask(task) {
+    const newStatus =
+      task.completed
+        ? "PENDING"
+        : "COMPLETED";
+
+    const { error } = await supabase
+      .from("task_assignments")
+      .update({
+        status: newStatus,
+      })
+      .eq("id", task.id);
+
+    if (error) {
+      console.log(
+        "Update received task error:",
+        error
+      );
+      return;
+    }
+
+    setReceivedTasks(
+      (currentTasks) =>
+        currentTasks.map(
+          (currentTask) =>
+            currentTask.id ===
+            task.id
+              ? {
+                  ...currentTask,
+                  completed:
+                    !currentTask.completed,
+                  status: newStatus,
+                }
+              : currentTask
+        )
+    );
+  }
 
   // ==========================================
   // إضافة مهمة
@@ -260,7 +582,7 @@ function TasksPage() {
   }
 
   // ==========================================
-  // تغيير حالة المهمة
+  // تغيير حالة المهمة الأصلية
   // ==========================================
 
   async function toggleTask(task) {
@@ -427,7 +749,6 @@ function TasksPage() {
       sx={{
         minHeight: "100vh",
 
-        // خلفية الصفحة
         backgroundColor:
           theme.palette.mode === "dark"
             ? "#0F172A"
@@ -439,7 +760,6 @@ function TasksPage() {
         transition:
           "background-color 0.3s, color 0.3s",
 
-        // ⭐ منع الحركة يمين ويسار
         width: "100%",
         overflowX: "hidden",
       }}
@@ -455,7 +775,6 @@ function TasksPage() {
           maxWidth: 1200,
           margin: "auto",
 
-          // منع أي عنصر من تجاوز الشاشة
           width: "100%",
           boxSizing: "border-box",
         }}
@@ -518,14 +837,17 @@ function TasksPage() {
             </Typography>
           </Box>
 
-          {/* عدد المهام */}
-
           <Chip
             icon={
               <TaskAltIcon />
             }
-            label={`${tasks.length} ${
-              tasks.length === 1
+            label={`${
+              tasks.length +
+              receivedTasks.length
+            } ${
+              tasks.length +
+                receivedTasks.length ===
+              1
                 ? currentText.taskCount
                 : currentText.tasksCount
             }`}
@@ -612,8 +934,6 @@ function TasksPage() {
               width: "100%",
             }}
           >
-            {/* Task input */}
-
             <TextField
               fullWidth
               label={
@@ -702,8 +1022,6 @@ function TasksPage() {
               }}
             />
 
-            {/* Priority */}
-
             <FormControl
               sx={{
                 minWidth: {
@@ -777,8 +1095,6 @@ function TasksPage() {
               </Select>
             </FormControl>
 
-            {/* Add Button */}
-
             <Button
               onClick={addTask}
               variant="contained"
@@ -836,28 +1152,87 @@ function TasksPage() {
         </Paper>
 
         {/* ==========================================
-            Your Tasks
+            Your Tasks + Search
         ========================================== */}
 
-        <Typography
-          variant="h5"
+        <Box
           sx={{
-            fontWeight: "bold",
+            display: "flex",
 
-            color:
-              "text.primary",
+            alignItems: "center",
+
+            justifyContent:
+              "space-between",
+
+            gap: 2,
 
             marginBottom: 2,
+
+            flexWrap: "wrap",
           }}
         >
-          {currentText.yourTasks}
-        </Typography>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: "bold",
+
+              color:
+                "text.primary",
+            }}
+          >
+            {currentText.yourTasks}
+          </Typography>
+
+          <TextField
+            value={searchTask}
+            onChange={(e) =>
+              setSearchTask(
+                e.target.value
+              )
+            }
+            placeholder={
+              currentText.searchTasks
+            }
+            size="small"
+            sx={{
+              width: {
+                xs: "100%",
+                sm: 280,
+              },
+
+              "& .MuiOutlinedInput-root":
+                {
+                  borderRadius:
+                    "12px",
+
+                  backgroundColor:
+                    "background.paper",
+
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline":
+                    {
+                      borderColor:
+                        "primary.main",
+
+                      borderWidth:
+                        "2px",
+                    },
+                },
+
+              "& .MuiInputLabel-root.Mui-focused":
+                {
+                  color:
+                    "primary.main",
+                },
+            }}
+          />
+        </Box>
 
         {/* ==========================================
-            قائمة المهام
+            المهام الأصلية
         ========================================== */}
 
-        {tasks.length > 0 ? (
+        {filteredTasks.length > 0 ||
+        filteredReceivedTasks.length > 0 ? (
           <Box
             sx={{
               display: "flex",
@@ -870,9 +1245,13 @@ function TasksPage() {
               width: "100%",
             }}
           >
-            {tasks.map((task) => (
+            {/* ========================================
+                المهام الأصلية
+            ======================================== */}
+
+            {filteredTasks.map((task) => (
               <Card
-                key={task.id}
+                key={`task-${task.id}`}
                 elevation={0}
                 sx={{
                   backgroundColor:
@@ -885,7 +1264,8 @@ function TasksPage() {
 
                   maxWidth: "100%",
 
-                  boxSizing: "border-box",
+                  boxSizing:
+                    "border-box",
 
                   overflow: "hidden",
 
@@ -927,7 +1307,6 @@ function TasksPage() {
                     boxSizing:
                       "border-box",
 
-                    // ⭐ ترتيب الكرت في الجوال
                     "@media (max-width:600px)":
                       {
                         flexDirection:
@@ -940,9 +1319,6 @@ function TasksPage() {
                       },
                   }}
                 >
-
-                  {/* معلومات المهمة */}
-
                   <Box
                     sx={{
                       display: "flex",
@@ -996,8 +1372,6 @@ function TasksPage() {
                       }}
                     />
 
-                    {/* Task icon */}
-
                     <Box
                       sx={{
                         width: 44,
@@ -1039,8 +1413,6 @@ function TasksPage() {
                         }}
                       />
                     </Box>
-
-                    {/* Task text */}
 
                     <Box
                       sx={{
@@ -1110,8 +1482,6 @@ function TasksPage() {
                     </Box>
                   </Box>
 
-                  {/* Priority + Buttons */}
-
                   <Box
                     sx={{
                       display: "flex",
@@ -1141,8 +1511,6 @@ function TasksPage() {
                         "border-box",
                     }}
                   >
-                    {/* Priority */}
-
                     <Chip
                       label={
                         task.priority ===
@@ -1166,8 +1534,8 @@ function TasksPage() {
                               : "#FCE7EF"
                             : theme.palette.mode ===
                               "dark"
-                              ? "rgba(128,203,196,0.12)"
-                              : "#E6F4F2",
+                            ? "rgba(128,203,196,0.12)"
+                            : "#E6F4F2",
 
                         color:
                           task.priority ===
@@ -1187,12 +1555,10 @@ function TasksPage() {
                               : "1px solid #F8BBD0"
                             : theme.palette.mode ===
                               "dark"
-                              ? "1px solid rgba(128,203,196,0.25)"
-                              : "1px solid #B2DFDB",
+                            ? "1px solid rgba(128,203,196,0.25)"
+                            : "1px solid #B2DFDB",
                       }}
                     />
-
-                    {/* Buttons */}
 
                     <Box
                       sx={{
@@ -1211,10 +1577,73 @@ function TasksPage() {
                               "flex-end",
 
                             minWidth: 0,
+
+                            flexWrap:
+                              "wrap",
                           },
                       }}
                     >
-                      {/* Edit */}
+                      <Button
+                        onClick={() =>
+                          openSendTaskDialog(
+                            task
+                          )
+                        }
+                        variant="outlined"
+                        startIcon={
+                          <SendIcon />
+                        }
+                        sx={{
+                          color:
+                            "primary.main",
+
+                          borderColor:
+                            theme.palette.mode ===
+                            "dark"
+                              ? "#475569"
+                              : "#B2DFDB",
+
+                          borderRadius:
+                            "10px",
+
+                          textTransform:
+                            "none",
+
+                          fontWeight:
+                            "600",
+
+                          whiteSpace:
+                            "nowrap",
+
+                          flexShrink: 1,
+
+                          minWidth:
+                            "0",
+
+                          "@media (max-width:600px)":
+                            {
+                              padding:
+                                "7px 10px",
+
+                              fontSize:
+                                "13px",
+                            },
+
+                          "&:hover":
+                            {
+                              borderColor:
+                                "primary.main",
+
+                              backgroundColor:
+                                theme.palette.mode ===
+                                "dark"
+                                  ? "rgba(128,203,196,0.08)"
+                                  : "rgba(0,137,123,0.06)",
+                            },
+                        }}
+                      >
+                        {currentText.sendTask}
+                      </Button>
 
                       <Button
                         onClick={() =>
@@ -1260,12 +1689,6 @@ function TasksPage() {
 
                               fontSize:
                                 "13px",
-
-                              "& .MuiButton-startIcon":
-                                {
-                                  marginRight:
-                                    "4px",
-                                },
                             },
 
                           "&:hover":
@@ -1283,8 +1706,6 @@ function TasksPage() {
                       >
                         {currentText.edit}
                       </Button>
-
-                      {/* Delete */}
 
                       <Button
                         onClick={() =>
@@ -1333,12 +1754,6 @@ function TasksPage() {
 
                               fontSize:
                                 "13px",
-
-                              "& .MuiButton-startIcon":
-                                {
-                                  marginRight:
-                                    "4px",
-                                },
                             },
 
                           "&:hover":
@@ -1361,12 +1776,287 @@ function TasksPage() {
                 </CardContent>
               </Card>
             ))}
+
+            {/* ========================================
+                المهام المستلمة
+            ======================================== */}
+
+            {filteredReceivedTasks.map(
+              (task) => (
+                <Card
+                  key={`received-${task.id}`}
+                  elevation={0}
+                  sx={{
+                    backgroundColor:
+                      "background.paper",
+
+                    borderRadius:
+                      "16px",
+
+                    width: "100%",
+
+                    maxWidth: "100%",
+
+                    boxSizing:
+                      "border-box",
+
+                    overflow:
+                      "hidden",
+
+                    border:
+                      theme.palette.mode ===
+                      "dark"
+                        ? "1px solid #334155"
+                        : "1px solid #E0F2F1",
+                  }}
+                >
+                  <CardContent
+                    sx={{
+                      padding:
+                        "20px !important",
+
+                      display: "flex",
+
+                      alignItems:
+                        "center",
+
+                      justifyContent:
+                        "space-between",
+
+                      gap: 2,
+
+                      flexWrap:
+                        "wrap",
+
+                      width: "100%",
+
+                      boxSizing:
+                        "border-box",
+
+                      "@media (max-width:600px)":
+                        {
+                          flexDirection:
+                            "column",
+
+                          alignItems:
+                            "stretch",
+
+                          gap: 1.5,
+                        },
+                    }}
+                  >
+                    {/* المهمة المستلمة */}
+
+                    <Box
+                      sx={{
+                        display: "flex",
+
+                        alignItems:
+                          "center",
+
+                        gap: 1,
+
+                        minWidth: 0,
+
+                        flex: 1,
+
+                        width: {
+                          xs: "100%",
+                          sm: "auto",
+                        },
+                      }}
+                    >
+                      <Checkbox
+                        checked={Boolean(
+                          task.completed
+                        )}
+                        onChange={() =>
+                          toggleReceivedTask(
+                            task
+                          )
+                        }
+                        sx={{
+                          color:
+                            "text.secondary",
+
+                          flexShrink: 0,
+
+                          "&.Mui-checked":
+                            {
+                              color:
+                                "primary.main",
+                            },
+                        }}
+                      />
+
+                      <Box
+                        sx={{
+                          width: 44,
+
+                          height: 44,
+
+                          minWidth: 44,
+
+                          borderRadius:
+                            "12px",
+
+                          backgroundColor:
+                            theme.palette.mode ===
+                            "dark"
+                              ? "#273449"
+                              : "#E6F4F2",
+
+                          display: "flex",
+
+                          alignItems:
+                            "center",
+
+                          justifyContent:
+                            "center",
+
+                          flexShrink: 0,
+
+                          border:
+                            theme.palette.mode ===
+                            "dark"
+                              ? "1px solid #334155"
+                              : "1px solid #B2DFDB",
+                        }}
+                      >
+                        <TaskAltIcon
+                          sx={{
+                            color:
+                              "primary.main",
+                          }}
+                        />
+                      </Box>
+
+                      <Box
+                        sx={{
+                          minWidth: 0,
+
+                          flex: 1,
+
+                          width:
+                            "100%",
+
+                          overflowWrap:
+                            "anywhere",
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            color:
+                              task.completed
+                                ? "text.secondary"
+                                : "text.primary",
+
+                            fontWeight:
+                              "600",
+
+                            fontSize:
+                              "16px",
+
+                            wordBreak:
+                              "break-word",
+
+                            overflowWrap:
+                              "anywhere",
+
+                            textDecoration:
+                              task.completed
+                                ? "line-through"
+                                : "none",
+                          }}
+                        >
+                          {task.task}
+                        </Typography>
+
+                        {/* اسم المرسل */}
+
+                        <Typography
+                          sx={{
+                            color:
+                              "text.secondary",
+
+                            fontSize:
+                              "13px",
+
+                            marginTop:
+                              "5px",
+
+                            fontWeight:
+                              "500",
+                          }}
+                        >
+                          {currentText.sender}:{" "}
+                          {task.senderName}
+                        </Typography>
+
+                        {/* نوع المهمة */}
+
+                        <Typography
+                          sx={{
+                            color:
+                              "primary.main",
+
+                            fontSize:
+                              "12px",
+
+                            marginTop:
+                              "3px",
+
+                            fontWeight:
+                              "500",
+                          }}
+                        >
+                          {
+                            currentText.receivedTask
+                          }
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* حالة المهمة المستلمة */}
+
+                    <Chip
+                      label={
+                        task.completed
+                          ? currentText.completed
+                          : currentText.normal
+                      }
+                      size="small"
+                      sx={{
+                        fontWeight:
+                          "bold",
+
+                        alignSelf: {
+                          xs: "flex-end",
+                          sm: "center",
+                        },
+
+                        backgroundColor:
+                          theme.palette.mode ===
+                          "dark"
+                            ? "rgba(128,203,196,0.12)"
+                            : "#E6F4F2",
+
+                        color:
+                          "primary.main",
+
+                        border:
+                          theme.palette.mode ===
+                          "dark"
+                            ? "1px solid rgba(128,203,196,0.25)"
+                            : "1px solid #B2DFDB",
+                      }}
+                    />
+                  </CardContent>
+                </Card>
+              )
+            )}
           </Box>
         ) : (
-          /* ==========================================
-             لا توجد مهام
-          ========================================== */
-
           <Paper
             elevation={0}
             sx={{
@@ -1464,6 +2154,235 @@ function TasksPage() {
       </Box>
 
       {/* ==========================================
+          Send Task Dialog
+      ========================================== */}
+
+      <Dialog
+        open={openSendDialog}
+        onClose={() => {
+          if (!sendingTask) {
+            setOpenSendDialog(false);
+            setSelectedTask(null);
+            setSelectedUser("");
+          }
+        }}
+        PaperProps={{
+          sx: {
+            width:
+              "calc(100% - 32px)",
+
+            maxWidth: 430,
+
+            backgroundColor:
+              "background.paper",
+
+            color:
+              "text.primary",
+
+            borderRadius:
+              "16px",
+
+            padding: 1,
+
+            boxSizing:
+              "border-box",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight:
+              "bold",
+
+            color:
+              "text.primary",
+          }}
+        >
+          {currentText.sendTaskTo}
+        </DialogTitle>
+
+        <DialogContent>
+          {selectedTask && (
+            <Box
+              sx={{
+                marginBottom: 2,
+
+                padding: 1.5,
+
+                borderRadius:
+                  "10px",
+
+                backgroundColor:
+                  theme.palette.mode ===
+                  "dark"
+                    ? "#1E293B"
+                    : "#F5F7FA",
+              }}
+            >
+              <Typography
+                sx={{
+                  color:
+                    "text.secondary",
+
+                  fontSize:
+                    "13px",
+
+                  marginBottom:
+                    0.5,
+                }}
+              >
+                {currentText.task}
+              </Typography>
+
+              <Typography
+                sx={{
+                  color:
+                    "text.primary",
+
+                  fontWeight:
+                    "600",
+
+                  overflowWrap:
+                    "anywhere",
+                }}
+              >
+                {selectedTask.task}
+              </Typography>
+            </Box>
+          )}
+
+          <FormControl fullWidth>
+            <InputLabel>
+              {currentText.selectUser}
+            </InputLabel>
+
+            <Select
+              value={selectedUser}
+              label={
+                currentText.selectUser
+              }
+              onChange={(e) =>
+                setSelectedUser(
+                  e.target.value
+                )
+              }
+              sx={{
+                borderRadius:
+                  "12px",
+
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline":
+                  {
+                    borderColor:
+                      "primary.main",
+
+                    borderWidth:
+                      "2px",
+                  },
+              }}
+            >
+              {users.length > 0 ? (
+                users.map((user) => (
+                  <MenuItem
+                    key={user.id}
+                    value={user.id}
+                  >
+                    {user.display_name ||
+                      user.name ||
+                      user.email}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>
+                  {currentText.noUsers}
+                </MenuItem>
+              )}
+            </Select>
+          </FormControl>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            padding: 2,
+
+            gap: 1,
+
+            flexWrap:
+              "wrap",
+          }}
+        >
+          <Button
+            onClick={() => {
+              setOpenSendDialog(false);
+              setSelectedTask(null);
+              setSelectedUser("");
+            }}
+            disabled={
+              sendingTask
+            }
+            variant="outlined"
+            sx={{
+              color:
+                "text.secondary",
+
+              borderColor:
+                theme.palette.mode ===
+                "dark"
+                  ? "#475569"
+                  : "#CBD5E1",
+
+              textTransform:
+                "none",
+
+              borderRadius:
+                "10px",
+            }}
+          >
+            {currentText.cancel}
+          </Button>
+
+          <Button
+            onClick={
+              sendTaskToUser
+            }
+            disabled={
+              !selectedUser ||
+              sendingTask
+            }
+            variant="contained"
+            startIcon={
+              <SendIcon />
+            }
+            sx={{
+              backgroundColor:
+                "primary.main",
+
+              color:
+                theme.palette.mode ===
+                "dark"
+                  ? "#0F172A"
+                  : "#FFFFFF",
+
+              textTransform:
+                "none",
+
+              borderRadius:
+                "10px",
+
+              "&:hover": {
+                backgroundColor:
+                  theme.palette.mode ===
+                  "dark"
+                    ? "#6FB8B1"
+                    : "#00796B",
+              },
+            }}
+          >
+            {currentText.send}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ==========================================
           Delete Dialog
       ========================================== */}
 
@@ -1474,7 +2393,8 @@ function TasksPage() {
         }
         PaperProps={{
           sx: {
-            width: "calc(100% - 32px)",
+            width:
+              "calc(100% - 32px)",
 
             maxWidth: 430,
 
@@ -1597,7 +2517,8 @@ function TasksPage() {
         }
         PaperProps={{
           sx: {
-            width: "calc(100% - 32px)",
+            width:
+              "calc(100% - 32px)",
 
             maxWidth: 430,
 
@@ -1643,8 +2564,6 @@ function TasksPage() {
           >
             {currentText.updateTask}
           </Typography>
-
-          {/* Task */}
 
           <TextField
             fullWidth
@@ -1706,8 +2625,6 @@ function TasksPage() {
                 },
             }}
           />
-
-          {/* Priority */}
 
           <FormControl fullWidth>
             <InputLabel>
@@ -1826,3 +2743,4 @@ function TasksPage() {
 }
 
 export default TasksPage;
+
