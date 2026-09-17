@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 
 // Supabase
 import { supabase } from "../supabaseClient";
 
 // Material UI
+import Pagination from "@mui/material/Pagination";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
@@ -188,6 +188,11 @@ function TasksPage() {
   // البحث
   const [searchTask, setSearchTask] =
     useState("");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const tasksPerPage = 2;
 
   // إرسال المهمة
   const [openSendDialog, setOpenSendDialog] =
@@ -407,6 +412,14 @@ function TasksPage() {
   }, []);
 
   // ==========================================
+  // إعادة الصفحة الأولى عند البحث
+  // ==========================================
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTask]);
+
+  // ==========================================
   // البحث في المهام
   // ==========================================
 
@@ -431,6 +444,48 @@ function TasksPage() {
             .trim()
         )
     );
+
+  // ==========================================
+  // Pagination
+  // ==========================================
+
+  const allFilteredTasks = [
+    ...filteredTasks.map((task) => ({
+      ...task,
+      taskType: "original",
+    })),
+
+    ...filteredReceivedTasks.map((task) => ({
+      ...task,
+      taskType: "received",
+    })),
+  ];
+
+  const totalPages = Math.ceil(
+    allFilteredTasks.length / tasksPerPage
+  );
+
+  const startIndex =
+    (currentPage - 1) * tasksPerPage;
+
+  const paginatedTasks =
+    allFilteredTasks.slice(
+      startIndex,
+      startIndex + tasksPerPage
+    );
+
+  // ==========================================
+  // حماية الصفحة الحالية
+  // ==========================================
+
+  useEffect(() => {
+    if (
+      totalPages > 0 &&
+      currentPage > totalPages
+    ) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   // ==========================================
   // فتح نافذة إرسال المهمة
@@ -576,6 +631,7 @@ function TasksPage() {
       setTask("");
       setPriority("NORMAL");
       setTaskError("");
+      setCurrentPage(1);
 
       getTasks();
     }
@@ -842,12 +898,47 @@ function TasksPage() {
               <TaskAltIcon />
             }
             label={`${
-              tasks.length +
+              tasks.length
+            } ${
+              tasks.length === 1
+                ? currentText.taskCount
+                : currentText.tasksCount
+            }`}
+            sx={{
+              backgroundColor:
+                theme.palette.mode ===
+                "dark"
+                  ? "#273449"
+                  : "#E6F4F2",
+
+              color:
+                "primary.main",
+
+              fontWeight: "bold",
+
+              border:
+                theme.palette.mode ===
+                "dark"
+                  ? "1px solid #334155"
+                  : "1px solid #B2DFDB",
+
+              maxWidth: "100%",
+
+              "& .MuiChip-icon": {
+                color:
+                  "primary.main",
+              },
+            }}
+          />
+
+          <Chip
+            icon={
+              <TaskAltIcon />
+            }
+            label={`${
               receivedTasks.length
             } ${
-              tasks.length +
-                receivedTasks.length ===
-              1
+              receivedTasks.length === 1
                 ? currentText.taskCount
                 : currentText.tasksCount
             }`}
@@ -1228,7 +1319,7 @@ function TasksPage() {
         </Box>
 
         {/* ==========================================
-            المهام الأصلية
+            المهام
         ========================================== */}
 
         {filteredTasks.length > 0 ||
@@ -1249,540 +1340,551 @@ function TasksPage() {
                 المهام الأصلية
             ======================================== */}
 
-            {filteredTasks.map((task) => (
-              <Card
-                key={`task-${task.id}`}
-                elevation={0}
-                sx={{
-                  backgroundColor:
-                    "background.paper",
-
-                  borderRadius:
-                    "16px",
-
-                  width: "100%",
-
-                  maxWidth: "100%",
-
-                  boxSizing:
-                    "border-box",
-
-                  overflow: "hidden",
-
-                  transition:
-                    "background-color 0.3s, border-color 0.2s, transform 0.2s",
-
-                  "&:hover": {
-                    borderColor:
-                      theme.palette.mode ===
-                      "dark"
-                        ? "#475569"
-                        : "#B2DFDB",
-
-                    transform:
-                      "translateY(-2px)",
-                  },
-                }}
-              >
-                <CardContent
+            {paginatedTasks
+              .filter(
+                (task) =>
+                  task.taskType ===
+                  "original"
+              )
+              .map((task) => (
+                <Card
+                  key={`task-${task.id}`}
+                  elevation={0}
                   sx={{
-                    padding:
-                      "20px !important",
+                    backgroundColor:
+                      "background.paper",
 
-                    display: "flex",
-
-                    alignItems:
-                      "center",
-
-                    justifyContent:
-                      "space-between",
-
-                    gap: 2,
-
-                    flexWrap:
-                      "wrap",
+                    borderRadius:
+                      "16px",
 
                     width: "100%",
+
+                    maxWidth: "100%",
 
                     boxSizing:
                       "border-box",
 
-                    "@media (max-width:600px)":
-                      {
-                        flexDirection:
-                          "column",
+                    overflow: "hidden",
 
-                        alignItems:
-                          "stretch",
+                    transition:
+                      "background-color 0.3s, border-color 0.2s, transform 0.2s",
 
-                        gap: 1.5,
-                      },
+                    "&:hover": {
+                      borderColor:
+                        theme.palette.mode ===
+                        "dark"
+                          ? "#475569"
+                          : "#B2DFDB",
+
+                      transform:
+                        "translateY(-2px)",
+                    },
                   }}
                 >
-                  <Box
+                  <CardContent
                     sx={{
+                      padding:
+                        "20px !important",
+
                       display: "flex",
 
                       alignItems:
                         "center",
 
-                      gap: 1,
+                      justifyContent:
+                        "space-between",
 
-                      minWidth: 0,
-
-                      flex: 1,
-
-                      width: {
-                        xs: "100%",
-                        sm: "auto",
-                      },
-
-                      maxWidth: "100%",
-                    }}
-                  >
-                    <Checkbox
-                      checked={Boolean(
-                        task.completed
-                      )}
-                      onChange={() =>
-                        toggleTask(
-                          task
-                        )
-                      }
-                      sx={{
-                        color:
-                          "text.secondary",
-
-                        flexShrink: 0,
-
-                        "&.Mui-checked":
-                          {
-                            color:
-                              "primary.main",
-                          },
-
-                        "&:hover":
-                          {
-                            backgroundColor:
-                              theme.palette.mode ===
-                              "dark"
-                                ? "rgba(128,203,196,0.08)"
-                                : "rgba(0,137,123,0.08)",
-                          },
-                      }}
-                    />
-
-                    <Box
-                      sx={{
-                        width: 44,
-
-                        height: 44,
-
-                        minWidth: 44,
-
-                        borderRadius:
-                          "12px",
-
-                        backgroundColor:
-                          theme.palette.mode ===
-                          "dark"
-                            ? "#273449"
-                            : "#E6F4F2",
-
-                        display: "flex",
-
-                        alignItems:
-                          "center",
-
-                        justifyContent:
-                          "center",
-
-                        flexShrink: 0,
-
-                        border:
-                          theme.palette.mode ===
-                          "dark"
-                            ? "1px solid #334155"
-                            : "1px solid #B2DFDB",
-                      }}
-                    >
-                      <TaskAltIcon
-                        sx={{
-                          color:
-                            "primary.main",
-                        }}
-                      />
-                    </Box>
-
-                    <Box
-                      sx={{
-                        minWidth: 0,
-
-                        flex: 1,
-
-                        width: "100%",
-
-                        maxWidth: "100%",
-
-                        overflowWrap:
-                          "anywhere",
-
-                        wordBreak:
-                          "break-word",
-                      }}
-                    >
-                      <Typography
-                        sx={{
-                          color:
-                            task.completed
-                              ? "text.secondary"
-                              : "text.primary",
-
-                          fontWeight:
-                            "600",
-
-                          fontSize:
-                            "16px",
-
-                          wordBreak:
-                            "break-word",
-
-                          overflowWrap:
-                            "anywhere",
-
-                          whiteSpace:
-                            "normal",
-
-                          textDecoration:
-                            task.completed
-                              ? "line-through"
-                              : "none",
-                        }}
-                      >
-                        {task.task}
-                      </Typography>
-
-                      <Typography
-                        sx={{
-                          color:
-                            "text.secondary",
-
-                          fontSize:
-                            "12px",
-
-                          marginTop:
-                            "4px",
-                        }}
-                      >
-                        {task.completed
-                          ? currentText.completed
-                          : currentText.task}{" "}
-                        #{task.id}
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Box
-                    sx={{
-                      display: "flex",
-
-                      alignItems:
-                        "center",
-
-                      gap: 1,
+                      gap: 2,
 
                       flexWrap:
                         "wrap",
 
-                      width: {
-                        xs: "100%",
-                        sm: "auto",
-                      },
-
-                      maxWidth:
-                        "100%",
-
-                      justifyContent: {
-                        xs: "space-between",
-                        sm: "flex-end",
-                      },
+                      width: "100%",
 
                       boxSizing:
                         "border-box",
+
+                      "@media (max-width:600px)":
+                        {
+                          flexDirection:
+                            "column",
+
+                          alignItems:
+                            "stretch",
+
+                          gap: 1.5,
+                        },
                     }}
                   >
-                    <Chip
-                      label={
-                        task.priority ===
-                        "URGENT"
-                          ? currentText.urgent
-                          : currentText.normal
-                      }
-                      size="small"
+                    <Box
                       sx={{
-                        fontWeight:
-                          "bold",
+                        display: "flex",
 
-                        flexShrink: 0,
+                        alignItems:
+                          "center",
 
-                        backgroundColor:
-                          task.priority ===
-                          "URGENT"
-                            ? theme.palette.mode ===
-                              "dark"
-                              ? "rgba(244,143,177,0.15)"
-                              : "#FCE7EF"
-                            : theme.palette.mode ===
-                              "dark"
-                            ? "rgba(128,203,196,0.12)"
-                            : "#E6F4F2",
+                        gap: 1,
 
-                        color:
-                          task.priority ===
-                          "URGENT"
-                            ? theme.palette.mode ===
-                              "dark"
-                              ? "#F48FB1"
-                              : "#D81B60"
-                            : "primary.main",
+                        minWidth: 0,
 
-                        border:
-                          task.priority ===
-                          "URGENT"
-                            ? theme.palette.mode ===
-                              "dark"
-                              ? "1px solid rgba(244,143,177,0.3)"
-                              : "1px solid #F8BBD0"
-                            : theme.palette.mode ===
-                              "dark"
-                            ? "1px solid rgba(128,203,196,0.25)"
-                            : "1px solid #B2DFDB",
+                        flex: 1,
+
+                        width: {
+                          xs: "100%",
+                          sm: "auto",
+                        },
+
+                        maxWidth: "100%",
                       }}
-                    />
+                    >
+                      <Checkbox
+                        checked={Boolean(
+                          task.completed
+                        )}
+                        onChange={() =>
+                          toggleTask(
+                            task
+                          )
+                        }
+                        sx={{
+                          color:
+                            "text.secondary",
+
+                          flexShrink: 0,
+
+                          "&.Mui-checked":
+                            {
+                              color:
+                                "primary.main",
+                            },
+
+                          "&:hover":
+                            {
+                              backgroundColor:
+                                theme.palette.mode ===
+                                "dark"
+                                  ? "rgba(128,203,196,0.08)"
+                                  : "rgba(0,137,123,0.08)",
+                            },
+                        }}
+                      />
+
+                      <Box
+                        sx={{
+                          width: 44,
+
+                          height: 44,
+
+                          minWidth: 44,
+
+                          borderRadius:
+                            "12px",
+
+                          backgroundColor:
+                            theme.palette.mode ===
+                            "dark"
+                              ? "#273449"
+                              : "#E6F4F2",
+
+                          display: "flex",
+
+                          alignItems:
+                            "center",
+
+                          justifyContent:
+                            "center",
+
+                          flexShrink: 0,
+
+                          border:
+                            theme.palette.mode ===
+                            "dark"
+                              ? "1px solid #334155"
+                              : "1px solid #B2DFDB",
+                        }}
+                      >
+                        <TaskAltIcon
+                          sx={{
+                            color:
+                              "primary.main",
+                          }}
+                        />
+                      </Box>
+
+                      <Box
+                        sx={{
+                          minWidth: 0,
+
+                          flex: 1,
+
+                          width: "100%",
+
+                          maxWidth: "100%",
+
+                          overflowWrap:
+                            "anywhere",
+
+                          wordBreak:
+                            "break-word",
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            color:
+                              task.completed
+                                ? "text.secondary"
+                                : "text.primary",
+
+                            fontWeight:
+                              "600",
+
+                            fontSize:
+                              "16px",
+
+                            wordBreak:
+                              "break-word",
+
+                            overflowWrap:
+                              "anywhere",
+
+                            whiteSpace:
+                              "normal",
+
+                            textDecoration:
+                              task.completed
+                                ? "line-through"
+                                : "none",
+                          }}
+                        >
+                          {task.task}
+                        </Typography>
+
+                        <Typography
+                          sx={{
+                            color:
+                              "text.secondary",
+
+                            fontSize:
+                              "12px",
+
+                            marginTop:
+                              "4px",
+                          }}
+                        >
+                          {task.completed
+                            ? currentText.completed
+                            : currentText.task}{" "}
+                          #{task.id}
+                        </Typography>
+                      </Box>
+                    </Box>
 
                     <Box
                       sx={{
                         display: "flex",
 
+                        alignItems:
+                          "center",
+
                         gap: 1,
+
+                        flexWrap:
+                          "wrap",
+
+                        width: {
+                          xs: "100%",
+                          sm: "auto",
+                        },
 
                         maxWidth:
                           "100%",
 
-                        "@media (max-width:600px)":
-                          {
-                            flex: 1,
+                        justifyContent: {
+                          xs: "space-between",
+                          sm: "flex-end",
+                        },
 
-                            justifyContent:
-                              "flex-end",
-
-                            minWidth: 0,
-
-                            flexWrap:
-                              "wrap",
-                          },
+                        boxSizing:
+                          "border-box",
                       }}
                     >
-                      <Button
-                        onClick={() =>
-                          openSendTaskDialog(
-                            task
-                          )
+                      <Chip
+                        label={
+                          task.priority ===
+                          "URGENT"
+                            ? currentText.urgent
+                            : currentText.normal
                         }
-                        variant="outlined"
-                        startIcon={
-                          <SendIcon />
-                        }
+                        size="small"
                         sx={{
-                          color:
-                            "primary.main",
-
-                          borderColor:
-                            theme.palette.mode ===
-                            "dark"
-                              ? "#475569"
-                              : "#B2DFDB",
-
-                          borderRadius:
-                            "10px",
-
-                          textTransform:
-                            "none",
-
                           fontWeight:
-                            "600",
+                            "bold",
 
-                          whiteSpace:
-                            "nowrap",
+                          flexShrink: 0,
 
-                          flexShrink: 1,
+                          backgroundColor:
+                            task.priority ===
+                            "URGENT"
+                              ? theme.palette.mode ===
+                                "dark"
+                                ? "rgba(244,143,177,0.15)"
+                                : "#FCE7EF"
+                              : theme.palette.mode ===
+                                "dark"
+                              ? "rgba(128,203,196,0.12)"
+                              : "#E6F4F2",
 
-                          minWidth:
-                            "0",
+                          color:
+                            task.priority ===
+                            "URGENT"
+                              ? theme.palette.mode ===
+                                "dark"
+                                ? "#F48FB1"
+                                : "#D81B60"
+                              : "primary.main",
+
+                          border:
+                            task.priority ===
+                            "URGENT"
+                              ? theme.palette.mode ===
+                                "dark"
+                                ? "1px solid rgba(244,143,177,0.3)"
+                                : "1px solid #F8BBD0"
+                              : theme.palette.mode ===
+                                "dark"
+                              ? "1px solid rgba(128,203,196,0.25)"
+                              : "1px solid #B2DFDB",
+                        }}
+                      />
+
+                      <Box
+                        sx={{
+                          display: "flex",
+
+                          gap: 1,
+
+                          maxWidth:
+                            "100%",
 
                           "@media (max-width:600px)":
                             {
-                              padding:
-                                "7px 10px",
+                              flex: 1,
 
-                              fontSize:
-                                "13px",
-                            },
+                              justifyContent:
+                                "flex-end",
 
-                          "&:hover":
-                            {
-                              borderColor:
-                                "primary.main",
+                              minWidth: 0,
 
-                              backgroundColor:
-                                theme.palette.mode ===
-                                "dark"
-                                  ? "rgba(128,203,196,0.08)"
-                                  : "rgba(0,137,123,0.06)",
+                              flexWrap:
+                                "wrap",
                             },
                         }}
                       >
-                        {currentText.sendTask}
-                      </Button>
+                        <Button
+                          onClick={() =>
+                            openSendTaskDialog(
+                              task
+                            )
+                          }
+                          variant="outlined"
+                          startIcon={
+                            <SendIcon />
+                          }
+                          sx={{
+                            color:
+                              "primary.main",
 
-                      <Button
-                        onClick={() =>
-                          startEdit(
-                            task
-                          )
-                        }
-                        variant="outlined"
-                        startIcon={
-                          <EditIcon />
-                        }
-                        sx={{
-                          color:
-                            "primary.main",
+                            borderColor:
+                              theme.palette.mode ===
+                              "dark"
+                                ? "#475569"
+                                : "#B2DFDB",
 
-                          borderColor:
-                            theme.palette.mode ===
-                            "dark"
-                              ? "#475569"
-                              : "#B2DFDB",
+                            borderRadius:
+                              "10px",
 
-                          borderRadius:
-                            "10px",
+                            textTransform:
+                              "none",
 
-                          textTransform:
-                            "none",
+                            fontWeight:
+                              "600",
 
-                          fontWeight:
-                            "600",
+                            whiteSpace:
+                              "nowrap",
 
-                          whiteSpace:
-                            "nowrap",
+                            flexShrink: 1,
 
-                          flexShrink: 1,
+                            minWidth:
+                              "0",
 
-                          minWidth:
-                            "0",
+                            "@media (max-width:600px)":
+                              {
+                                padding:
+                                  "7px 10px",
 
-                          "@media (max-width:600px)":
-                            {
-                              padding:
-                                "7px 10px",
+                                fontSize:
+                                  "13px",
+                              },
 
-                              fontSize:
-                                "13px",
-                            },
+                            "&:hover":
+                              {
+                                borderColor:
+                                  "primary.main",
 
-                          "&:hover":
-                            {
-                              borderColor:
-                                "primary.main",
+                                backgroundColor:
+                                  theme.palette.mode ===
+                                  "dark"
+                                    ? "rgba(128,203,196,0.08)"
+                                    : "rgba(0,137,123,0.06)",
+                              },
+                          }}
+                        >
+                          {currentText.sendTask}
+                        </Button>
 
-                              backgroundColor:
-                                theme.palette.mode ===
-                                "dark"
-                                  ? "rgba(128,203,196,0.08)"
-                                  : "rgba(0,137,123,0.06)",
-                            },
-                        }}
-                      >
-                        {currentText.edit}
-                      </Button>
+                        <Button
+                          onClick={() =>
+                            startEdit(
+                              task
+                            )
+                          }
+                          variant="outlined"
+                          startIcon={
+                            <EditIcon />
+                          }
+                          sx={{
+                            color:
+                              "primary.main",
 
-                      <Button
-                        onClick={() =>
-                          confirmDelete(
-                            task.id
-                          )
-                        }
-                        variant="outlined"
-                        startIcon={
-                          <DeleteIcon />
-                        }
-                        sx={{
-                          color:
-                            theme.palette.mode ===
-                            "dark"
-                              ? "#EF5350"
-                              : "#D32F2F",
+                            borderColor:
+                              theme.palette.mode ===
+                              "dark"
+                                ? "#475569"
+                                : "#B2DFDB",
 
-                          borderColor:
-                            theme.palette.mode ===
-                            "dark"
-                              ? "#7F1D1D"
-                              : "#FFCDD2",
+                            borderRadius:
+                              "10px",
 
-                          borderRadius:
-                            "10px",
+                            textTransform:
+                              "none",
 
-                          textTransform:
-                            "none",
+                            fontWeight:
+                              "600",
 
-                          fontWeight:
-                            "600",
+                            whiteSpace:
+                              "nowrap",
 
-                          whiteSpace:
-                            "nowrap",
+                            flexShrink: 1,
 
-                          flexShrink: 1,
+                            minWidth:
+                              "0",
 
-                          minWidth:
-                            "0",
+                            "@media (max-width:600px)":
+                              {
+                                padding:
+                                  "7px 10px",
 
-                          "@media (max-width:600px)":
-                            {
-                              padding:
-                                "7px 10px",
+                                fontSize:
+                                  "13px",
+                              },
 
-                              fontSize:
-                                "13px",
-                            },
+                            "&:hover":
+                              {
+                                borderColor:
+                                  "primary.main",
 
-                          "&:hover":
-                            {
-                              borderColor:
-                                "#EF5350",
+                                backgroundColor:
+                                  theme.palette.mode ===
+                                  "dark"
+                                    ? "rgba(128,203,196,0.08)"
+                                    : "rgba(0,137,123,0.06)",
+                              },
+                          }}
+                        >
+                          {currentText.edit}
+                        </Button>
 
-                              backgroundColor:
-                                theme.palette.mode ===
-                                "dark"
-                                  ? "rgba(239,83,80,0.08)"
-                                  : "rgba(239,83,80,0.06)",
-                            },
-                        }}
-                      >
-                        {currentText.delete}
-                      </Button>
+                        <Button
+                          onClick={() =>
+                            confirmDelete(
+                              task.id
+                            )
+                          }
+                          variant="outlined"
+                          startIcon={
+                            <DeleteIcon />
+                          }
+                          sx={{
+                            color:
+                              theme.palette.mode ===
+                              "dark"
+                                ? "#EF5350"
+                                : "#D32F2F",
+
+                            borderColor:
+                              theme.palette.mode ===
+                              "dark"
+                                ? "#7F1D1D"
+                                : "#FFCDD2",
+
+                            borderRadius:
+                              "10px",
+
+                            textTransform:
+                              "none",
+
+                            fontWeight:
+                              "600",
+
+                            whiteSpace:
+                              "nowrap",
+
+                            flexShrink: 1,
+
+                            minWidth:
+                              "0",
+
+                            "@media (max-width:600px)":
+                              {
+                                padding:
+                                  "7px 10px",
+
+                                fontSize:
+                                  "13px",
+                              },
+
+                            "&:hover":
+                              {
+                                borderColor:
+                                  "#EF5350",
+
+                                backgroundColor:
+                                  theme.palette.mode ===
+                                  "dark"
+                                    ? "rgba(239,83,80,0.08)"
+                                    : "rgba(239,83,80,0.06)",
+                              },
+                          }}
+                        >
+                          {currentText.delete}
+                        </Button>
+                      </Box>
                     </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
 
             {/* ========================================
                 المهام المستلمة
             ======================================== */}
 
-            {filteredReceivedTasks.map(
-              (task) => (
+            {paginatedTasks
+              .filter(
+                (task) =>
+                  task.taskType ===
+                  "received"
+              )
+              .map((task) => (
                 <Card
                   key={`received-${task.id}`}
                   elevation={0}
@@ -2053,7 +2155,37 @@ function TasksPage() {
                     />
                   </CardContent>
                 </Card>
-              )
+              ))}
+
+            {/* ========================================
+                Pagination
+            ======================================== */}
+
+            {totalPages > 1 && (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent:
+                    "center",
+                  marginTop: 3,
+                  marginBottom: 2,
+                }}
+              >
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={(
+                    event,
+                    page
+                  ) =>
+                    setCurrentPage(
+                      page
+                    )
+                  }
+                  color="primary"
+                  shape="rounded"
+                />
+              </Box>
             )}
           </Box>
         ) : (
@@ -2743,4 +2875,3 @@ function TasksPage() {
 }
 
 export default TasksPage;
-

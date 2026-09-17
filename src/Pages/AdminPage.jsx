@@ -21,6 +21,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
+import Pagination from "@mui/material/Pagination";
 
 // استيراد الأيقونات
 import PersonIcon from "@mui/icons-material/Person";
@@ -292,7 +293,28 @@ function AdminPage() {
   const [searchUser, setSearchUser] =
     useState("");
 
+  // ======================================================
+  // Pagination المستخدمين
+  // ======================================================
+
+  const [currentPage, setCurrentPage] =
+    useState(1);
+
+  const usersPerPage = 2;
+
+  // ======================================================
+  // Pagination المهام
+  // ======================================================
+
+  const [currentTaskPage, setCurrentTaskPage] =
+    useState(1);
+
+  const tasksPerPage = 2;
+
+  // ======================================================
   // حالة التنبيه
+  // ======================================================
+
   const [message, setMessage] =
     useState("");
 
@@ -727,6 +749,77 @@ function AdminPage() {
     });
 
   // ======================================================
+  // Pagination المستخدمين
+  // ======================================================
+
+  const totalPages = Math.ceil(
+    filteredUsers.length / usersPerPage
+  );
+
+  const startIndex =
+    (currentPage - 1) * usersPerPage;
+
+  const paginatedUsers =
+    filteredUsers.slice(
+      startIndex,
+      startIndex + usersPerPage
+    );
+
+  // ======================================================
+  // إعادة الصفحة الأولى عند تغيير البحث
+  // ======================================================
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchUser]);
+
+  // ======================================================
+  // التأكد أن رقم صفحة المستخدمين صحيح
+  // ======================================================
+
+  useEffect(() => {
+    if (
+      totalPages > 0 &&
+      currentPage > totalPages
+    ) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  // ======================================================
+  // Pagination المهام
+  // ======================================================
+
+  const totalTaskPages = Math.ceil(
+    tasks.length / tasksPerPage
+  );
+
+  const taskStartIndex =
+    (currentTaskPage - 1) * tasksPerPage;
+
+  const paginatedTasks =
+    tasks.slice(
+      taskStartIndex,
+      taskStartIndex + tasksPerPage
+    );
+
+  // ======================================================
+  // التأكد أن رقم صفحة المهام صحيح
+  // ======================================================
+
+  useEffect(() => {
+    if (
+      totalTaskPages > 0 &&
+      currentTaskPage > totalTaskPages
+    ) {
+      setCurrentTaskPage(totalTaskPages);
+    }
+  }, [
+    currentTaskPage,
+    totalTaskPages,
+  ]);
+
+  // ======================================================
   // واجهة الصفحة
   // ======================================================
 
@@ -933,321 +1026,349 @@ function AdminPage() {
             {currentText.noUsersFound}
           </Typography>
         ) : (
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                md: "repeat(2, 1fr)",
-              },
-              gap: 2.5,
-            }}
-          >
-            {filteredUsers.map(
-              (user) => {
-                const isActive =
-                  Number(
-                    user.is_active
-                  ) === 1;
+          <>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  md: "repeat(2, 1fr)",
+                },
+                gap: 2.5,
+              }}
+            >
+              {paginatedUsers.map(
+                (user) => {
+                  const isActive =
+                    Number(
+                      user.is_active
+                    ) === 1;
 
-                return (
-                  <Paper
-                    key={user.id}
-                    sx={{
-                      p: 3,
-                      borderRadius: "20px",
-                      position: "relative",
-                      overflow: "hidden",
-
-                      transition:
-                        "transform 0.2s ease",
-
-                      "&:hover": {
-                        transform:
-                          "translateY(-3px)",
-                      },
-
-                      "&::before": {
-                        content: '""',
-                        position:
-                          "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: "4px",
-                        backgroundColor:
-                          "primary.main",
-                      },
-                    }}
-                  >
-                    {/* معلومات المستخدم */}
-
-                    <Box
+                  return (
+                    <Paper
+                      key={user.id}
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        mb: 2,
+                        p: 3,
+                        borderRadius: "20px",
+                        position: "relative",
+                        overflow: "hidden",
+
+                        transition:
+                          "transform 0.2s ease",
+
+                        "&:hover": {
+                          transform:
+                            "translateY(-3px)",
+                        },
+
+                        "&::before": {
+                          content: '""',
+                          position:
+                            "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: "4px",
+                          backgroundColor:
+                            "primary.main",
+                        },
                       }}
                     >
-                      <Avatar
-                        sx={{
-                          width: 46,
-                          height: 46,
-                          borderRadius:
-                            "14px",
-
-                          backgroundColor:
-                            theme.palette
-                              .mode ===
-                            "dark"
-                              ? "rgba(128,203,196,0.12)"
-                              : "#E6F4F2",
-
-                          color:
-                            "primary.main",
-                        }}
-                      >
-                        <PersonIcon />
-                      </Avatar>
+                      {/* معلومات المستخدم */}
 
                       <Box
                         sx={{
-                          minWidth: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          mb: 2,
                         }}
                       >
-                        <Typography
+                        <Avatar
                           sx={{
-                            fontWeight: 800,
-                            fontSize:
-                              "1.05rem",
+                            width: 46,
+                            height: 46,
+                            borderRadius:
+                              "14px",
+
+                            backgroundColor:
+                              theme.palette
+                                .mode ===
+                              "dark"
+                                ? "rgba(128,203,196,0.12)"
+                                : "#E6F4F2",
+
+                            color:
+                              "primary.main",
                           }}
                         >
-                          {user.name ||
-                            currentText.roleUser}
-                        </Typography>
+                          <PersonIcon />
+                        </Avatar>
 
+                        <Box
+                          sx={{
+                            minWidth: 0,
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              fontWeight: 800,
+                              fontSize:
+                                "1.05rem",
+                            }}
+                          >
+                            {user.name ||
+                              currentText.roleUser}
+                          </Typography>
+
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color:
+                                "text.secondary",
+                              wordBreak:
+                                "break-word",
+                            }}
+                          >
+                            {user.email}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      {/* الحالة */}
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems:
+                            "center",
+                          justifyContent:
+                            "space-between",
+                          gap: 1,
+                          mb: 2,
+                          padding: "10px 12px",
+                          borderRadius: "12px",
+
+                          backgroundColor:
+                            theme.palette
+                              .mode ===
+                            "dark"
+                              ? "#273449"
+                              : "#F7FAFC",
+                        }}
+                      >
                         <Typography
                           variant="body2"
                           sx={{
-                            color:
-                              "text.secondary",
-                            wordBreak:
-                              "break-word",
+                            fontWeight: 600,
                           }}
                         >
-                          {user.email}
+                          {currentText.status}
                         </Typography>
+
+                        <Chip
+                          label={
+                            isActive
+                              ? currentText.active
+                              : currentText.inactive
+                          }
+                          size="small"
+                          sx={{
+                            fontWeight: 700,
+
+                            backgroundColor:
+                              isActive
+                                ? theme.palette
+                                    .mode ===
+                                  "dark"
+                                  ? "rgba(128,203,196,0.16)"
+                                  : "#E6F4F2"
+                                : theme.palette
+                                    .mode ===
+                                  "dark"
+                                  ? "rgba(239,83,80,0.16)"
+                                  : "#FFEBEE",
+
+                            color:
+                              isActive
+                                ? "primary.main"
+                                : "#EF5350",
+                          }}
+                        />
                       </Box>
-                    </Box>
 
-                    {/* الحالة */}
+                      {/* الصلاحية */}
 
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems:
-                          "center",
-                        justifyContent:
-                          "space-between",
-                        gap: 1,
-                        mb: 2,
-                        padding: "10px 12px",
-                        borderRadius: "12px",
-
-                        backgroundColor:
-                          theme.palette
-                            .mode ===
-                          "dark"
-                            ? "#273449"
-                            : "#F7FAFC",
-                      }}
-                    >
                       <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 600,
-                        }}
-                      >
-                        {currentText.status}
-                      </Typography>
-
-                      <Chip
-                        label={
-                          isActive
-                            ? currentText.active
-                            : currentText.inactive
-                        }
-                        size="small"
                         sx={{
                           fontWeight: 700,
-
-                          backgroundColor:
-                            isActive
-                              ? theme.palette
-                                  .mode ===
-                                "dark"
-                                ? "rgba(128,203,196,0.16)"
-                                : "#E6F4F2"
-                              : theme.palette
-                                  .mode ===
-                                "dark"
-                                ? "rgba(239,83,80,0.16)"
-                                : "#FFEBEE",
-
-                          color:
-                            isActive
-                              ? "primary.main"
-                              : "#EF5350",
+                          mb: 1,
                         }}
-                      />
-                    </Box>
+                      >
+                        {currentText.role}
+                      </Typography>
 
-                    {/* الصلاحية */}
-
-                    <Typography
-                      sx={{
-                        fontWeight: 700,
-                        mb: 1,
-                      }}
-                    >
-                      {currentText.role}
-                    </Typography>
-
-                    <Select
-                      fullWidth
-                      value={
-                        user.role ||
-                        "USER"
-                      }
-                      onChange={(e) =>
-                        changeRole(
-                          user.id,
-                          e.target.value
-                        )
-                      }
-                      sx={{
-                        mb: 2,
-
-                        "& .MuiOutlinedInput-notchedOutline":
-                          {
-                            borderRadius:
-                              "12px",
-                          },
-                      }}
-                    >
-                      <MenuItem value="USER">
-                        {currentText.roleUser}
-                      </MenuItem>
-
-                      <MenuItem value="SUPERADMIN">
-                        {
-                          currentText.roleSuperAdmin
+                      <Select
+                        fullWidth
+                        value={
+                          user.role ||
+                          "USER"
                         }
-                      </MenuItem>
-                    </Select>
-
-                    {/* الأزرار */}
-
-                    <Box
-                      sx={{
-                        display: "flex",
-                        gap: 1.5,
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <Button
-                        variant="outlined"
-                        startIcon={
-                          isActive ? (
-                            <BlockIcon />
-                          ) : (
-                            <CheckCircleIcon />
-                          )
-                        }
-                        onClick={() =>
-                          toggleUser(
+                        onChange={(e) =>
+                          changeRole(
                             user.id,
-                            user.is_active
+                            e.target.value
                           )
                         }
                         sx={{
-                          flex: 1,
-                          minWidth:
-                            "170px",
+                          mb: 2,
 
-                          color:
-                            "primary.main",
-
-                          borderColor:
-                            theme.palette
-                              .mode ===
-                            "dark"
-                              ? "#475569"
-                              : "#B2DFDB",
-
-                          borderRadius:
-                            "10px",
-
-                          textTransform:
-                            "none",
-
-                          fontWeight: 600,
+                          "& .MuiOutlinedInput-notchedOutline":
+                            {
+                              borderRadius:
+                                "12px",
+                            },
                         }}
                       >
-                        {isActive
-                          ? currentText.deactivateAccount
-                          : currentText.activateAccount}
-                      </Button>
+                        <MenuItem value="USER">
+                          {currentText.roleUser}
+                        </MenuItem>
 
-                      <Button
-                        variant="outlined"
-                        startIcon={
-                          <DeleteIcon />
-                        }
-                        onClick={() =>
-                          openDeleteUser(
-                            user.id
-                          )
-                        }
+                        <MenuItem value="SUPERADMIN">
+                          {
+                            currentText.roleSuperAdmin
+                          }
+                        </MenuItem>
+                      </Select>
+
+                      {/* الأزرار */}
+
+                      <Box
                         sx={{
-                          flex: 1,
-                          minWidth:
-                            "140px",
-
-                          color:
-                            theme.palette
-                              .mode ===
-                            "dark"
-                              ? "#EF5350"
-                              : "#D32F2F",
-
-                          borderColor:
-                            theme.palette
-                              .mode ===
-                            "dark"
-                              ? "#7F1D1D"
-                              : "#FFCDD2",
-
-                          borderRadius:
-                            "10px",
-
-                          textTransform:
-                            "none",
-
-                          fontWeight: 600,
+                          display: "flex",
+                          gap: 1.5,
+                          flexWrap: "wrap",
                         }}
                       >
-                        {
-                          currentText.deleteAccount
-                        }
-                      </Button>
-                    </Box>
-                  </Paper>
-                );
-              }
+                        <Button
+                          variant="outlined"
+                          startIcon={
+                            isActive ? (
+                              <BlockIcon />
+                            ) : (
+                              <CheckCircleIcon />
+                            )
+                          }
+                          onClick={() =>
+                            toggleUser(
+                              user.id,
+                              user.is_active
+                            )
+                          }
+                          sx={{
+                            flex: 1,
+                            minWidth:
+                              "170px",
+
+                            color:
+                              "primary.main",
+
+                            borderColor:
+                              theme.palette
+                                .mode ===
+                              "dark"
+                                ? "#475569"
+                                : "#B2DFDB",
+
+                            borderRadius:
+                              "10px",
+
+                            textTransform:
+                              "none",
+
+                            fontWeight: 600,
+                          }}
+                        >
+                          {isActive
+                            ? currentText.deactivateAccount
+                            : currentText.activateAccount}
+                        </Button>
+
+                        <Button
+                          variant="outlined"
+                          startIcon={
+                            <DeleteIcon />
+                          }
+                          onClick={() =>
+                            openDeleteUser(
+                              user.id
+                            )
+                          }
+                          sx={{
+                            flex: 1,
+                            minWidth:
+                              "140px",
+
+                            color:
+                              theme.palette
+                                .mode ===
+                              "dark"
+                                ? "#EF5350"
+                                : "#D32F2F",
+
+                            borderColor:
+                              theme.palette
+                                .mode ===
+                              "dark"
+                                ? "#7F1D1D"
+                                : "#FFCDD2",
+
+                            borderRadius:
+                              "10px",
+
+                            textTransform:
+                              "none",
+
+                            fontWeight: 600,
+                          }}
+                        >
+                          {
+                            currentText.deleteAccount
+                          }
+                        </Button>
+                      </Box>
+                    </Paper>
+                  );
+                }
+              )}
+            </Box>
+
+            {/* Pagination المستخدمين */}
+
+            {totalPages > 1 && (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginTop: 3,
+                  marginBottom: 2,
+                }}
+              >
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={(
+                    event,
+                    page
+                  ) =>
+                    setCurrentPage(page)
+                  }
+                  color="primary"
+                  shape="rounded"
+                />
+              </Box>
             )}
-          </Box>
+          </>
         )}
 
         {/* ======================================================
@@ -1274,26 +1395,58 @@ function AdminPage() {
               {currentText.noTasksFound}
             </Typography>
           ) : (
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  md: "repeat(2, 1fr)",
-                },
-                gap: 2.5,
-              }}
-            >
-              {tasks.map((task) => (
-                <TaskAdminItem
-                  key={task.id}
-                  task={task}
-                  onUpdate={updateTask}
-                  onDelete={openDeleteTask}
-                  currentText={currentText}
-                />
-              ))}
-            </Box>
+            <>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    md: "repeat(2, 1fr)",
+                  },
+                  gap: 2.5,
+                }}
+              >
+                {paginatedTasks.map(
+                  (task) => (
+                    <TaskAdminItem
+                      key={task.id}
+                      task={task}
+                      onUpdate={updateTask}
+                      onDelete={openDeleteTask}
+                      currentText={currentText}
+                    />
+                  )
+                )}
+              </Box>
+
+              {/* Pagination المهام */}
+
+              {totalTaskPages > 1 && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    marginTop: 3,
+                    marginBottom: 2,
+                  }}
+                >
+                  <Pagination
+                    count={totalTaskPages}
+                    page={currentTaskPage}
+                    onChange={(
+                      event,
+                      page
+                    ) =>
+                      setCurrentTaskPage(
+                        page
+                      )
+                    }
+                    color="primary"
+                    shape="rounded"
+                  />
+                </Box>
+              )}
+            </>
           )}
         </Box>
       </Box>

@@ -85,6 +85,9 @@ export default function Chat() {
   // اسم المهمة
   const [taskTitle, setTaskTitle] = useState("");
 
+  // أولوية المهمة
+  const [taskPriority, setTaskPriority] = useState("NORMAL");
+
   // تحميل إضافة المهمة
   const [taskLoading, setTaskLoading] = useState(false);
 
@@ -131,15 +134,20 @@ export default function Chat() {
       taskAdded: "تمت إضافة المهمة",
 
       tasks: "المهام",
-      status: "الحالة",
+      priority: "الأولوية",
+      normal: "عادية",
+      urgent: "عاجلة",
 
+      status: "الحالة",
       pending: "قيد الانتظار",
-      inProgress: "قيد التنفيذ",
       completed: "مكتملة",
 
       taskError: "حدث خطأ أثناء إضافة المهمة",
-      taskUpdated: "تم تحديث حالة المهمة",
+      taskUpdated: "تم تحديث المهمة",
       noTasks: "لا توجد مهام",
+
+      createdByMe: "أنت أنشأت هذه المهمة",
+      assignedToMe: "تم إرسال هذه المهمة إليك",
     },
 
     en: {
@@ -173,15 +181,20 @@ export default function Chat() {
       taskAdded: "Task added successfully",
 
       tasks: "Tasks",
-      status: "Status",
+      priority: "Priority",
+      normal: "Normal",
+      urgent: "Urgent",
 
+      status: "Status",
       pending: "Pending",
-      inProgress: "In Progress",
       completed: "Completed",
 
       taskError: "Error adding task",
-      taskUpdated: "Task status updated",
+      taskUpdated: "Task updated",
       noTasks: "No tasks",
+
+      createdByMe: "You created this task",
+      assignedToMe: "This task was assigned to you",
     },
   };
 
@@ -307,8 +320,12 @@ export default function Chat() {
     if (!currentUser || !selectedUser) return;
 
     const { data, error } = await supabase
-      .from("task_assignments")
+      .from("tasks")
       .select("*")
+      .or(
+        `and(created_by.eq.${currentUser.id},user_id.eq.${selectedUser.id}),and(created_by.eq.${selectedUser.id},user_id.eq.${currentUser.id})`
+      )
+      .is("deleted_at", null)
       .order("created_at", {
         ascending: true,
       });
@@ -321,16 +338,7 @@ export default function Chat() {
       return;
     }
 
-    // عرض مهام المحادثة الحالية فقط
-    const conversationTasks = (data || []).filter(
-      (task) =>
-        (task.created_by === currentUser.id &&
-          task.assigned_to === selectedUser.id) ||
-        (task.created_by === selectedUser.id &&
-          task.assigned_to === currentUser.id)
-    );
-
-    setTasks(conversationTasks);
+    setTasks(data || []);
   }
 
   // ==========================================
@@ -439,7 +447,7 @@ export default function Chat() {
     if (!currentUser) return;
 
     const channel = supabase
-      .channel("task-assignments-realtime")
+      .channel("tasks-realtime")
 
       // إضافة مهمة
       .on(
@@ -447,7 +455,7 @@ export default function Chat() {
         {
           event: "INSERT",
           schema: "public",
-          table: "task_assignments",
+          table: "tasks",
         },
         (payload) => {
           const newTask = payload.new;
@@ -455,8 +463,13 @@ export default function Chat() {
           // المهمة لا تخص المستخدم الحالي
           if (
             newTask.created_by !== currentUser.id &&
-            newTask.assigned_to !== currentUser.id
+            newTask.user_id !== currentUser.id
           ) {
+            return;
+          }
+
+          // تجاهل المهام المحذوفة
+          if (newTask.deleted_at) {
             return;
           }
 
@@ -466,11 +479,11 @@ export default function Chat() {
             (
               (
                 newTask.created_by === currentUser.id &&
-                newTask.assigned_to === selectedUser.id
+                newTask.user_id === selectedUser.id
               ) ||
               (
                 newTask.created_by === selectedUser.id &&
-                newTask.assigned_to === currentUser.id
+                newTask.user_id === currentUser.id
               )
             )
           ) {
@@ -490,7 +503,7 @@ export default function Chat() {
           // إذا الطرف الآخر أنشأ المهمة
           if (newTask.created_by !== currentUser.id) {
             setNotificationMessage(
-              `${t.newMessage}: ${newTask.title}`
+              `${t.addTask}: ${newTask.task}`
             );
 
             setNotificationOpen(true);
@@ -504,42 +517,36 @@ export default function Chat() {
         {
           event: "UPDATE",
           schema: "public",
-          table: "task_assignments",
+          table: "tasks",
         },
         (payload) => {
           const updatedTask = payload.new;
 
+          // المهمة لا تخص المستخدم الحالي
           if (
             updatedTask.created_by !== currentUser.id &&
-            updatedTask.assigned_to !== currentUser.id
+            updatedTask.user_id !== currentUser.id
           ) {
             return;
           }
 
+          // إذا تم حذف المهمة حذفًا ناعمًا
+          if (updatedTask.deleted_at) {
+            setTasks((prev) =>
+              prev.filter(
+                (task) => task.id !== updatedTask.id
+              )
+            );
+
+            return;
+          }
+
+          // تحديث نفس المهمة عند الطرف الآخر
           setTasks((prev) =>
             prev.map((task) =>
               task.id === updatedTask.id
                 ? updatedTask
                 : task
-            )
-          );
-        }
-      )
-
-      // حذف المهمة
-      .on(
-        "postgres_changes",
-        {
-          event: "DELETE",
-          schema: "public",
-          table: "task_assignments",
-        },
-        (payload) => {
-          const deletedTask = payload.old;
-
-          setTasks((prev) =>
-            prev.filter(
-              (task) => task.id !== deletedTask.id
             )
           );
         }
@@ -608,6 +615,7 @@ export default function Chat() {
     if (!selectedUser) return;
 
     setTaskTitle("");
+    setTaskPriority("NORMAL");
     setTaskDialogOpen(true);
   }
 
@@ -627,13 +635,14 @@ export default function Chat() {
     setTaskLoading(true);
 
     const { data, error } = await supabase
-      .from("task_assignments")
+      .from("tasks")
       .insert([
         {
-          title: taskTitle.trim(),
+          task: taskTitle.trim(),
+          user_id: selectedUser.id,
           created_by: currentUser.id,
-          assigned_to: selectedUser.id,
-          status: "PENDING",
+          priority: taskPriority,
+          completed: false,
         },
       ])
       .select()
@@ -668,8 +677,50 @@ export default function Chat() {
 
     setTaskDialogOpen(false);
     setTaskTitle("");
+    setTaskPriority("NORMAL");
 
     setNotificationMessage(t.taskAdded);
+    setNotificationOpen(true);
+  }
+
+  // ==========================================
+  // تحديث أولوية المهمة
+  // ==========================================
+
+  async function updateTaskPriority(task, newPriority) {
+    if (!task || !currentUser) return;
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .update({
+        priority: newPriority,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", task.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error(
+        "Error updating task priority:",
+        error
+      );
+
+      setNotificationMessage(t.error);
+      setNotificationOpen(true);
+
+      return;
+    }
+
+    setTasks((prev) =>
+      prev.map((item) =>
+        item.id === task.id
+          ? data
+          : item
+      )
+    );
+
+    setNotificationMessage(t.taskUpdated);
     setNotificationOpen(true);
   }
 
@@ -677,23 +728,15 @@ export default function Chat() {
   // تحديث حالة المهمة
   // ==========================================
 
-  async function updateTaskStatus(
-    task,
-    newStatus
-  ) {
+  async function updateTaskCompleted(task, completed) {
     if (!task || !currentUser) return;
 
-    const updateData = {
-      status: newStatus,
-      completed_at:
-        newStatus === "COMPLETED"
-          ? new Date().toISOString()
-          : null,
-    };
-
     const { data, error } = await supabase
-      .from("task_assignments")
-      .update(updateData)
+      .from("tasks")
+      .update({
+        completed: completed,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", task.id)
       .select()
       .single();
@@ -740,10 +783,15 @@ export default function Chat() {
       return;
     }
 
-    const { error } = await supabase
-      .from("task_assignments")
-      .delete()
-      .eq("id", deletingTask.id);
+    const { data, error } = await supabase
+      .from("tasks")
+      .update({
+        deleted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", deletingTask.id)
+      .select()
+      .single();
 
     if (error) {
       console.error(
@@ -1574,6 +1622,8 @@ export default function Chat() {
                             "divider",
                         }}
                       >
+                        {/* عنوان المهمة */}
+
                         <Box
                           sx={{
                             display:
@@ -1593,9 +1643,13 @@ export default function Chat() {
                               wordBreak:
                                 "break-word",
                               flex: 1,
+                              textDecoration:
+                                task.completed
+                                  ? "line-through"
+                                  : "none",
                             }}
                           >
-                            {task.title}
+                            {task.task}
                           </Typography>
 
                           {/* حذف المهمة */}
@@ -1613,6 +1667,71 @@ export default function Chat() {
                             <DeleteIcon fontSize="small" />
                           </IconButton>
                         </Box>
+
+                        {/* الأولوية */}
+
+                        <Box
+                          sx={{
+                            display:
+                              "flex",
+                            alignItems:
+                              "center",
+                            justifyContent:
+                              "space-between",
+                            gap: 1,
+                            flexWrap:
+                              "wrap",
+                            mb: 1,
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                          >
+                            {t.priority}
+                          </Typography>
+
+                          <select
+                            value={
+                              task.priority ||
+                              "NORMAL"
+                            }
+                            onChange={(e) =>
+                              updateTaskPriority(
+                                task,
+                                e.target.value
+                              )
+                            }
+                            style={{
+                              padding:
+                                "6px 10px",
+                              borderRadius:
+                                "8px",
+                              border:
+                                "1px solid #ccc",
+                              background:
+                                darkMode
+                                  ? "#333"
+                                  : "#fff",
+                              color:
+                                darkMode
+                                  ? "#fff"
+                                  : "#000",
+                              cursor:
+                                "pointer",
+                            }}
+                          >
+                            <option value="NORMAL">
+                              {t.normal}
+                            </option>
+
+                            <option value="URGENT">
+                              {t.urgent}
+                            </option>
+                          </select>
+                        </Box>
+
+                        {/* الحالة */}
 
                         <Box
                           sx={{
@@ -1636,13 +1755,15 @@ export default function Chat() {
 
                           <select
                             value={
-                              task.status ||
-                              "PENDING"
+                              task.completed
+                                ? "COMPLETED"
+                                : "PENDING"
                             }
                             onChange={(e) =>
-                              updateTaskStatus(
+                              updateTaskCompleted(
                                 task,
-                                e.target.value
+                                e.target.value ===
+                                  "COMPLETED"
                               )
                             }
                             style={{
@@ -1668,15 +1789,13 @@ export default function Chat() {
                               {t.pending}
                             </option>
 
-                            <option value="IN_PROGRESS">
-                              {t.inProgress}
-                            </option>
-
                             <option value="COMPLETED">
                               {t.completed}
                             </option>
                           </select>
                         </Box>
+
+                        {/* من أنشأ المهمة */}
 
                         <Typography
                           variant="caption"
@@ -1688,14 +1807,8 @@ export default function Chat() {
                           }}
                         >
                           {createdByMe
-                            ? language ===
-                              "ar"
-                              ? "أنت أنشأت هذه المهمة"
-                              : "You created this task"
-                            : language ===
-                              "ar"
-                            ? "تم إرسال هذه المهمة إليك"
-                            : "This task was assigned to you"}
+                            ? t.createdByMe
+                            : t.assignedToMe}
                         </Typography>
                       </Paper>
                     );
@@ -1895,6 +2008,8 @@ export default function Chat() {
                   }`}
             </Typography>
 
+            {/* اسم المهمة */}
+
             <TextField
               fullWidth
               autoFocus
@@ -1916,7 +2031,55 @@ export default function Chat() {
                   addTask();
                 }
               }}
+              sx={{ mb: 2 }}
             />
+
+            {/* الأولوية */}
+
+            <Typography
+              variant="body2"
+              sx={{
+                mb: 1,
+                fontWeight: "bold",
+              }}
+            >
+              {t.priority}
+            </Typography>
+
+            <select
+              value={taskPriority}
+              onChange={(e) =>
+                setTaskPriority(
+                  e.target.value
+                )
+              }
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: "8px",
+                border:
+                  "1px solid #ccc",
+                background:
+                  darkMode
+                    ? "#333"
+                    : "#fff",
+                color:
+                  darkMode
+                    ? "#fff"
+                    : "#000",
+                cursor:
+                  "pointer",
+                marginBottom: "16px",
+              }}
+            >
+              <option value="NORMAL">
+                {t.normal}
+              </option>
+
+              <option value="URGENT">
+                {t.urgent}
+              </option>
+            </select>
 
             <Box
               sx={{
@@ -1924,7 +2087,7 @@ export default function Chat() {
                 justifyContent:
                   "flex-end",
                 gap: 1,
-                mt: 3,
+                mt: 1,
               }}
             >
               <Button
@@ -1933,6 +2096,9 @@ export default function Chat() {
                     false
                   );
                   setTaskTitle("");
+                  setTaskPriority(
+                    "NORMAL"
+                  );
                 }}
                 disabled={taskLoading}
               >
