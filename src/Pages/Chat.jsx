@@ -79,7 +79,7 @@ export default function Chat() {
 
   const [tasks, setTasks] = useState([]);
 
-  // نافذة إضافة مهمة
+  // نافذة إضافة المهمة
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
   // اسم المهمة
@@ -249,9 +249,7 @@ export default function Chat() {
             setSelectedUser(savedUser);
             setMobileChatOpen(true);
           } else {
-            localStorage.removeItem(
-              "selectedChatUserId"
-            );
+            localStorage.removeItem("selectedChatUserId");
           }
         }
       }
@@ -323,7 +321,7 @@ export default function Chat() {
       .from("tasks")
       .select("*")
       .or(
-        `and(created_by.eq.${currentUser.id},user_id.eq.${selectedUser.id}),and(created_by.eq.${selectedUser.id},user_id.eq.${currentUser.id})`
+        `and(user_id.eq.${currentUser.id},assigned_to.eq.${selectedUser.id}),and(user_id.eq.${selectedUser.id},assigned_to.eq.${currentUser.id})`
       )
       .is("deleted_at", null)
       .order("created_at", {
@@ -449,7 +447,10 @@ export default function Chat() {
     const channel = supabase
       .channel("tasks-realtime")
 
+      // ==========================================
       // إضافة مهمة
+      // ==========================================
+
       .on(
         "postgres_changes",
         {
@@ -462,8 +463,8 @@ export default function Chat() {
 
           // المهمة لا تخص المستخدم الحالي
           if (
-            newTask.created_by !== currentUser.id &&
-            newTask.user_id !== currentUser.id
+            newTask.user_id !== currentUser.id &&
+            newTask.assigned_to !== currentUser.id
           ) {
             return;
           }
@@ -478,12 +479,12 @@ export default function Chat() {
             selectedUser &&
             (
               (
-                newTask.created_by === currentUser.id &&
-                newTask.user_id === selectedUser.id
+                newTask.user_id === currentUser.id &&
+                newTask.assigned_to === selectedUser.id
               ) ||
               (
-                newTask.created_by === selectedUser.id &&
-                newTask.user_id === currentUser.id
+                newTask.user_id === selectedUser.id &&
+                newTask.assigned_to === currentUser.id
               )
             )
           ) {
@@ -501,7 +502,7 @@ export default function Chat() {
           }
 
           // إذا الطرف الآخر أنشأ المهمة
-          if (newTask.created_by !== currentUser.id) {
+          if (newTask.user_id !== currentUser.id) {
             setNotificationMessage(
               `${t.addTask}: ${newTask.task}`
             );
@@ -511,7 +512,10 @@ export default function Chat() {
         }
       )
 
+      // ==========================================
       // تحديث المهمة
+      // ==========================================
+
       .on(
         "postgres_changes",
         {
@@ -524,8 +528,8 @@ export default function Chat() {
 
           // المهمة لا تخص المستخدم الحالي
           if (
-            updatedTask.created_by !== currentUser.id &&
-            updatedTask.user_id !== currentUser.id
+            updatedTask.user_id !== currentUser.id &&
+            updatedTask.assigned_to !== currentUser.id
           ) {
             return;
           }
@@ -534,21 +538,49 @@ export default function Chat() {
           if (updatedTask.deleted_at) {
             setTasks((prev) =>
               prev.filter(
-                (task) => task.id !== updatedTask.id
+                (task) =>
+                  task.id !== updatedTask.id
               )
             );
 
             return;
           }
 
-          // تحديث نفس المهمة عند الطرف الآخر
-          setTasks((prev) =>
-            prev.map((task) =>
-              task.id === updatedTask.id
-                ? updatedTask
-                : task
-            )
-          );
+          // هل المهمة تخص المحادثة الحالية؟
+          const belongsToCurrentChat =
+            selectedUser &&
+            (
+              (
+                updatedTask.user_id === currentUser.id &&
+                updatedTask.assigned_to === selectedUser.id
+              ) ||
+              (
+                updatedTask.user_id === selectedUser.id &&
+                updatedTask.assigned_to === currentUser.id
+              )
+            );
+
+          if (!belongsToCurrentChat) {
+            return;
+          }
+
+          // تحديث نفس المهمة
+          setTasks((prev) => {
+            const exists = prev.some(
+              (task) =>
+                task.id === updatedTask.id
+            );
+
+            if (exists) {
+              return prev.map((task) =>
+                task.id === updatedTask.id
+                  ? updatedTask
+                  : task
+              );
+            }
+
+            return [...prev, updatedTask];
+          });
         }
       )
 
@@ -639,9 +671,15 @@ export default function Chat() {
       .insert([
         {
           task: taskTitle.trim(),
-          user_id: selectedUser.id,
-          created_by: currentUser.id,
+
+          // الشخص الذي أنشأ المهمة
+          user_id: currentUser.id,
+
+          // الشخص الذي ستصل إليه المهمة
+          assigned_to: selectedUser.id,
+
           priority: taskPriority,
+
           completed: false,
         },
       ])
@@ -687,7 +725,10 @@ export default function Chat() {
   // تحديث أولوية المهمة
   // ==========================================
 
-  async function updateTaskPriority(task, newPriority) {
+  async function updateTaskPriority(
+    task,
+    newPriority
+  ) {
     if (!task || !currentUser) return;
 
     const { data, error } = await supabase
@@ -728,7 +769,10 @@ export default function Chat() {
   // تحديث حالة المهمة
   // ==========================================
 
-  async function updateTaskCompleted(task, completed) {
+  async function updateTaskCompleted(
+    task,
+    completed
+  ) {
     if (!task || !currentUser) return;
 
     const { data, error } = await supabase
@@ -779,15 +823,20 @@ export default function Chat() {
   // ==========================================
 
   async function deleteTask() {
-    if (!deletingTask || !currentUser) {
+    if (
+      !deletingTask ||
+      !currentUser
+    ) {
       return;
     }
 
-    const { data, error } = await supabase
+    const now = new Date().toISOString();
+
+    const { error } = await supabase
       .from("tasks")
       .update({
-        deleted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        deleted_at: now,
+        updated_at: now,
       })
       .eq("id", deletingTask.id)
       .select()
@@ -808,7 +857,8 @@ export default function Chat() {
     // حذف المهمة من الواجهة
     setTasks((prev) =>
       prev.filter(
-        (task) => task.id !== deletingTask.id
+        (task) =>
+          task.id !== deletingTask.id
       )
     );
 
@@ -1606,7 +1656,7 @@ export default function Chat() {
 
                   {tasks.map((task) => {
                     const createdByMe =
-                      task.created_by ===
+                      task.user_id ===
                       currentUser.id;
 
                     return (
@@ -1959,10 +2009,8 @@ export default function Chat() {
             backgroundColor:
               "rgba(0,0,0,0.5)",
             display: "flex",
-            alignItems:
-              "center",
-            justifyContent:
-              "center",
+            alignItems: "center",
+            justifyContent: "center",
             zIndex: 2000,
             p: 2,
           }}
@@ -2069,7 +2117,8 @@ export default function Chat() {
                     : "#000",
                 cursor:
                   "pointer",
-                marginBottom: "16px",
+                marginBottom:
+                  "16px",
               }}
             >
               <option value="NORMAL">
@@ -2134,10 +2183,8 @@ export default function Chat() {
             backgroundColor:
               "rgba(0,0,0,0.5)",
             display: "flex",
-            alignItems:
-              "center",
-            justifyContent:
-              "center",
+            alignItems: "center",
+            justifyContent: "center",
             zIndex: 2000,
             p: 2,
           }}
@@ -2222,10 +2269,8 @@ export default function Chat() {
             backgroundColor:
               "rgba(0,0,0,0.5)",
             display: "flex",
-            alignItems:
-              "center",
-            justifyContent:
-              "center",
+            alignItems: "center",
+            justifyContent: "center",
             zIndex: 2000,
             p: 2,
           }}
@@ -2302,10 +2347,8 @@ export default function Chat() {
             backgroundColor:
               "rgba(0,0,0,0.5)",
             display: "flex",
-            alignItems:
-              "center",
-            justifyContent:
-              "center",
+            alignItems: "center",
+            justifyContent: "center",
             zIndex: 2000,
             p: 2,
           }}

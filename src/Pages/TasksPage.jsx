@@ -31,6 +31,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import SendIcon from "@mui/icons-material/Send";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import InboxIcon from "@mui/icons-material/Inbox";
 
 // Theme
 import { useTheme } from "@mui/material/styles";
@@ -51,10 +53,7 @@ function TasksPage() {
       setLanguage(event.detail);
     };
 
-    window.addEventListener(
-      "languageChanged",
-      handleLanguageChange
-    );
+    window.addEventListener("languageChanged", handleLanguageChange);
 
     return () => {
       window.removeEventListener(
@@ -71,8 +70,7 @@ function TasksPage() {
   const text = {
     en: {
       tasks: "Tasks",
-      manageTasks:
-        "Manage your tasks easily and stay organized.",
+      manageTasks: "Manage your tasks easily and stay organized.",
       task: "Task",
       taskCount: "Task",
       tasksCount: "Tasks",
@@ -82,7 +80,12 @@ function TasksPage() {
       normal: "Normal",
       urgent: "Urgent",
       addTask: "Add Task",
-      yourTasks: "Your Tasks",
+
+      // تمييز المهام
+      yourTasks: "My Tasks",
+      receivedTasks: "Tasks Sent To Me",
+      myTasksCount: "My Tasks",
+      receivedTasksCount: "Sent To Me",
 
       // البحث
       searchTasks: "Search tasks...",
@@ -102,34 +105,35 @@ function TasksPage() {
       edit: "Edit",
       delete: "Delete",
       noTasks: "No tasks yet",
-      firstTask:
-        "Add your first task to get started.",
+      firstTask: "Add your first task to get started.",
       deleteTask: "Delete Task?",
       deleteConfirmation:
         "Are you sure you want to delete this task? This action cannot be undone.",
       cancel: "Cancel",
       editTask: "Edit Task",
-      updateTask:
-        "Update your task below.",
+      updateTask: "Update your task below.",
       saveChanges: "Save Changes",
       required: "Task is required",
     },
 
     ar: {
       tasks: "المهام",
-      manageTasks:
-        "أدر مهامك بسهولة وحافظ على تنظيمك.",
+      manageTasks: "أدر مهامك بسهولة وحافظ على تنظيمك.",
       task: "مهمة",
       taskCount: "مهمة",
       tasksCount: "مهام",
       addNewTask: "إضافة مهمة جديدة",
-      whatToDo:
-        "ماذا تحتاج إلى إنجازه؟",
+      whatToDo: "ماذا تحتاج إلى إنجازه؟",
       priority: "الأولوية",
       normal: "عادية",
       urgent: "عاجلة",
       addTask: "إضافة مهمة",
-      yourTasks: "مهامك",
+
+      // تمييز المهام
+      yourTasks: "مهامي",
+      receivedTasks: "المهام المرسلة لي",
+      myTasksCount: "مهامي",
+      receivedTasksCount: "مرسلة لي",
 
       // البحث
       searchTasks: "ابحث في المهام...",
@@ -149,45 +153,36 @@ function TasksPage() {
       edit: "تعديل",
       delete: "حذف",
       noTasks: "لا توجد مهام بعد",
-      firstTask:
-        "أضف أول مهمة لك للبدء.",
+      firstTask: "أضف أول مهمة لك للبدء.",
       deleteTask: "حذف المهمة؟",
       deleteConfirmation:
         "هل أنت متأكد من أنك تريد حذف هذه المهمة؟ لا يمكن التراجع عن هذا الإجراء.",
       cancel: "إلغاء",
       editTask: "تعديل المهمة",
-      updateTask:
-        "قم بتحديث المهمة أدناه.",
+      updateTask: "قم بتحديث المهمة أدناه.",
       saveChanges: "حفظ التغييرات",
       required: "المهمة مطلوبة",
     },
   };
 
-  const currentText =
-    language === "ar"
-      ? text.ar
-      : text.en;
+  const currentText = language === "ar" ? text.ar : text.en;
 
   // ==========================================
   // States
   // ==========================================
 
   const [task, setTask] = useState("");
-  const [priority, setPriority] =
-    useState("NORMAL");
-  const [taskError, setTaskError] =
-    useState("");
+  const [priority, setPriority] = useState("NORMAL");
+  const [taskError, setTaskError] = useState("");
 
-  // المهام الأصلية
+  // المهام التي أنشأها المستخدم
   const [tasks, setTasks] = useState([]);
 
   // المهام المستلمة
-  const [receivedTasks, setReceivedTasks] =
-    useState([]);
+  const [receivedTasks, setReceivedTasks] = useState([]);
 
   // البحث
-  const [searchTask, setSearchTask] =
-    useState("");
+  const [searchTask, setSearchTask] = useState("");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -195,46 +190,35 @@ function TasksPage() {
   const tasksPerPage = 2;
 
   // إرسال المهمة
-  const [openSendDialog, setOpenSendDialog] =
-    useState(false);
+  const [openSendDialog, setOpenSendDialog] = useState(false);
 
-  const [selectedTask, setSelectedTask] =
-    useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   const [users, setUsers] = useState([]);
 
-  const [selectedUser, setSelectedUser] =
-    useState("");
+  const [selectedUser, setSelectedUser] = useState("");
 
-  const [sendingTask, setSendingTask] =
-    useState(false);
+  const [sendingTask, setSendingTask] = useState(false);
 
   // Edit
-  const [editingId, setEditingId] =
-    useState(null);
+  const [editingId, setEditingId] = useState(null);
 
-  const [editTask, setEditTask] =
-    useState("");
+  const [editTask, setEditTask] = useState("");
 
-  const [editPriority, setEditPriority] =
-    useState("NORMAL");
+  const [editPriority, setEditPriority] = useState("NORMAL");
 
-  const [editTaskError, setEditTaskError] =
-    useState("");
+  const [editTaskError, setEditTaskError] = useState("");
 
   // Delete
-  const [deleteId, setDeleteId] =
-    useState(null);
+  const [deleteId, setDeleteId] = useState(null);
 
-  const [openDeleteDialog, setOpenDeleteDialog] =
-    useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   // Edit Dialog
-  const [openEditDialog, setOpenEditDialog] =
-    useState(false);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
 
   // ==========================================
-  // جلب المهام الأصلية
+  // جلب المهام
   // ==========================================
 
   async function getTasks() {
@@ -249,111 +233,73 @@ function TasksPage() {
     const { data, error } = await supabase
       .from("tasks")
       .select("*")
-      .eq("user_id", user.id)
+      .or(`user_id.eq.${user.id},assigned_to.eq.${user.id}`)
       .is("deleted_at", null)
       .order("id", {
         ascending: false,
       });
 
     if (error) {
-      console.log(
-        "Get tasks error:",
-        error
-      );
-    } else {
-      setTasks(data || []);
-    }
-  }
-
-  // ==========================================
-  // جلب المهام المستلمة
-  // ==========================================
-
-  async function getReceivedTasks() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+      console.log("Get tasks error:", error);
       return;
     }
 
-    const { data, error } = await supabase
-      .from("task_assignments")
-      .select(
-        "id, title, created_by, assigned_to, status, created_at"
-      )
-      .eq("assigned_to", user.id)
-      .order("id", {
-        ascending: false,
-      });
+    const allTasks = data || [];
 
-    if (error) {
-      console.log(
-        "Get received tasks error:",
-        error
-      );
-      return;
-    }
+    // ==========================================
+    // مهامي
+    // ==========================================
 
-    const assignments = data || [];
+    const originalTasks = allTasks.filter(
+      (item) => item.user_id === user.id
+    );
 
-    if (assignments.length === 0) {
-      setReceivedTasks([]);
-      return;
-    }
+    // ==========================================
+    // المهام المرسلة لي
+    // ==========================================
 
-    // الحصول على IDs المرسلين
-    const senderIds = [
-      ...new Set(
-        assignments.map(
-          (item) => item.created_by
-        )
-      ),
-    ];
+    const received = allTasks.filter(
+      (item) =>
+        item.assigned_to === user.id &&
+        item.user_id !== user.id
+    );
 
+    // ==========================================
     // جلب أسماء المرسلين
-    const {
-      data: senderProfiles,
-      error: senderError,
-    } = await supabase
-      .from("profiles")
-      .select(
-        "id, display_name, name, email"
-      )
-      .in("id", senderIds);
+    // ==========================================
 
-    if (senderError) {
-      console.log(
-        "Get sender profiles error:",
-        senderError
-      );
-    }
+    if (received.length > 0) {
+      const senderIds = [
+        ...new Set(
+          received.map((item) => item.user_id)
+        ),
+      ];
 
-    const profiles = senderProfiles || [];
+      const {
+        data: senderProfiles,
+        error: senderError,
+      } = await supabase
+        .from("profiles")
+        .select("id, display_name, name, email")
+        .in("id", senderIds);
 
-    // تجهيز المهام المستلمة
-    const formattedTasks =
-      assignments.map((assignment) => {
+      if (senderError) {
+        console.log(
+          "Get sender profiles error:",
+          senderError
+        );
+      }
+
+      const profiles = senderProfiles || [];
+
+      const formattedReceived = received.map((item) => {
         const sender = profiles.find(
-          (profile) =>
-            profile.id ===
-            assignment.created_by
+          (profile) => profile.id === item.user_id
         );
 
         return {
-          ...assignment,
-
+          ...item,
           isReceivedTask: true,
-
-          task: assignment.title,
-
-          completed:
-            assignment.status ===
-            "COMPLETED",
-
-          priority: "NORMAL",
-
           senderName:
             sender?.display_name ||
             sender?.name ||
@@ -362,9 +308,12 @@ function TasksPage() {
         };
       });
 
-    setReceivedTasks(
-      formattedTasks
-    );
+      setReceivedTasks(formattedReceived);
+    } else {
+      setReceivedTasks([]);
+    }
+
+    setTasks(originalTasks);
   }
 
   // ==========================================
@@ -382,9 +331,7 @@ function TasksPage() {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select(
-        "id, display_name, name, email"
-      )
+      .select("id, display_name, name, email")
       .neq("id", user.id)
       .eq("is_active", 1)
       .order("display_name", {
@@ -392,10 +339,7 @@ function TasksPage() {
       });
 
     if (error) {
-      console.log(
-        "Get users error:",
-        error
-      );
+      console.log("Get users error:", error);
       return;
     }
 
@@ -408,7 +352,6 @@ function TasksPage() {
 
   useEffect(() => {
     getTasks();
-    getReceivedTasks();
   }, []);
 
   // ==========================================
@@ -423,27 +366,17 @@ function TasksPage() {
   // البحث في المهام
   // ==========================================
 
-  const filteredTasks =
-    tasks.filter((task) =>
-      task.task
-        ?.toLowerCase()
-        .includes(
-          searchTask
-            .toLowerCase()
-            .trim()
-        )
-    );
+  const filteredTasks = tasks.filter((task) =>
+    task.task
+      ?.toLowerCase()
+      .includes(searchTask.toLowerCase().trim())
+  );
 
-  const filteredReceivedTasks =
-    receivedTasks.filter((task) =>
-      task.task
-        ?.toLowerCase()
-        .includes(
-          searchTask
-            .toLowerCase()
-            .trim()
-        )
-    );
+  const filteredReceivedTasks = receivedTasks.filter((task) =>
+    task.task
+      ?.toLowerCase()
+      .includes(searchTask.toLowerCase().trim())
+  );
 
   // ==========================================
   // Pagination
@@ -468,11 +401,10 @@ function TasksPage() {
   const startIndex =
     (currentPage - 1) * tasksPerPage;
 
-  const paginatedTasks =
-    allFilteredTasks.slice(
-      startIndex,
-      startIndex + tasksPerPage
-    );
+  const paginatedTasks = allFilteredTasks.slice(
+    startIndex,
+    startIndex + tasksPerPage
+  );
 
   // ==========================================
   // حماية الصفحة الحالية
@@ -520,31 +452,40 @@ function TasksPage() {
       return;
     }
 
-    const { error } = await supabase
-      .from("task_assignments")
-      .insert([
-        {
-          title: selectedTask.task,
-          created_by: user.id,
-          assigned_to: selectedUser,
-          status: "PENDING",
-        },
-      ]);
+    const { data, error } = await supabase
+      .from("tasks")
+      .update({
+        assigned_to: selectedUser,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", selectedTask.id)
+      .eq("user_id", user.id)
+      .select()
+      .single();
 
     if (error) {
-      console.log(
-        "Send task error:",
-        error
-      );
+      console.log("Send task error:", error);
 
       setSendingTask(false);
       return;
+    }
+
+    if (data) {
+      setTasks((currentTasks) =>
+        currentTasks.map((currentTask) =>
+          currentTask.id === data.id
+            ? data
+            : currentTask
+        )
+      );
     }
 
     setOpenSendDialog(false);
     setSelectedTask(null);
     setSelectedUser("");
     setSendingTask(false);
+
+    getTasks();
   }
 
   // ==========================================
@@ -552,17 +493,17 @@ function TasksPage() {
   // ==========================================
 
   async function toggleReceivedTask(task) {
-    const newStatus =
-      task.completed
-        ? "PENDING"
-        : "COMPLETED";
+    const newCompleted = !task.completed;
 
-    const { error } = await supabase
-      .from("task_assignments")
+    const { data, error } = await supabase
+      .from("tasks")
       .update({
-        status: newStatus,
+        completed: newCompleted,
+        updated_at: new Date().toISOString(),
       })
-      .eq("id", task.id);
+      .eq("id", task.id)
+      .select()
+      .single();
 
     if (error) {
       console.log(
@@ -572,20 +513,16 @@ function TasksPage() {
       return;
     }
 
-    setReceivedTasks(
-      (currentTasks) =>
-        currentTasks.map(
-          (currentTask) =>
-            currentTask.id ===
-            task.id
-              ? {
-                  ...currentTask,
-                  completed:
-                    !currentTask.completed,
-                  status: newStatus,
-                }
-              : currentTask
-        )
+    setReceivedTasks((currentTasks) =>
+      currentTasks.map((currentTask) =>
+        currentTask.id === task.id
+          ? {
+              ...currentTask,
+              ...data,
+              completed: newCompleted,
+            }
+          : currentTask
+      )
     );
   }
 
@@ -595,9 +532,7 @@ function TasksPage() {
 
   async function addTask() {
     if (!task.trim()) {
-      setTaskError(
-        currentText.required
-      );
+      setTaskError(currentText.required);
       return;
     }
 
@@ -619,14 +554,12 @@ function TasksPage() {
           priority: priority,
           completed: false,
           user_id: user.id,
+          assigned_to: null,
         },
       ]);
 
     if (error) {
-      console.log(
-        "Add task error:",
-        error
-      );
+      console.log("Add task error:", error);
     } else {
       setTask("");
       setPriority("NORMAL");
@@ -646,16 +579,12 @@ function TasksPage() {
       .from("tasks")
       .update({
         completed: !task.completed,
-        updated_at:
-          new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .eq("id", task.id);
 
     if (error) {
-      console.log(
-        "Toggle task error:",
-        error
-      );
+      console.log("Toggle task error:", error);
     } else {
       getTasks();
     }
@@ -682,16 +611,18 @@ function TasksPage() {
     const { error } = await supabase
       .from("tasks")
       .update({
-        deleted_at:
-          new Date().toISOString(),
+        deleted_at: new Date().toISOString(),
       })
-      .eq("id", deleteId);
+      .eq("id", deleteId)
+      .eq(
+        "user_id",
+        (
+          await supabase.auth.getUser()
+        ).data.user?.id
+      );
 
     if (error) {
-      console.log(
-        "Delete error:",
-        error
-      );
+      console.log("Delete error:", error);
       return;
     }
 
@@ -703,6 +634,8 @@ function TasksPage() {
 
     setOpenDeleteDialog(false);
     setDeleteId(null);
+
+    getTasks();
   }
 
   // ==========================================
@@ -727,9 +660,7 @@ function TasksPage() {
 
   async function updateTask() {
     if (!editTask.trim()) {
-      setEditTaskError(
-        currentText.required
-      );
+      setEditTaskError(currentText.required);
       return;
     }
 
@@ -744,18 +675,14 @@ function TasksPage() {
       .update({
         task: editTask.trim(),
         priority: editPriority,
-        updated_at:
-          new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .eq("id", editingId)
       .select()
       .single();
 
     if (error) {
-      console.log(
-        "Update error:",
-        error
-      );
+      console.log("Update error:", error);
       return;
     }
 
@@ -810,8 +737,7 @@ function TasksPage() {
             ? "#0F172A"
             : "#F5F7FA",
 
-        color:
-          theme.palette.text.primary,
+        color: theme.palette.text.primary,
 
         transition:
           "background-color 0.3s, color 0.3s",
@@ -835,7 +761,6 @@ function TasksPage() {
           boxSizing: "border-box",
         }}
       >
-
         {/* ==========================================
             العنوان
         ========================================== */}
@@ -843,8 +768,7 @@ function TasksPage() {
         <Box
           sx={{
             display: "flex",
-            justifyContent:
-              "space-between",
+            justifyContent: "space-between",
             alignItems: "center",
 
             flexWrap: "wrap",
@@ -864,8 +788,7 @@ function TasksPage() {
               sx={{
                 fontWeight: "bold",
 
-                color:
-                  "text.primary",
+                color: "text.primary",
 
                 marginBottom: 1,
 
@@ -880,8 +803,7 @@ function TasksPage() {
 
             <Typography
               sx={{
-                color:
-                  "text.secondary",
+                color: "text.secondary",
 
                 fontSize: {
                   xs: "14px",
@@ -893,81 +815,84 @@ function TasksPage() {
             </Typography>
           </Box>
 
-          <Chip
-            icon={
-              <TaskAltIcon />
-            }
-            label={`${
-              tasks.length
-            } ${
-              tasks.length === 1
-                ? currentText.taskCount
-                : currentText.tasksCount
-            }`}
+          {/* ==========================================
+              أيقونات وعدد المهام
+          ========================================== */}
+
+          <Box
             sx={{
-              backgroundColor:
-                theme.palette.mode ===
-                "dark"
-                  ? "#273449"
-                  : "#E6F4F2",
-
-              color:
-                "primary.main",
-
-              fontWeight: "bold",
-
-              border:
-                theme.palette.mode ===
-                "dark"
-                  ? "1px solid #334155"
-                  : "1px solid #B2DFDB",
-
-              maxWidth: "100%",
-
-              "& .MuiChip-icon": {
-                color:
-                  "primary.main",
-              },
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              flexWrap: "wrap",
             }}
-          />
+          >
+            {/* مهامي */}
 
-          <Chip
-            icon={
-              <TaskAltIcon />
-            }
-            label={`${
-              receivedTasks.length
-            } ${
-              receivedTasks.length === 1
-                ? currentText.taskCount
-                : currentText.tasksCount
-            }`}
-            sx={{
-              backgroundColor:
-                theme.palette.mode ===
-                "dark"
-                  ? "#273449"
-                  : "#E6F4F2",
+            <Chip
+              icon={<AssignmentIcon />}
+              label={`${tasks.length} ${
+                currentText.myTasksCount
+              }`}
+              sx={{
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "#273449"
+                    : "#E6F4F2",
 
-              color:
-                "primary.main",
+                color: "primary.main",
 
-              fontWeight: "bold",
+                fontWeight: "bold",
 
-              border:
-                theme.palette.mode ===
-                "dark"
-                  ? "1px solid #334155"
-                  : "1px solid #B2DFDB",
+                border:
+                  theme.palette.mode === "dark"
+                    ? "1px solid #334155"
+                    : "1px solid #B2DFDB",
 
-              maxWidth: "100%",
+                maxWidth: "100%",
 
-              "& .MuiChip-icon": {
+                "& .MuiChip-icon": {
+                  color: "primary.main",
+                },
+              }}
+            />
+
+            {/* المهام المرسلة لي */}
+
+            <Chip
+              icon={<InboxIcon />}
+              label={`${receivedTasks.length} ${
+                currentText.receivedTasksCount
+              }`}
+              sx={{
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "#312E3A"
+                    : "#F3E8FF",
+
                 color:
-                  "primary.main",
-              },
-            }}
-          />
+                  theme.palette.mode === "dark"
+                    ? "#D8B4FE"
+                    : "#7E22CE",
+
+                fontWeight: "bold",
+
+                border:
+                  theme.palette.mode === "dark"
+                    ? "1px solid #4C4660"
+                    : "1px solid #D8B4FE",
+
+                maxWidth: "100%",
+
+                "& .MuiChip-icon": {
+                  color:
+                    theme.palette.mode === "dark"
+                      ? "#D8B4FE"
+                      : "#7E22CE",
+                },
+              }}
+            />
+          </Box>
         </Box>
 
         {/* ==========================================
@@ -984,8 +909,7 @@ function TasksPage() {
 
             marginBottom: 4,
 
-            backgroundColor:
-              "background.paper",
+            backgroundColor: "background.paper",
 
             borderRadius: "16px",
 
@@ -997,8 +921,7 @@ function TasksPage() {
             sx={{
               fontWeight: "bold",
 
-              color:
-                "text.primary",
+              color: "text.primary",
 
               marginBottom: 2,
 
@@ -1012,8 +935,7 @@ function TasksPage() {
             sx={{
               display: "flex",
 
-              alignItems:
-                "flex-start",
+              alignItems: "flex-start",
 
               gap: 2,
 
@@ -1027,22 +949,14 @@ function TasksPage() {
           >
             <TextField
               fullWidth
-              label={
-                currentText.whatToDo
-              }
+              label={currentText.whatToDo}
               value={task}
-              error={Boolean(
-                taskError
-              )}
+              error={Boolean(taskError)}
               helperText={taskError}
               onChange={(e) => {
-                setTask(
-                  e.target.value
-                );
+                setTask(e.target.value);
 
-                if (
-                  e.target.value.trim()
-                ) {
+                if (e.target.value.trim()) {
                   setTaskError("");
                 }
               }}
@@ -1058,58 +972,49 @@ function TasksPage() {
 
                 width: "100%",
 
-                "& .MuiOutlinedInput-root":
-                  {
-                    height: 56,
+                "& .MuiOutlinedInput-root": {
+                  height: 56,
 
-                    borderRadius:
-                      "12px",
+                  borderRadius: "12px",
 
-                    backgroundColor:
-                      theme.palette.mode ===
-                      "dark"
-                        ? "#1E293B"
-                        : "#FFFFFF",
+                  backgroundColor:
+                    theme.palette.mode === "dark"
+                      ? "#1E293B"
+                      : "#FFFFFF",
 
-                    "&:hover .MuiOutlinedInput-notchedOutline":
-                      {
-                        borderColor:
-                          "primary.main",
-                      },
+                  "&:hover .MuiOutlinedInput-notchedOutline":
+                    {
+                      borderColor:
+                        "primary.main",
+                    },
 
-                    "&.Mui-focused":
-                      {
-                        boxShadow:
-                          theme.palette.mode ===
-                          "dark"
-                            ? "0 0 0 3px rgba(128,203,196,0.12)"
-                            : "0 0 0 3px rgba(0,137,123,0.10)",
-                      },
-
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline":
-                      {
-                        borderColor:
-                          "primary.main",
-
-                        borderWidth:
-                          "2px",
-                      },
+                  "&.Mui-focused": {
+                    boxShadow:
+                      theme.palette.mode === "dark"
+                        ? "0 0 0 3px rgba(128,203,196,0.12)"
+                        : "0 0 0 3px rgba(0,137,123,0.10)",
                   },
+
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline":
+                    {
+                      borderColor:
+                        "primary.main",
+
+                      borderWidth: "2px",
+                    },
+                },
 
                 "& .MuiInputLabel-root.Mui-focused":
                   {
-                    color:
-                      "primary.main",
+                    color: "primary.main",
                   },
 
-                "& .MuiFormHelperText-root":
-                  {
-                    color:
-                      "#EF5350",
+                "& .MuiFormHelperText-root": {
+                  color: "#EF5350",
 
-                    marginLeft: 4,
-                    marginRight: 4,
-                  },
+                  marginLeft: 4,
+                  marginRight: 4,
+                },
               }}
             />
 
@@ -1127,33 +1032,29 @@ function TasksPage() {
 
                 flexShrink: 0,
 
-                "& .MuiOutlinedInput-root":
-                  {
-                    height: 56,
+                "& .MuiOutlinedInput-root": {
+                  height: 56,
 
-                    borderRadius:
-                      "12px",
+                  borderRadius: "12px",
 
-                    "&:hover .MuiOutlinedInput-notchedOutline":
-                      {
-                        borderColor:
-                          "primary.main",
-                      },
+                  "&:hover .MuiOutlinedInput-notchedOutline":
+                    {
+                      borderColor:
+                        "primary.main",
+                    },
 
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline":
-                      {
-                        borderColor:
-                          "primary.main",
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline":
+                    {
+                      borderColor:
+                        "primary.main",
 
-                        borderWidth:
-                          "2px",
-                      },
-                  },
+                      borderWidth: "2px",
+                    },
+                },
 
                 "& .MuiInputLabel-root.Mui-focused":
                   {
-                    color:
-                      "primary.main",
+                    color: "primary.main",
                   },
               }}
             >
@@ -1163,17 +1064,12 @@ function TasksPage() {
 
               <Select
                 value={priority}
-                label={
-                  currentText.priority
-                }
+                label={currentText.priority}
                 onChange={(e) =>
-                  setPriority(
-                    e.target.value
-                  )
+                  setPriority(e.target.value)
                 }
                 sx={{
-                  borderRadius:
-                    "12px",
+                  borderRadius: "12px",
                 }}
               >
                 <MenuItem value="NORMAL">
@@ -1189,9 +1085,7 @@ function TasksPage() {
             <Button
               onClick={addTask}
               variant="contained"
-              startIcon={
-                <AddIcon />
-              }
+              startIcon={<AddIcon />}
               sx={{
                 minWidth: {
                   xs: "100%",
@@ -1207,20 +1101,17 @@ function TasksPage() {
 
                 flexShrink: 0,
 
-                borderRadius:
-                  "12px",
+                borderRadius: "12px",
 
                 backgroundColor:
                   "primary.main",
 
                 color:
-                  theme.palette.mode ===
-                  "dark"
+                  theme.palette.mode === "dark"
                     ? "#0F172A"
                     : "#FFFFFF",
 
-                textTransform:
-                  "none",
+                textTransform: "none",
 
                 fontWeight: "bold",
 
@@ -1228,8 +1119,7 @@ function TasksPage() {
 
                 "&:hover": {
                   backgroundColor:
-                    theme.palette.mode ===
-                    "dark"
+                    theme.palette.mode === "dark"
                       ? "#6FB8B1"
                       : "#00796B",
 
@@ -1243,7 +1133,7 @@ function TasksPage() {
         </Paper>
 
         {/* ==========================================
-            Your Tasks + Search
+            My Tasks + Search
         ========================================== */}
 
         <Box
@@ -1252,8 +1142,7 @@ function TasksPage() {
 
             alignItems: "center",
 
-            justifyContent:
-              "space-between",
+            justifyContent: "space-between",
 
             gap: 2,
 
@@ -1267,8 +1156,7 @@ function TasksPage() {
             sx={{
               fontWeight: "bold",
 
-              color:
-                "text.primary",
+              color: "text.primary",
             }}
           >
             {currentText.yourTasks}
@@ -1277,13 +1165,9 @@ function TasksPage() {
           <TextField
             value={searchTask}
             onChange={(e) =>
-              setSearchTask(
-                e.target.value
-              )
+              setSearchTask(e.target.value)
             }
-            placeholder={
-              currentText.searchTasks
-            }
+            placeholder={currentText.searchTasks}
             size="small"
             sx={{
               width: {
@@ -1291,28 +1175,24 @@ function TasksPage() {
                 sm: 280,
               },
 
-              "& .MuiOutlinedInput-root":
-                {
-                  borderRadius:
-                    "12px",
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "12px",
 
-                  backgroundColor:
-                    "background.paper",
+                backgroundColor:
+                  "background.paper",
 
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline":
-                    {
-                      borderColor:
-                        "primary.main",
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline":
+                  {
+                    borderColor:
+                      "primary.main",
 
-                      borderWidth:
-                        "2px",
-                    },
-                },
+                    borderWidth: "2px",
+                  },
+              },
 
               "& .MuiInputLabel-root.Mui-focused":
                 {
-                  color:
-                    "primary.main",
+                  color: "primary.main",
                 },
             }}
           />
@@ -1328,8 +1208,7 @@ function TasksPage() {
             sx={{
               display: "flex",
 
-              flexDirection:
-                "column",
+              flexDirection: "column",
 
               gap: 2,
 
@@ -1343,8 +1222,7 @@ function TasksPage() {
             {paginatedTasks
               .filter(
                 (task) =>
-                  task.taskType ===
-                  "original"
+                  task.taskType === "original"
               )
               .map((task) => (
                 <Card
@@ -1354,15 +1232,13 @@ function TasksPage() {
                     backgroundColor:
                       "background.paper",
 
-                    borderRadius:
-                      "16px",
+                    borderRadius: "16px",
 
                     width: "100%",
 
                     maxWidth: "100%",
 
-                    boxSizing:
-                      "border-box",
+                    boxSizing: "border-box",
 
                     overflow: "hidden",
 
@@ -1388,16 +1264,14 @@ function TasksPage() {
 
                       display: "flex",
 
-                      alignItems:
-                        "center",
+                      alignItems: "center",
 
                       justifyContent:
                         "space-between",
 
                       gap: 2,
 
-                      flexWrap:
-                        "wrap",
+                      flexWrap: "wrap",
 
                       width: "100%",
 
@@ -1420,8 +1294,7 @@ function TasksPage() {
                       sx={{
                         display: "flex",
 
-                        alignItems:
-                          "center",
+                        alignItems: "center",
 
                         gap: 1,
 
@@ -1442,9 +1315,7 @@ function TasksPage() {
                           task.completed
                         )}
                         onChange={() =>
-                          toggleTask(
-                            task
-                          )
+                          toggleTask(task)
                         }
                         sx={{
                           color:
@@ -1452,20 +1323,18 @@ function TasksPage() {
 
                           flexShrink: 0,
 
-                          "&.Mui-checked":
-                            {
-                              color:
-                                "primary.main",
-                            },
+                          "&.Mui-checked": {
+                            color:
+                              "primary.main",
+                          },
 
-                          "&:hover":
-                            {
-                              backgroundColor:
-                                theme.palette.mode ===
-                                "dark"
-                                  ? "rgba(128,203,196,0.08)"
-                                  : "rgba(0,137,123,0.08)",
-                            },
+                          "&:hover": {
+                            backgroundColor:
+                              theme.palette.mode ===
+                              "dark"
+                                ? "rgba(128,203,196,0.08)"
+                                : "rgba(0,137,123,0.08)",
+                          },
                         }}
                       />
 
@@ -1535,11 +1404,9 @@ function TasksPage() {
                                 ? "text.secondary"
                                 : "text.primary",
 
-                            fontWeight:
-                              "600",
+                            fontWeight: "600",
 
-                            fontSize:
-                              "16px",
+                            fontSize: "16px",
 
                             wordBreak:
                               "break-word",
@@ -1564,11 +1431,9 @@ function TasksPage() {
                             color:
                               "text.secondary",
 
-                            fontSize:
-                              "12px",
+                            fontSize: "12px",
 
-                            marginTop:
-                              "4px",
+                            marginTop: "4px",
                           }}
                         >
                           {task.completed
@@ -1583,21 +1448,18 @@ function TasksPage() {
                       sx={{
                         display: "flex",
 
-                        alignItems:
-                          "center",
+                        alignItems: "center",
 
                         gap: 1,
 
-                        flexWrap:
-                          "wrap",
+                        flexWrap: "wrap",
 
                         width: {
                           xs: "100%",
                           sm: "auto",
                         },
 
-                        maxWidth:
-                          "100%",
+                        maxWidth: "100%",
 
                         justifyContent: {
                           xs: "space-between",
@@ -1714,8 +1576,7 @@ function TasksPage() {
 
                             flexShrink: 1,
 
-                            minWidth:
-                              "0",
+                            minWidth: "0",
 
                             "@media (max-width:600px)":
                               {
@@ -1726,17 +1587,16 @@ function TasksPage() {
                                   "13px",
                               },
 
-                            "&:hover":
-                              {
-                                borderColor:
-                                  "primary.main",
+                            "&:hover": {
+                              borderColor:
+                                "primary.main",
 
-                                backgroundColor:
-                                  theme.palette.mode ===
-                                  "dark"
-                                    ? "rgba(128,203,196,0.08)"
-                                    : "rgba(0,137,123,0.06)",
-                              },
+                              backgroundColor:
+                                theme.palette.mode ===
+                                "dark"
+                                  ? "rgba(128,203,196,0.08)"
+                                  : "rgba(0,137,123,0.06)",
+                            },
                           }}
                         >
                           {currentText.sendTask}
@@ -1744,9 +1604,7 @@ function TasksPage() {
 
                         <Button
                           onClick={() =>
-                            startEdit(
-                              task
-                            )
+                            startEdit(task)
                           }
                           variant="outlined"
                           startIcon={
@@ -1776,8 +1634,7 @@ function TasksPage() {
 
                             flexShrink: 1,
 
-                            minWidth:
-                              "0",
+                            minWidth: "0",
 
                             "@media (max-width:600px)":
                               {
@@ -1788,17 +1645,16 @@ function TasksPage() {
                                   "13px",
                               },
 
-                            "&:hover":
-                              {
-                                borderColor:
-                                  "primary.main",
+                            "&:hover": {
+                              borderColor:
+                                "primary.main",
 
-                                backgroundColor:
-                                  theme.palette.mode ===
-                                  "dark"
-                                    ? "rgba(128,203,196,0.08)"
-                                    : "rgba(0,137,123,0.06)",
-                              },
+                              backgroundColor:
+                                theme.palette.mode ===
+                                "dark"
+                                  ? "rgba(128,203,196,0.08)"
+                                  : "rgba(0,137,123,0.06)",
+                            },
                           }}
                         >
                           {currentText.edit}
@@ -1841,8 +1697,7 @@ function TasksPage() {
 
                             flexShrink: 1,
 
-                            minWidth:
-                              "0",
+                            minWidth: "0",
 
                             "@media (max-width:600px)":
                               {
@@ -1853,17 +1708,16 @@ function TasksPage() {
                                   "13px",
                               },
 
-                            "&:hover":
-                              {
-                                borderColor:
-                                  "#EF5350",
+                            "&:hover": {
+                              borderColor:
+                                "#EF5350",
 
-                                backgroundColor:
-                                  theme.palette.mode ===
-                                  "dark"
-                                    ? "rgba(239,83,80,0.08)"
-                                    : "rgba(239,83,80,0.06)",
-                              },
+                              backgroundColor:
+                                theme.palette.mode ===
+                                "dark"
+                                  ? "rgba(239,83,80,0.08)"
+                                  : "rgba(239,83,80,0.06)",
+                            },
                           }}
                         >
                           {currentText.delete}
@@ -1881,8 +1735,7 @@ function TasksPage() {
             {paginatedTasks
               .filter(
                 (task) =>
-                  task.taskType ===
-                  "received"
+                  task.taskType === "received"
               )
               .map((task) => (
                 <Card
@@ -1892,8 +1745,7 @@ function TasksPage() {
                     backgroundColor:
                       "background.paper",
 
-                    borderRadius:
-                      "16px",
+                    borderRadius: "16px",
 
                     width: "100%",
 
@@ -1902,14 +1754,13 @@ function TasksPage() {
                     boxSizing:
                       "border-box",
 
-                    overflow:
-                      "hidden",
+                    overflow: "hidden",
 
                     border:
                       theme.palette.mode ===
                       "dark"
-                        ? "1px solid #334155"
-                        : "1px solid #E0F2F1",
+                        ? "1px solid #4C4660"
+                        : "1px solid #E9D5FF",
                   }}
                 >
                   <CardContent
@@ -1919,16 +1770,14 @@ function TasksPage() {
 
                       display: "flex",
 
-                      alignItems:
-                        "center",
+                      alignItems: "center",
 
                       justifyContent:
                         "space-between",
 
                       gap: 2,
 
-                      flexWrap:
-                        "wrap",
+                      flexWrap: "wrap",
 
                       width: "100%",
 
@@ -1947,14 +1796,11 @@ function TasksPage() {
                         },
                     }}
                   >
-                    {/* المهمة المستلمة */}
-
                     <Box
                       sx={{
                         display: "flex",
 
-                        alignItems:
-                          "center",
+                        alignItems: "center",
 
                         gap: 1,
 
@@ -1983,11 +1829,10 @@ function TasksPage() {
 
                           flexShrink: 0,
 
-                          "&.Mui-checked":
-                            {
-                              color:
-                                "primary.main",
-                            },
+                          "&.Mui-checked": {
+                            color:
+                              "primary.main",
+                          },
                         }}
                       />
 
@@ -2005,8 +1850,8 @@ function TasksPage() {
                           backgroundColor:
                             theme.palette.mode ===
                             "dark"
-                              ? "#273449"
-                              : "#E6F4F2",
+                              ? "#312E3A"
+                              : "#F3E8FF",
 
                           display: "flex",
 
@@ -2021,14 +1866,17 @@ function TasksPage() {
                           border:
                             theme.palette.mode ===
                             "dark"
-                              ? "1px solid #334155"
-                              : "1px solid #B2DFDB",
+                              ? "1px solid #4C4660"
+                              : "1px solid #D8B4FE",
                         }}
                       >
-                        <TaskAltIcon
+                        <InboxIcon
                           sx={{
                             color:
-                              "primary.main",
+                              theme.palette.mode ===
+                              "dark"
+                                ? "#D8B4FE"
+                                : "#7E22CE",
                           }}
                         />
                       </Box>
@@ -2039,8 +1887,7 @@ function TasksPage() {
 
                           flex: 1,
 
-                          width:
-                            "100%",
+                          width: "100%",
 
                           overflowWrap:
                             "anywhere",
@@ -2053,11 +1900,9 @@ function TasksPage() {
                                 ? "text.secondary"
                                 : "text.primary",
 
-                            fontWeight:
-                              "600",
+                            fontWeight: "600",
 
-                            fontSize:
-                              "16px",
+                            fontSize: "16px",
 
                             wordBreak:
                               "break-word",
@@ -2081,14 +1926,11 @@ function TasksPage() {
                             color:
                               "text.secondary",
 
-                            fontSize:
-                              "13px",
+                            fontSize: "13px",
 
-                            marginTop:
-                              "5px",
+                            marginTop: "5px",
 
-                            fontWeight:
-                              "500",
+                            fontWeight: "500",
                           }}
                         >
                           {currentText.sender}:{" "}
@@ -2100,16 +1942,16 @@ function TasksPage() {
                         <Typography
                           sx={{
                             color:
-                              "primary.main",
+                              theme.palette.mode ===
+                              "dark"
+                                ? "#D8B4FE"
+                                : "#7E22CE",
 
-                            fontSize:
-                              "12px",
+                            fontSize: "12px",
 
-                            marginTop:
-                              "3px",
+                            marginTop: "3px",
 
-                            fontWeight:
-                              "500",
+                            fontWeight: "500",
                           }}
                         >
                           {
@@ -2119,12 +1961,15 @@ function TasksPage() {
                       </Box>
                     </Box>
 
-                    {/* حالة المهمة المستلمة */}
+                    {/* حالة وأولوية المهمة المستلمة */}
 
                     <Chip
                       label={
                         task.completed
                           ? currentText.completed
+                          : task.priority ===
+                            "URGENT"
+                          ? currentText.urgent
                           : currentText.normal
                       }
                       size="small"
@@ -2138,17 +1983,35 @@ function TasksPage() {
                         },
 
                         backgroundColor:
-                          theme.palette.mode ===
-                          "dark"
+                          task.priority ===
+                          "URGENT"
+                            ? theme.palette.mode ===
+                              "dark"
+                              ? "rgba(244,143,177,0.15)"
+                              : "#FCE7EF"
+                            : theme.palette.mode ===
+                              "dark"
                             ? "rgba(128,203,196,0.12)"
                             : "#E6F4F2",
 
                         color:
-                          "primary.main",
+                          task.priority ===
+                          "URGENT"
+                            ? theme.palette.mode ===
+                              "dark"
+                              ? "#F48FB1"
+                              : "#D81B60"
+                            : "primary.main",
 
                         border:
-                          theme.palette.mode ===
-                          "dark"
+                          task.priority ===
+                          "URGENT"
+                            ? theme.palette.mode ===
+                              "dark"
+                              ? "1px solid rgba(244,143,177,0.3)"
+                              : "1px solid #F8BBD0"
+                            : theme.palette.mode ===
+                              "dark"
                             ? "1px solid rgba(128,203,196,0.25)"
                             : "1px solid #B2DFDB",
                       }}
@@ -2165,8 +2028,7 @@ function TasksPage() {
               <Box
                 sx={{
                   display: "flex",
-                  justifyContent:
-                    "center",
+                  justifyContent: "center",
                   marginTop: 3,
                   marginBottom: 2,
                 }}
@@ -2174,13 +2036,8 @@ function TasksPage() {
                 <Pagination
                   count={totalPages}
                   page={currentPage}
-                  onChange={(
-                    event,
-                    page
-                  ) =>
-                    setCurrentPage(
-                      page
-                    )
+                  onChange={(event, page) =>
+                    setCurrentPage(page)
                   }
                   color="primary"
                   shape="rounded"
@@ -2192,22 +2049,18 @@ function TasksPage() {
           <Paper
             elevation={0}
             sx={{
-              padding:
-                "55px 20px",
+              padding: "55px 20px",
 
-              textAlign:
-                "center",
+              textAlign: "center",
 
               backgroundColor:
                 "background.paper",
 
-              borderRadius:
-                "16px",
+              borderRadius: "16px",
 
               width: "100%",
 
-              boxSizing:
-                "border-box",
+              boxSizing: "border-box",
             }}
           >
             <Box
@@ -2216,8 +2069,7 @@ function TasksPage() {
 
                 height: 65,
 
-                borderRadius:
-                  "50%",
+                borderRadius: "50%",
 
                 backgroundColor:
                   theme.palette.mode ===
@@ -2227,11 +2079,9 @@ function TasksPage() {
 
                 display: "flex",
 
-                alignItems:
-                  "center",
+                alignItems: "center",
 
-                justifyContent:
-                  "center",
+                justifyContent: "center",
 
                 margin:
                   "0 auto 15px",
@@ -2255,14 +2105,11 @@ function TasksPage() {
 
             <Typography
               sx={{
-                fontWeight:
-                  "bold",
+                fontWeight: "bold",
 
-                color:
-                  "text.primary",
+                color: "text.primary",
 
-                fontSize:
-                  "18px",
+                fontSize: "18px",
 
                 marginBottom: 1,
               }}
@@ -2275,8 +2122,7 @@ function TasksPage() {
                 color:
                   "text.secondary",
 
-                fontSize:
-                  "14px",
+                fontSize: "14px",
               }}
             >
               {currentText.firstTask}
@@ -2300,34 +2146,27 @@ function TasksPage() {
         }}
         PaperProps={{
           sx: {
-            width:
-              "calc(100% - 32px)",
+            width: "calc(100% - 32px)",
 
             maxWidth: 430,
 
             backgroundColor:
               "background.paper",
 
-            color:
-              "text.primary",
+            color: "text.primary",
 
-            borderRadius:
-              "16px",
+            borderRadius: "16px",
 
             padding: 1,
 
-            boxSizing:
-              "border-box",
+            boxSizing: "border-box",
           },
         }}
       >
         <DialogTitle
           sx={{
-            fontWeight:
-              "bold",
-
-            color:
-              "text.primary",
+            fontWeight: "bold",
+            color: "text.primary",
           }}
         >
           {currentText.sendTaskTo}
@@ -2341,8 +2180,7 @@ function TasksPage() {
 
                 padding: 1.5,
 
-                borderRadius:
-                  "10px",
+                borderRadius: "10px",
 
                 backgroundColor:
                   theme.palette.mode ===
@@ -2356,11 +2194,9 @@ function TasksPage() {
                   color:
                     "text.secondary",
 
-                  fontSize:
-                    "13px",
+                  fontSize: "13px",
 
-                  marginBottom:
-                    0.5,
+                  marginBottom: 0.5,
                 }}
               >
                 {currentText.task}
@@ -2371,8 +2207,7 @@ function TasksPage() {
                   color:
                     "text.primary",
 
-                  fontWeight:
-                    "600",
+                  fontWeight: "600",
 
                   overflowWrap:
                     "anywhere",
@@ -2390,25 +2225,21 @@ function TasksPage() {
 
             <Select
               value={selectedUser}
-              label={
-                currentText.selectUser
-              }
+              label={currentText.selectUser}
               onChange={(e) =>
                 setSelectedUser(
                   e.target.value
                 )
               }
               sx={{
-                borderRadius:
-                  "12px",
+                borderRadius: "12px",
 
                 "&.Mui-focused .MuiOutlinedInput-notchedOutline":
                   {
                     borderColor:
                       "primary.main",
 
-                    borderWidth:
-                      "2px",
+                    borderWidth: "2px",
                   },
               }}
             >
@@ -2438,8 +2269,7 @@ function TasksPage() {
 
             gap: 1,
 
-            flexWrap:
-              "wrap",
+            flexWrap: "wrap",
           }}
         >
           <Button
@@ -2448,9 +2278,7 @@ function TasksPage() {
               setSelectedTask(null);
               setSelectedUser("");
             }}
-            disabled={
-              sendingTask
-            }
+            disabled={sendingTask}
             variant="outlined"
             sx={{
               color:
@@ -2462,20 +2290,16 @@ function TasksPage() {
                   ? "#475569"
                   : "#CBD5E1",
 
-              textTransform:
-                "none",
+              textTransform: "none",
 
-              borderRadius:
-                "10px",
+              borderRadius: "10px",
             }}
           >
             {currentText.cancel}
           </Button>
 
           <Button
-            onClick={
-              sendTaskToUser
-            }
+            onClick={sendTaskToUser}
             disabled={
               !selectedUser ||
               sendingTask
@@ -2494,11 +2318,9 @@ function TasksPage() {
                   ? "#0F172A"
                   : "#FFFFFF",
 
-              textTransform:
-                "none",
+              textTransform: "none",
 
-              borderRadius:
-                "10px",
+              borderRadius: "10px",
 
               "&:hover": {
                 backgroundColor:
@@ -2520,9 +2342,7 @@ function TasksPage() {
 
       <Dialog
         open={openDeleteDialog}
-        onClose={
-          closeDeleteDialog
-        }
+        onClose={closeDeleteDialog}
         PaperProps={{
           sx: {
             width:
@@ -2533,26 +2353,20 @@ function TasksPage() {
             backgroundColor:
               "background.paper",
 
-            color:
-              "text.primary",
+            color: "text.primary",
 
-            borderRadius:
-              "16px",
+            borderRadius: "16px",
 
             padding: 1,
 
-            boxSizing:
-              "border-box",
+            boxSizing: "border-box",
           },
         }}
       >
         <DialogTitle
           sx={{
-            fontWeight:
-              "bold",
-
-            color:
-              "text.primary",
+            fontWeight: "bold",
+            color: "text.primary",
           }}
         >
           {currentText.deleteTask}
@@ -2579,8 +2393,7 @@ function TasksPage() {
 
             gap: 1,
 
-            flexWrap:
-              "wrap",
+            flexWrap: "wrap",
           }}
         >
           <Button
@@ -2598,11 +2411,9 @@ function TasksPage() {
                   ? "#475569"
                   : "#CBD5E1",
 
-              textTransform:
-                "none",
+              textTransform: "none",
 
-              borderRadius:
-                "10px",
+              borderRadius: "10px",
             }}
           >
             {currentText.cancel}
@@ -2618,14 +2429,11 @@ function TasksPage() {
               backgroundColor:
                 "#EF5350",
 
-              color:
-                "#FFFFFF",
+              color: "#FFFFFF",
 
-              textTransform:
-                "none",
+              textTransform: "none",
 
-              borderRadius:
-                "10px",
+              borderRadius: "10px",
 
               "&:hover": {
                 backgroundColor:
@@ -2644,9 +2452,7 @@ function TasksPage() {
 
       <Dialog
         open={openEditDialog}
-        onClose={
-          closeEditDialog
-        }
+        onClose={closeEditDialog}
         PaperProps={{
           sx: {
             width:
@@ -2657,26 +2463,20 @@ function TasksPage() {
             backgroundColor:
               "background.paper",
 
-            color:
-              "text.primary",
+            color: "text.primary",
 
-            borderRadius:
-              "16px",
+            borderRadius: "16px",
 
             padding: 1,
 
-            boxSizing:
-              "border-box",
+            boxSizing: "border-box",
           },
         }}
       >
         <DialogTitle
           sx={{
-            fontWeight:
-              "bold",
-
-            color:
-              "text.primary",
+            fontWeight: "bold",
+            color: "text.primary",
           }}
         >
           {currentText.editTask}
@@ -2688,8 +2488,7 @@ function TasksPage() {
               color:
                 "text.secondary",
 
-              fontSize:
-                "14px",
+              fontSize: "14px",
 
               marginBottom: 2,
             }}
@@ -2699,16 +2498,12 @@ function TasksPage() {
 
           <TextField
             fullWidth
-            label={
-              currentText.task
-            }
+            label={currentText.task}
             value={editTask}
             error={Boolean(
               editTaskError
             )}
-            helperText={
-              editTaskError
-            }
+            helperText={editTaskError}
             autoFocus
             onChange={(e) => {
               setEditTask(
@@ -2731,16 +2526,14 @@ function TasksPage() {
 
               "& .MuiOutlinedInput-root":
                 {
-                  borderRadius:
-                    "12px",
+                  borderRadius: "12px",
 
                   "&.Mui-focused .MuiOutlinedInput-notchedOutline":
                     {
                       borderColor:
                         "primary.main",
 
-                      borderWidth:
-                        "2px",
+                      borderWidth: "2px",
                     },
                 },
 
@@ -2764,9 +2557,7 @@ function TasksPage() {
             </InputLabel>
 
             <Select
-              value={
-                editPriority
-              }
+              value={editPriority}
               label={
                 currentText.priority
               }
@@ -2776,16 +2567,14 @@ function TasksPage() {
                 )
               }
               sx={{
-                borderRadius:
-                  "12px",
+                borderRadius: "12px",
 
                 "&.Mui-focused .MuiOutlinedInput-notchedOutline":
                   {
                     borderColor:
                       "primary.main",
 
-                    borderWidth:
-                      "2px",
+                    borderWidth: "2px",
                   },
               }}
             >
@@ -2806,8 +2595,7 @@ function TasksPage() {
 
             gap: 1,
 
-            flexWrap:
-              "wrap",
+            flexWrap: "wrap",
           }}
         >
           <Button
@@ -2825,11 +2613,9 @@ function TasksPage() {
                   ? "#475569"
                   : "#CBD5E1",
 
-              textTransform:
-                "none",
+              textTransform: "none",
 
-              borderRadius:
-                "10px",
+              borderRadius: "10px",
             }}
           >
             {currentText.cancel}
@@ -2851,11 +2637,9 @@ function TasksPage() {
                   ? "#0F172A"
                   : "#FFFFFF",
 
-              textTransform:
-                "none",
+              textTransform: "none",
 
-              borderRadius:
-                "10px",
+              borderRadius: "10px",
 
               "&:hover": {
                 backgroundColor:
