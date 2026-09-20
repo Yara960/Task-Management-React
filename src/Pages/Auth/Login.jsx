@@ -36,10 +36,33 @@ function Login() {
   const {
     darkMode,
     toggleDarkMode,
-    language,
-    toggleLanguage,
   } = useAppTheme();
 
+    // اللغة الحالية
+  const [language, setLanguage] = useState(
+    () => localStorage.getItem("language") || "en"
+  );
+ // ==========================================
+  // تغيير اللغة من صفحة التسجيل
+  // ==========================================
+
+  const toggleLanguage = () => {
+
+    const newLanguage = language === "en" ? "ar" : "en";
+
+    setLanguage(newLanguage);
+
+    // حفظ اللغة
+    localStorage.setItem("language", newLanguage);
+
+    // إرسال اللغة لباقي الصفحات
+    window.dispatchEvent(
+      new CustomEvent("languageChanged", {
+        detail: newLanguage,
+      })
+    );
+
+  };
   // ==========================================
   // الانتقال بين الصفحات
   // ==========================================
@@ -212,6 +235,23 @@ function Login() {
       ? text.ar
       : text.en;
 
+        // ==========================================
+  // استقبال تغيير اللغة من Navbar
+  // ==========================================
+
+  useEffect(() => {
+
+    const handleLanguageChange = (event) => {
+      setLanguage(event.detail);
+    };
+
+    window.addEventListener("languageChanged", handleLanguageChange);
+
+    return () => {
+      window.removeEventListener("languageChanged", handleLanguageChange);
+    };
+
+  }, []);
   // ==========================================
   // تغيير اتجاه الصفحة
   // ==========================================
@@ -231,7 +271,8 @@ function Login() {
       document.documentElement.lang = "en";
 
     }
-
+    // حفظ اللغة
+    localStorage.setItem("language", language);
   }, [language]);
 
   // ==========================================
