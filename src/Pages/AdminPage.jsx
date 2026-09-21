@@ -309,7 +309,7 @@ function AdminPage() {
   const [currentTaskPage, setCurrentTaskPage] =
     useState(1);
 
-  const tasksPerPage = 2;
+  const tasksPerPage = 20;
 
   // ======================================================
   // حالة التنبيه
