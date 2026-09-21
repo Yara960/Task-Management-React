@@ -1583,6 +1583,31 @@ export default function Chat() {
                         }}
                       >
                         {msg.message}
+
+                    {msg.created_at && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          display: "block",
+                          mt: 0.5,
+                          textAlign: isMine ? "right" : "left",
+                          opacity: 0.75,
+                          fontSize: "0.7rem",
+                        }}
+                      >
+                        {new Date(msg.created_at).toLocaleString(
+                          language === "ar" ? "ar-SA" : "en-US",
+                          {
+                            weekday: "short",
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </Typography>
+                    )}
                       </Typography>
 
                       {isMine && (
