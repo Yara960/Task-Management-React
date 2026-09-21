@@ -187,7 +187,7 @@ function TasksPage() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
 
-  const tasksPerPage = 2;
+  const tasksPerPage = 20;
 
   // إرسال المهمة
   const [openSendDialog, setOpenSendDialog] = useState(false);

@@ -1,0 +1,222 @@
+config:
+  target: "https://hvbysksipxlvicnanqvu.supabase.co"
+
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm up"
+
+    - duration: 60
+      arrivalRate: 10
+      name: "High Load"
+
+scenarios:
+
+  # =========================================================
+  # 1. READ TASKS
+  # =========================================================
+  - name: "Read Tasks"
+    weight: 5
+    flow:
+      - get:
+          url: "/rest/v1/tasks?select=id,created_at,task,priority,completed,user_id,assigned_to&limit=10"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+
+  # =========================================================
+  # 2. CREATE TASK
+  # =========================================================
+  - name: "Create Task"
+    weight: 2
+    flow:
+      - post:
+          url: "/rest/v1/tasks"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+            Content-Type: "application/json"
+            Prefer: "return=representation"
+          json:
+            task: "Artillery Load Test Task"
+            user_id: "{{ $env.TEST_USER_ID }}"
+            priority: "NORMAL"
+            completed: false
+
+  # =========================================================
+  # 3. CREATE -> UPDATE
+  # =========================================================
+  - name: "Create and Update Task"
+    weight: 2
+    flow:
+
+      # Create
+      - post:
+          url: "/rest/v1/tasks"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+            Content-Type: "application/json"
+            Prefer: "return=representation"
+          json:
+            task: "Artillery Update Test"
+            user_id: "{{ $env.TEST_USER_ID }}"
+            priority: "NORMAL"
+            completed: false
+          capture:
+            - json: "$[0].id"
+              as: "createdTaskId"
+
+      # Update
+      - patch:
+          url: "/rest/v1/tasks?id=eq.{{ createdTaskId }}"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+            Content-Type: "application/json"
+            Prefer: "return=representation"
+          json:
+            task: "Artillery Updated Task"
+            priority: "URGENT"
+            completed: true
+
+  # =========================================================
+  # 4. CREATE -> UPDATE -> SOFT DELETE
+  # =========================================================
+  - name: "Create Update Soft Delete Task"
+    weight: 2
+    flow:
+
+      # Create
+      - post:
+          url: "/rest/v1/tasks"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+            Content-Type: "application/json"
+            Prefer: "return=representation"
+          json:
+            task: "Artillery Soft Delete Test"
+            user_id: "{{ $env.TEST_USER_ID }}"
+            priority: "NORMAL"
+            completed: false
+          capture:
+            - json: "$[0].id"
+              as: "createdTaskId"
+
+      # Update
+      - patch:
+          url: "/rest/v1/tasks?id=eq.{{ createdTaskId }}"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+            Content-Type: "application/json"
+            Prefer: "return=representation"
+          json:
+            task: "Artillery Updated Before Delete"
+            priority: "URGENT"
+            completed: true
+
+      # Soft Delete
+      - patch:
+          url: "/rest/v1/tasks?id=eq.{{ createdTaskId }}"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+            Content-Type: "application/json"
+            Prefer: "return=representation"
+          json:
+            deleted_at: "2026-09-21T00:00:00Z"
+
+  # =========================================================
+  # 5. READ TASKS MULTIPLE TIMES
+  # =========================================================
+  - name: "Read Tasks Multiple Times"
+    weight: 2
+    flow:
+
+      - get:
+          url: "/rest/v1/tasks?select=id,task,priority,completed&limit=10"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+
+      - get:
+          url: "/rest/v1/tasks?select=id,task,priority,completed&limit=10"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+
+      - get:
+          url: "/rest/v1/tasks?select=id,task,priority,completed&limit=10"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+
+  # =========================================================
+  # 6. READ PROFILES
+  # =========================================================
+  - name: "Read Profiles"
+    weight: 1
+    flow:
+      - get:
+          url: "/rest/v1/profiles?select=id,display_name,email,role,is_active&limit=10"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+
+  # =========================================================
+  # 7. READ MESSAGES
+  # =========================================================
+  - name: "Read Messages"
+    weight: 1
+    flow:
+      - get:
+          url: "/rest/v1/messages?select=id,sender_id,receiver_id,message,created_at&limit=10"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+
+  # =========================================================
+  # 8. OPEN VERCEL APPLICATION
+  # =========================================================
+  - name: "Open Vercel App"
+    weight: 2
+    flow:
+      - get:
+          url: "https://task-management-react-orcin.vercel.app/"
+
+  # =========================================================
+  # 9. FULL DATA FLOW
+  # =========================================================
+  - name: "Full Data Flow"
+    weight: 2
+    flow:
+
+      # Read Tasks
+      - get:
+          url: "/rest/v1/tasks?select=id,task,priority,completed&limit=10"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+
+      # Read Profiles
+      - get:
+          url: "/rest/v1/profiles?select=id,display_name,email,role,is_active&limit=10"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+
+      # Read Messages
+      - get:
+          url: "/rest/v1/messages?select=id,sender_id,receiver_id,message,created_at&limit=10"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
+
+      # Read Tasks again
+      - get:
+          url: "/rest/v1/tasks?select=id,task,priority,completed&limit=10"
+          headers:
+            apikey: "{{ $env.SUPABASE_KEY }}"
+            Authorization: "Bearer {{ $env.TEST_ACCESS_TOKEN }}"
